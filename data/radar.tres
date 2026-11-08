@@ -6,6 +6,6 @@
 script = ExtResource("1")
 id = "radar"
 title = "Radar"
-description = "Zielsystem f?r die Entwicklung."
+description = "Zielsystem für die Entwicklung."
 socket = "head"
 values = Array[float]([1, 2, 3, 4, 5])

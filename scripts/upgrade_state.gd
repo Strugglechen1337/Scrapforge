@@ -18,5 +18,7 @@ func can_evolve() -> bool:
 func evolve() -> bool:
     if not can_evolve():
         return false
+    levels["rocket"] = 0
+    levels["radar"] = 0
     levels["swarm"] = 1
     return true

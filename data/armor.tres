@@ -6,6 +6,6 @@
 script = ExtResource("1")
 id = "armor"
 title = "Panzerung"
-description = "Verst?rkt den Kern."
+description = "Verstärkt den Kern."
 socket = "core"
 values = Array[float]([10, 20, 30, 40, 50])

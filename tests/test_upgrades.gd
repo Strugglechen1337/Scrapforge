@@ -9,6 +9,7 @@ func _initialize() -> void:
     for i in range(5): assert(state.upgrade("radar"))
     assert(state.evolve())
     assert(not state.evolve())
+    assert(state.level("rocket") == 0 and state.level("radar") == 0 and state.level("swarm") == 1)
     for id in ["laser", "rocket", "shield", "saw", "thruster", "armor", "magnet", "cooldown", "radar"]:
         var definition = load("res://data/" + id + ".tres")
         assert(definition != null and definition.values.size() == 5)

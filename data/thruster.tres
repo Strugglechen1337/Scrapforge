@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = "thruster"
-title = "Schubd?sen"
-description = "Erh?ht die Bewegungsgeschwindigkeit."
+title = "Schubdüsen"
+description = "Erhöht die Bewegungsgeschwindigkeit."
 socket = "legs"
 values = Array[float]([12, 24, 36, 48, 60])

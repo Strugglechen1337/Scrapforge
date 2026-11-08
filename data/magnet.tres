@@ -6,6 +6,6 @@
 script = ExtResource("1")
 id = "magnet"
 title = "Magnet"
-description = "Zieht Kristalle aus gr??erer Entfernung an."
+description = "Zieht Kristalle aus größerer Entfernung an."
 socket = "core"
 values = Array[float]([20, 40, 60, 80, 100])
