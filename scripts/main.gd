@@ -1,6 +1,6 @@
 extends Node2D
 
-const IDS = ["laser", "rocket", "shield", "saw", "thruster", "armor", "magnet", "cooldown", "radar"]
+const IDS = ["minigun", "laser", "rocket", "shield", "saw", "thruster", "armor", "magnet", "cooldown", "radar"]
 const BG = Color("080f1c")
 const CYAN = Color("46f6ef")
 const PINK = Color("ff568d")
@@ -27,6 +27,7 @@ var autoplay := false
 var demo_time := 0.0
 var demo_stage := 0
 var robot: RobotVisual
+var world_3d: ScrapWorld3D
 var boss_spawned := false
 var won := false
 var shake_enabled := true
@@ -43,14 +44,9 @@ func _ready() -> void:
     randomize()
     robot = RobotVisual.new()
     add_child(robot)
-    var env := Environment.new()
-    env.background_mode = Environment.BG_CANVAS
-    env.glow_enabled = true
-    env.glow_hdr_threshold = 0.65
-    env.glow_intensity = 0.8
-    var world := WorldEnvironment.new()
-    world.environment = env
-    add_child(world)
+    world_3d = ScrapWorld3D.new()
+    world_3d.game = self
+    add_child(world_3d)
     for arg in OS.get_cmdline_user_args():
         if arg.begins_with("--shot-dir="): shot_dir = arg.trim_prefix("--shot-dir=")
     for binding in [["ui_left", KEY_A], ["ui_right", KEY_D], ["ui_up", KEY_W], ["ui_down", KEY_S]]:
@@ -59,6 +55,7 @@ func _ready() -> void:
         InputMap.action_add_event(binding[0], key)
     for id in IDS:
         definitions[id] = load("res://data/" + id + ".tres")
+    definitions["swarm"] = load("res://data/swarm.tres")
     autoplay = "--autoplay" in OS.get_cmdline_user_args()
     if autoplay:
         start_game()
@@ -166,7 +163,7 @@ func spark(at: Vector2, color: Color, count: int) -> void:
 
 func start_game() -> void:
     state = UpgradeState.new()
-    state.upgrade("laser")
+    state.upgrade("minigun")
     player = Vector2.ZERO
     enemies.clear()
     bullets.clear()
@@ -228,7 +225,8 @@ func _process(delta: float) -> void:
         elif demo_stage == 6 and demo_time >= 60:
             get_tree().quit()
             return
-    robot.visible = mode != "menu" and mode != "settings"
+    robot.visible = false
+    world_3d.update_view()
     robot.position = get_viewport_rect().size / 2
     robot.scale = Vector2.ONE * (2.4 if mode == "end" else 1.25)
     if mode == "end": robot.position = Vector2(300, 440)
@@ -273,7 +271,7 @@ func _process(delta: float) -> void:
         for enemy in enemies:
             if player.distance_squared_to(enemy.pos) < player.distance_squared_to(nearest.pos): nearest = enemy
         var dir: Vector2 = (nearest.pos - player).normalized()
-        bullets.append({"pos": player, "vel": dir * 560, "life": 2.0, "damage": 12 + state.level("laser") * 6 + state.level("rocket") * 5})
+        bullets.append({"pos": player, "vel": dir * 560, "life": 2.0, "damage": 12 + state.level("minigun") * 6 + state.level("laser") * 6 + state.level("rocket") * 5})
         spark(player + dir * 35, CYAN, 4)
         if state.level("swarm"):
             for angle in [-0.25, -0.12, 0.12, 0.25]:
@@ -346,7 +344,8 @@ func choose_upgrade(force_show := false) -> void:
     for id in candidates.slice(0, 3):
         var definition = definitions[id]
         var b := button("%s  ·  STUFE %d\n%s" % [definition.title, state.level(id) + 1, definition.description], func():
-            state.upgrade(id)
+            if id == "swarm": state.evolve()
+            else: state.upgrade(id)
             mode = "playing"
             clear_ui()
             status = Label.new()
@@ -390,6 +389,7 @@ func show_end(victory: bool) -> void:
 
 
 func _draw() -> void:
+    if mode != "menu" and mode != "settings": return
     var size := get_viewport_rect().size
     draw_rect(Rect2(Vector2.ZERO, size), BG)
     var offset := Vector2(fposmod(-player.x + size.x / 2, 80), fposmod(-player.y + size.y / 2, 80))

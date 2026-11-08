@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/upgrade_definition.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/module_visual_3d.gd" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = "swarm"
+title = "Schwarm-Werfer"
+description = "Entwickelte Raketenbatterie."
+socket = "right_shoulder"
+visual_script = ExtResource("2")
+values = Array[float]([36, 36, 36, 36, 36])

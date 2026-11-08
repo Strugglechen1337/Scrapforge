@@ -7,6 +7,7 @@ func run_tests() -> void:
     var game = load("res://scenes/main.tscn").instantiate()
     root.add_child(game)
     game.start_game()
+    assert(game.state.level("minigun") == 1 and game.state.level("laser") == 0)
     game.elapsed = 300.0
     game._process(0.01)
     assert(game.boss_spawned)

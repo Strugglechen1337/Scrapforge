@@ -56,6 +56,10 @@ func _draw() -> void:
         plate(Rect2(-53, -13, 25 + laser * 3, 16), Color("35536b"))
         for i in range(laser): draw_line(Vector2(-51, -10 + i * 2.4), Vector2(-35, -10 + i * 2.4), CYAN, 2)
         draw_circle(Vector2(-54, -5), 3 + laser, CYAN)
+    var minigun := lvl("minigun")
+    if minigun:
+        plate(Rect2(28, -13, 25 + minigun * 3, 16), Color("35536b"))
+        for i in range(minigun + 1): draw_line(Vector2(37, -10 + i * 2.4), Vector2(56, -10 + i * 2.4), LIGHT, 2)
     var rockets := lvl("rocket")
     if rockets and not lvl("swarm"):
         plate(Rect2(20, -37, 20 + rockets * 3, 13), Color("526278"))
