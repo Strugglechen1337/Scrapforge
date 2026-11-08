@@ -1,22 +1,18 @@
 # Scrapforge
 
-**Schmiede dir aus Schrott den ultimativen Kampfroboter.**
+Ein origineller Survivor-Prototyp: Der Roboter bewegt sich durch eine Arena und schießt automatisch auf Gegner. Kristalle erhöhen die Stufe; beim Aufstieg wird ein Upgrade gewählt.
 
-Ein Survivor-Action-Spiel: Überlebe immer stärkere Gegnerwellen – dein Roboter schießt automatisch, du steuerst die Bewegung. Mit jedem Level-Aufstieg wählst du ein neues Bauteil, und **man sieht es am Roboter**: Raketenwerfer am Arm, Schildring auf dem Rücken, Schubdüsen an den Beinen. Am Ende jeder Runde steht dein ganz eigener Kampfroboter.
+## Entwicklung
 
-## Ziele
+Godot 4.7.2 (Standard-Build) installieren, `project.godot` öffnen und das Projekt starten. Pfeiltasten oder linker Controller-Stick bewegen den Roboter; auf Touch-Geräten zieht man den virtuellen Stick über den Bildschirm. Menüs und Auswahl sind mit Tastatur oder Controller bedienbar.
 
-- **Sichtbare Upgrades:** feste Anbaupunkte (Arme, Schultern, Rücken, Kopf, Beine, Kern); jedes Bauteil und jede Stufe verändert das Aussehen
-- **Entwicklungen:** zwei voll ausgebaute Teile verschmelzen zu einer neuen Waffe mit eigenem Look
-- **Sehr moderner Look:** Neon, Glow/Bloom, Partikel, flüssige Animationen
-- **Plattformen:** Android, Steam Deck (Linux nativ), Windows
-- **Steuerung:** Controller, Tastatur/Maus, Touch (virtueller Stick)
-- **Update-Funktion:** das Spiel erkennt neue Versionen auf GitHub und bietet das Update an
+Headless-Prüfung:
 
-## Technik
-
-Godot 4 (2D) · GitHub Actions für Builds und Releases
+```sh
+godot --headless --editor --path . --quit
+godot --headless --path . --script res://tests/test_upgrades.gd
+```
 
 ## Status
 
-In Entwicklung – erste spielbare Version folgt.
+Frühes Grundgerüst, noch keine veröffentlichungsfähige Ausbaustufe: Entwicklung, Boss, vollständige Bauteile und Effekte, Update-Funktion, Einstellungen, Screenshot-Funktion und Export-Workflows fehlen. Android und Steam Deck sind noch nicht verifiziert. Bitte Issues oder Pull Requests mit reproduzierbaren Schritten und Tests einreichen; keine fremden Assets ohne passende Lizenz hinzufügen.

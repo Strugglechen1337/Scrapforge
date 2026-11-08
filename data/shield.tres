@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/upgrade_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "shield"
+title = "Schildgenerator"
+description = "Ein Schutzring reduziert Schaden."
+socket = "back"
+values = Array[float]([0.08, 0.12, 0.16, 0.2, 0.25])

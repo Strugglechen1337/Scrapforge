@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/upgrade_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "thruster"
+title = "Schubd?sen"
+description = "Erh?ht die Bewegungsgeschwindigkeit."
+socket = "legs"
+values = Array[float]([12, 24, 36, 48, 60])
