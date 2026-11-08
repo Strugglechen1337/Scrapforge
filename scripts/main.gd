@@ -42,6 +42,12 @@ var resume_mode := "playing"
 
 func _ready() -> void:
     randomize()
+    if "--showcase" in OS.get_cmdline_user_args():
+        mode = "showcase"
+        var showcase = load("res://scripts/showcase.gd").new()
+        add_child(showcase)
+        set_process(false)
+        return
     robot = RobotVisual.new()
     add_child(robot)
     world_3d = ScrapWorld3D.new()
@@ -185,9 +191,6 @@ func start_game() -> void:
     status.position = Vector2(30, 24)
     status.add_theme_font_size_override("font_size", 24)
     panel.add_child(status)
-    if autoplay:
-        for id in ["rocket", "shield", "saw", "thruster", "radar", "armor", "magnet", "cooldown"]:
-            for n in range(3): state.upgrade(id)
 
 func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventScreenTouch:
@@ -203,8 +206,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
     if autoplay:
         demo_time += delta
-        if demo_stage == 0 and demo_time >= 10:
-            capture_demo("spiel")
+        if demo_stage == 0 and demo_time >= 2:
+            capture_demo("spiel-start")
             demo_stage = 1
         elif demo_stage == 1 and demo_time >= 20:
             choose_upgrade(true)

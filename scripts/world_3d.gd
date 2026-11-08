@@ -30,6 +30,9 @@ func _ready() -> void:
     env.ambient_light_energy = 0.6
     env.tonemap_mode = Environment.TONE_MAPPER_ACES
     env.glow_enabled = true
+    env.fog_enabled = true
+    env.fog_light_color = Color("202b39")
+    env.fog_density = 0.008
     var environment := WorldEnvironment.new()
     environment.environment = env
     add_child(environment)
@@ -40,14 +43,19 @@ func _ready() -> void:
     add_child(light)
     camera = Camera3D.new()
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    camera.size = 14
+    camera.size = 20
     camera.position = Vector3(0, 18, 12)
     camera.rotation_degrees.x = -56
     add_child(camera)
     var floor_material := StandardMaterial3D.new()
-    floor_material.albedo_color = Color("272a33")
+    floor_material.albedo_color = Color("8e98a8")
     floor_material.metallic = 0.4
     floor_material.roughness = 0.85
+    floor_material.albedo_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Color.jpg")
+    floor_material.normal_enabled = true
+    floor_material.normal_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_NormalGL.jpg")
+    floor_material.roughness_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Roughness.jpg")
+    floor_material.uv1_scale = Vector3(20, 14, 1)
     box(self, Vector3(80, 0.2, 55), Vector3(0, -0.2, 0), floor_material)
     for x in range(-20, 21):
         box(self, Vector3(0.035, 0.012, 55), Vector3(x * 2, -0.09, 0), metal)
@@ -56,8 +64,37 @@ func _ready() -> void:
     for x in range(-18, 19, 2):
         box(self, Vector3(0.8, 0.02, 0.08), Vector3(x * 2, -0.08, -25), orange)
         box(self, Vector3(0.8, 0.02, 0.08), Vector3(x * 2, -0.08, 25), cyan)
+    for z in [-8.0, 8.0]:
+        box(self, Vector3(35, 0.02, 0.11), Vector3(0, -0.07, z), orange if z < 0 else cyan)
+        for i in range(-14, 15):
+            var stripe := MeshInstance3D.new()
+            var mesh := BoxMesh.new()
+            mesh.size = Vector3(0.55, 0.015, 0.15)
+            stripe.mesh = mesh
+            stripe.material_override = orange if z < 0 else cyan
+            stripe.position = Vector3(i * 1.2, -0.06, z + 0.22)
+            stripe.rotation.y = 0.6
+            add_child(stripe)
+    var prop_paths := ["barrel", "machine-generator", "pipe-straight", "monorail-traincargo"]
+    for i in range(32):
+        var packed: PackedScene = load("res://assets/third_party/kenney/space-kit/" + prop_paths[i % prop_paths.size()] + ".glb")
+        var prop := packed.instantiate() as Node3D
+        add_child(prop)
+        shade_prop(prop)
+        prop.position = Vector3((i % 16 - 7.5) * 4.5, 0, -10.0 if i < 16 else 10.0)
+        prop.rotation.y = float(i % 4) * PI / 2.0
+        prop.scale = Vector3.ONE * 1.4
+    for z in [-8.0, 8.0]:
+        for x in [-12.0, 0.0, 12.0]:
+            var lamp := OmniLight3D.new()
+            lamp.position = Vector3(x, 1.0, z)
+            lamp.light_color = Color("ff7a1a") if z < 0 else Color("33f5ff")
+            lamp.light_energy = 1.2
+            lamp.omni_range = 5.0
+            add_child(lamp)
     robot = Robot3D.new()
     add_child(robot)
+    robot.rotation.y = PI
     collection_ring = MeshInstance3D.new()
     var ring := TorusMesh.new()
     ring.inner_radius = 1.15
@@ -75,6 +112,11 @@ func emissive(color: Color) -> StandardMaterial3D:
     material.emission = color
     material.emission_energy_multiplier = 2.5
     return material
+
+func shade_prop(node: Node) -> void:
+    if node is MeshInstance3D:
+        node.material_override = metal
+    for child in node.get_children(): shade_prop(child)
 
 func box(parent: Node3D, size: Vector3, pos: Vector3, material: Material) -> void:
     var instance := MeshInstance3D.new()
