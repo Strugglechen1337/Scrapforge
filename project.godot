@@ -1,5 +1,6 @@
 [application]
 config/name="Scrapforge"
+config/icon="res://assets/ui/icon.svg"
 config/version="0.1.0"
 run/main_scene="res://scenes/main.tscn"
 
@@ -7,8 +8,9 @@ run/main_scene="res://scenes/main.tscn"
 window/size/viewport_width=1280
 window/size/viewport_height=800
 window/stretch/mode="canvas_items"
-window/handheld/orientation=1
+window/handheld/orientation=0
 
 [rendering]
 renderer/rendering_method="forward_plus"
 renderer/rendering_method.mobile="mobile"
+textures/vram_compression/import_etc2_astc=true

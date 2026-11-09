@@ -23,9 +23,8 @@ var kills := 0
 var mode := "menu"
 var panel: Control
 var status: Label
-var touch_origin := Vector2.ZERO
-var touch_direction := Vector2.ZERO
-var touch_id := -1
+var updater: ReleaseUpdater
+var touch_controls: TouchControls
 var autoplay := false
 var demo_time := 0.0
 var demo_stage := 0
@@ -61,6 +60,10 @@ func _ready() -> void:
         add_child(showcase)
         set_process(false)
         return
+    updater = ReleaseUpdater.new()
+    touch_controls = TouchControls.new()
+    touch_controls.game = self
+    add_child(touch_controls)
     robot = RobotVisual.new()
     add_child(robot)
     world_3d = ScrapWorld3D.new()
@@ -80,6 +83,7 @@ func _ready() -> void:
         start_game()
     else:
         show_menu()
+    add_child(updater)
 
 func clear_ui() -> void:
     if is_instance_valid(panel):
@@ -132,6 +136,7 @@ func show_menu() -> void:
     var start := button("START", start_game)
     box.add_child(start)
     box.add_child(button("EINSTELLUNGEN", show_settings))
+    box.add_child(button("NACH UPDATES SUCHEN", func(): updater.check(true)))
     box.add_child(button("BEENDEN", func(): get_tree().quit()))
     start.grab_focus()
     queue_redraw()
@@ -263,17 +268,6 @@ func write_fps_report() -> void:
         for stat in screenshot_stats: file.store_line(stat)
         print(result)
 
-func _unhandled_input(event: InputEvent) -> void:
-    if event is InputEventScreenTouch:
-        if event.pressed and touch_id == -1:
-            touch_id = event.index
-            touch_origin = event.position
-        elif event.index == touch_id and not event.pressed:
-            touch_id = -1
-            touch_direction = Vector2.ZERO
-    if event is InputEventScreenDrag and event.index == touch_id:
-        touch_direction = (event.position - touch_origin).limit_length(80.0) / 80.0
-
 func _process(delta: float) -> void:
     if autoplay:
         var now := Time.get_ticks_usec()
@@ -350,7 +344,7 @@ func _process(delta: float) -> void:
         spawn_boss()
     var direction := Vector2(Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left"), Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up"))
     direction += Vector2(Input.get_joy_axis(0, JOY_AXIS_LEFT_X), Input.get_joy_axis(0, JOY_AXIS_LEFT_Y)).limit_length(1.0)
-    direction += touch_direction
+    direction += Vector2(Input.get_action_strength("touch_right") - Input.get_action_strength("touch_left"), Input.get_action_strength("touch_down") - Input.get_action_strength("touch_up"))
     if autoplay:
         direction = Vector2(cos(elapsed * 0.4), sin(elapsed * 0.4))
         if demo_stage in [2,4]: direction = Vector2.ZERO
