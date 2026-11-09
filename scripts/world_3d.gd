@@ -165,16 +165,8 @@ func _ready() -> void:
 			box(self, Vector3(0.25, 3.0, 1.0), Vector3(x, 1.4, z), metal)
 	for x in [-37.0, 37.0]:
 		box(self, Vector3(0.6, 2.5, 50), Vector3(x, 1.15, 0), metal)
-	# Discontinuous industrial barriers and salvage clusters frame the first view.
-	for z in [-10.0, 10.0]:
-		for x in [-16.0, -11.0, 9.0, 15.0]:
-			box(self, Vector3(3.5, 1.5, 0.35), Vector3(x, 0.7, z), metal)
-			box(self, Vector3(3.65, 0.12, 0.5), Vector3(x, 1.5, z), metal)
-			for side in [-1, 1]:
-				box(self, Vector3(0.14, 1.7, 0.55), Vector3(x + side * 1.5, 0.8, z), metal)
-		for x in [-13.0, 11.0]:
-			box(self, Vector3(1.8, 1.3, 1.2), Vector3(x, 0.65, z + 1.2), metal)
-			box(self, Vector3(1.95, 0.12, 1.3), Vector3(x, 1.35, z + 1.2), metal)
+	# Sketchfab scenery props (crates, canisters, barrels) frame the arena; see scripts/arena_props.gd.
+	ArenaProps.build(self)
 	for x in range(-20, 21):
 		box(self, Vector3(0.035, 0.012, 55), Vector3(x * 2, -0.09, 0), metal)
 	for z in range(-14, 15):
@@ -193,15 +185,6 @@ func _ready() -> void:
 			stripe.position = Vector3(i * 1.2, -0.06, z + 0.22)
 			stripe.rotation.y = 0.6
 			add_child(stripe)
-	var prop_paths := ["barrel", "machine-generator", "pipe-straight", "monorail-traincargo"]
-	for i in range(32):
-		var packed: PackedScene = load("res://assets/third_party/kenney/space-kit/" + prop_paths[i % prop_paths.size()] + ".glb")
-		var prop := packed.instantiate() as Node3D
-		add_child(prop)
-		shade_prop(prop)
-		prop.position = Vector3((i % 16 - 7.5) * 4.5, 0, -10.0 if i < 16 else 10.0)
-		prop.rotation.y = float(i % 4) * PI / 2.0
-		prop.scale = Vector3.ONE * 1.4
 	for z in [-8.0, 8.0]:
 		for x in [-12.0, 0.0, 12.0]:
 			var lamp := OmniLight3D.new()
