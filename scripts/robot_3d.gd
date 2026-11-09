@@ -4,6 +4,9 @@ class_name Robot3D
 var state: UpgradeState
 var definitions: Dictionary = {}
 var signature := ""
+var skin: Resource
+var body_material: StandardMaterial3D
+var accent := StandardMaterial3D.new()
 var metal := StandardMaterial3D.new()
 var dark := StandardMaterial3D.new()
 var glow := StandardMaterial3D.new()
@@ -16,12 +19,12 @@ var clock := 0.0
 var visor: MeshInstance3D
 
 func _ready() -> void:
-    metal.albedo_color = Color("c9ccc6")
-    metal.metallic = 0.58
-    metal.roughness = 0.48
-    metal.albedo_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Color.jpg")
-    metal.normal_enabled = true
-    metal.normal_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_NormalGL.jpg")
+    metal.albedo_color = Color("a9a39a")
+    accent.albedo_color = Color("e97220")
+    accent.metallic = 0.08
+    accent.roughness = 0.72
+    metal.metallic = 0.08
+    metal.roughness = 0.72
     dark.albedo_color = Color("192431")
     dark.metallic = 0.68
     dark.roughness = 0.44
@@ -39,10 +42,11 @@ func _ready() -> void:
     var skeleton := model.get_node("RobotArmature/Skeleton3D") as Skeleton3D
     var body := skeleton.get_node("George") as MeshInstance3D
     var material := body.get_active_material(0).duplicate() as StandardMaterial3D
-    material.albedo_color = Color("d8dbd5")
-    material.metallic = 0.45
-    material.roughness = 0.58
+    material.albedo_color = Color("e1e5e3")
+    material.metallic = 0.08
+    material.roughness = 0.75
     body.material_override = material
+    body_material = material
     animation = model.get_node("AnimationPlayer") as AnimationPlayer
     var walk := animation.get_animation("Walk")
     walk.loop_mode = Animation.LOOP_LINEAR
@@ -71,13 +75,50 @@ func _ready() -> void:
         attachment.add_child(marker)
         marker.set_meta("rest_basis", skeleton.get_bone_global_rest(skeleton.find_bone(bone)).basis.orthonormalized())
         add_base_plate(marker, "chassis_thigh")
+    for pair in [["LowerLeg.L", "chassis_shin"], ["LowerLeg.R", "chassis_shin"], ["Foot.L", "chassis_foot"], ["Foot.R", "chassis_foot"], ["UpperArm.L", "chassis_upper_arm"], ["UpperArm.R", "chassis_upper_arm"]]:
+        var attachment := BoneAttachment3D.new()
+        attachment.bone_name = pair[0]
+        skeleton.add_child(attachment)
+        var marker := Marker3D.new()
+        attachment.add_child(marker)
+        marker.set_meta("rest_basis", skeleton.get_bone_global_rest(skeleton.find_bone(pair[0])).basis.orthonormalized())
+        add_base_plate(marker, pair[1])
     visor = MeshInstance3D.new()
     var visor_mesh := BoxMesh.new()
     visor_mesh.size = Vector3(0.24, 0.065, 0.04)
     visor.mesh = visor_mesh
     visor.material_override = visor_glow
     add_child(visor)
+    set_skin(load("res://data/skins/standard.tres"))
     set_robot_layer(self)
+
+func set_skin(value: Resource) -> void:
+    skin = value
+    if not skin: return
+    metal.albedo_color = skin.armor_color
+    accent.albedo_color = skin.accent_color
+    if body_material: body_material.albedo_color = skin.armor_color
+    # A reusable, deterministic paint-wear mask: chipped edges and fine scratches.
+    var image := Image.create(256, 256, false, Image.FORMAT_RGBA8)
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 47021
+    for y in range(256):
+        for x in range(256):
+            var pattern := sin(float(x) * 0.07 + sin(float(y) * 0.04) * 2.0) + cos(float(y) * 0.06 + float(x) * 0.025)
+            var shade := 0.65 if skin.camouflage and pattern > 0.8 else 1.0
+            var edge := mini(mini(x, 255 - x), mini(y, 255 - y))
+            if edge < 9 and rng.randf() < (9.0 - edge) * 0.018: shade = rng.randf_range(0.35, 0.62)
+            image.set_pixel(x, y, Color(shade, shade, shade, 1))
+    for i in range(95):
+        var x := rng.randi_range(3, 244)
+        var y := rng.randi_range(3, 252)
+        var length := rng.randi_range(2, 11)
+        var shade := rng.randf_range(0.42, 0.78)
+        for j in range(length):
+            image.set_pixel(x + j, y + int(j / 5), Color(shade, shade, shade, 1))
+    var wear := ImageTexture.create_from_image(image)
+    metal.albedo_texture = wear
+    accent.albedo_texture = wear
 
 func set_robot_layer(node: Node) -> void:
     if node is GeometryInstance3D:
@@ -88,7 +129,7 @@ func add_base_plate(marker: Marker3D, id: String) -> void:
     var module: Node3D = load("res://scripts/module_visual_3d.gd").new()
     base_parts.add_child(module)
     module.set_meta("marker", marker)
-    module.build(id, 1, metal, dark, glow)
+    module.build(id, 1, metal, dark, glow, accent)
 
 func refresh() -> void:
     if not state or not is_instance_valid(parts): return
@@ -104,8 +145,10 @@ func refresh() -> void:
         if level == 0 or not definition.visual_script or not sockets.has(definition.socket): continue
         var module: Node3D = definition.visual_script.new()
         parts.add_child(module)
-        module.set_meta("socket", definition.socket)
-        module.build(id, level, metal, dark, glow)
+        var socket_name: String = state.arm_socket(id) if id in state.ARM_WEAPONS else definition.socket
+        module.set_meta("socket", socket_name)
+        module.set_meta("module_id", id)
+        module.build(id, level, metal, dark, glow, accent)
         set_robot_layer(module)
     update_parts()
 
@@ -115,6 +158,7 @@ func update_parts() -> void:
     for part in parts.get_children():
         var socket: Marker3D = sockets[part.get_meta("socket")]
         follow_bone(part, socket, true)
+        if part.get_meta("module_id") == "minigun": part.scale *= 1.45
         if part.get_meta("socket") in ["left_shoulder", "right_shoulder"]:
             var side := 1.0 if part.get_meta("socket") == "left_shoulder" else -1.0
             part.position += part.basis.orthonormalized() * Vector3(side * 0.22, 0.13, 0)

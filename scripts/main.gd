@@ -1,9 +1,10 @@
 extends Node2D
 
-const IDS = ["minigun", "laser", "rocket", "shield", "saw", "thruster", "armor", "magnet", "cooldown", "radar"]
+const IDS = ["minigun", "laser", "rocket", "shield", "saw", "thruster", "armor", "magnet", "cooldown", "radar", "flamethrower", "plasma", "turret", "sensor", "drone"]
 const BG = Color("080f1c")
 const CYAN = Color("46f6ef")
 const PINK = Color("ff568d")
+var weapons = preload("res://scripts/weapons_3d.gd").new()
 var state = UpgradeState.new()
 var definitions: Dictionary = {}
 var player := Vector2.ZERO
@@ -22,9 +23,8 @@ var kills := 0
 var mode := "menu"
 var panel: Control
 var status: Label
-var touch_origin := Vector2.ZERO
-var touch_direction := Vector2.ZERO
-var touch_id := -1
+var updater: ReleaseUpdater
+var touch_controls: TouchControls
 var autoplay := false
 var demo_time := 0.0
 var demo_stage := 0
@@ -60,6 +60,10 @@ func _ready() -> void:
         add_child(showcase)
         set_process(false)
         return
+    updater = ReleaseUpdater.new()
+    touch_controls = TouchControls.new()
+    touch_controls.game = self
+    add_child(touch_controls)
     robot = RobotVisual.new()
     add_child(robot)
     world_3d = ScrapWorld3D.new()
@@ -79,6 +83,7 @@ func _ready() -> void:
         start_game()
     else:
         show_menu()
+    add_child(updater)
 
 func clear_ui() -> void:
     if is_instance_valid(panel):
@@ -131,6 +136,7 @@ func show_menu() -> void:
     var start := button("START", start_game)
     box.add_child(start)
     box.add_child(button("EINSTELLUNGEN", show_settings))
+    box.add_child(button("NACH UPDATES SUCHEN", func(): updater.check(true)))
     box.add_child(button("BEENDEN", func(): get_tree().quit()))
     start.grab_focus()
     queue_redraw()
@@ -188,6 +194,7 @@ func spark(at: Vector2, color: Color, count: int) -> void:
 
 
 func start_game() -> void:
+    weapons = preload("res://scripts/weapons_3d.gd").new()
     state = UpgradeState.new()
     state.upgrade("minigun")
     player = Vector2.ZERO
@@ -265,17 +272,6 @@ func write_fps_report() -> void:
         for stat in screenshot_stats: file.store_line(stat)
         print(result)
 
-func _unhandled_input(event: InputEvent) -> void:
-    if event is InputEventScreenTouch:
-        if event.pressed and touch_id == -1:
-            touch_id = event.index
-            touch_origin = event.position
-        elif event.index == touch_id and not event.pressed:
-            touch_id = -1
-            touch_direction = Vector2.ZERO
-    if event is InputEventScreenDrag and event.index == touch_id:
-        touch_direction = (event.position - touch_origin).limit_length(80.0) / 80.0
-
 func _process(delta: float) -> void:
     if autoplay:
         var now := Time.get_ticks_usec()
@@ -294,9 +290,9 @@ func _process(delta: float) -> void:
             capture_demo("spiel-start")
             demo_stage = 1
         elif demo_stage == 1 and demo_time >= 5.5 and level == 1:
-            for id in ["minigun","rocket","shield","saw","thruster","radar","armor"]:
+            for id in ["minigun","rocket","turret","shield","saw","thruster","radar","armor"]:
                 for n in range(3): state.upgrade(id)
-            level = 8
+            level = 9
         elif demo_stage == 1 and demo_time >= 6:
             for i in range(175):
                 var angle := PI * 0.32 + TAU * 0.78 * (float(i) / 175.0) + float(i % 5) * 0.03
@@ -361,7 +357,7 @@ func _process(delta: float) -> void:
         spawn_boss()
     var direction := Vector2(Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left"), Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up"))
     direction += Vector2(Input.get_joy_axis(0, JOY_AXIS_LEFT_X), Input.get_joy_axis(0, JOY_AXIS_LEFT_Y)).limit_length(1.0)
-    direction += touch_direction
+    direction += Vector2(Input.get_action_strength("touch_right") - Input.get_action_strength("touch_left"), Input.get_action_strength("touch_down") - Input.get_action_strength("touch_up"))
     if autoplay:
         direction = Vector2(cos(elapsed * 0.4), sin(elapsed * 0.4))
         if demo_stage in [2,4]: direction = Vector2.ZERO
@@ -391,6 +387,7 @@ func _process(delta: float) -> void:
                 var angle := randf() * TAU
                 var spawn_dist := 280.0 if elapsed < 5.0 else 580.0
                 enemies.append(make_enemy(kind, player + Vector2.from_angle(angle) * spawn_dist))
+    weapons.update(self, delta)
     fire_clock -= delta
     if fire_clock <= 0 and not enemies.is_empty():
         fire_clock = maxf(0.12, 0.65 - state.level("cooldown") * 0.05)
@@ -400,7 +397,7 @@ func _process(delta: float) -> void:
         var dir: Vector2 = (nearest.pos - player).normalized()
         shot_index += 1
         var rocket_shot := state.level("rocket") > 0 and shot_index % 3 == 0
-        bullets.append({"pos": player, "vel": dir * 560, "life": 2.0, "damage": 12 + state.level("minigun") * 6 + state.level("laser") * 6 + state.level("rocket") * 5, "rocket":rocket_shot})
+        bullets.append({"pos": player, "vel": dir * 560, "life": 2.0, "damage": 12 + state.level("minigun") * 6 + state.level("rocket") * 5, "rocket":rocket_shot})
         spark(player + dir * 35, CYAN, 4)
         world_3d.effects_3d.burst(player + dir * 28, "muzzle")
         if state.level("swarm"):
@@ -435,13 +432,13 @@ func _process(delta: float) -> void:
                     if enemy.jump_warning <= 0:
                         enemy.pos = enemy.jump_target
                         world_3d.effects_3d.burst(enemy.pos,"explosion")
-                        if enemy.pos.distance_to(player) < 100: hp -= 25
+                        if enemy.pos.distance_to(player) < 100: weapons.damage(self, 25)
         var saw := state.level("saw")
         for i in range(saw):
             var blade := player + Vector2.from_angle(elapsed * 1.8 + TAU * i / saw) * 78
             if enemy.pos.distance_to(blade) < 23: enemy.hp -= delta * 24
         if diff.length() < 36:
-            hp -= delta * (8.0 - state.level("shield")) * (1.0 - state.level("armor") * 0.05)
+            weapons.damage(self, delta * 8.0 * (1.0 - state.level("armor") * 0.05))
             hit_flash = 0.4
             shake = 2.0
     for bullet in bullets:
@@ -449,7 +446,11 @@ func _process(delta: float) -> void:
         bullet.life -= delta
         for enemy in enemies:
             if bullet.pos.distance_to(enemy.pos) < 22:
-                enemy.hp -= bullet.damage
+                if bullet.get("plasma", false):
+                    for victim in enemies:
+                        if victim.pos.distance_to(enemy.pos) < 100: victim.hp -= bullet.damage
+                    world_3d.effects_3d.burst(bullet.pos, "explosion")
+                else: enemy.hp -= bullet.damage
                 enemy.flash = 0.15
                 if bullet.get("rocket",false): world_3d.effects_3d.burst(bullet.pos,"explosion")
                 hit_flash = 0.15
@@ -464,7 +465,7 @@ func _process(delta: float) -> void:
         shot.pos += shot.vel * delta
         shot.life -= delta
         if shot.pos.distance_to(player) < 25:
-            hp -= 8
+            weapons.damage(self, 8)
             shake = 3.0
             shot.life = 0
     enemy_shots = enemy_shots.filter(func(b): return b.life > 0)
@@ -478,10 +479,10 @@ func _process(delta: float) -> void:
     enemies = enemies.filter(func(e): return e.hp > 0)
     for i in range(crystals.size() - 1, -1, -1):
         var distance := player.distance_to(crystals[i])
-        var magnet_range := 35 + state.level("magnet") * 20
+        var magnet_range := 35 + state.level("magnet") * 20 + state.level("sensor") * 20
         if distance < magnet_range * 2 and distance > 8:
             crystals[i] = crystals[i].move_toward(player, 180 * delta)
-        if player.distance_to(crystals[i]) < 35 + state.level("magnet") * 20:
+        if player.distance_to(crystals[i]) < 35 + state.level("magnet") * 20 + state.level("sensor") * 20:
             world_3d.effects_3d.burst(crystals[i],"pickup")
             crystals.remove_at(i)
             xp += 1
@@ -503,7 +504,7 @@ func _process(delta: float) -> void:
 
 func choose_upgrade(force_show := false) -> void:
     if autoplay and not force_show:
-        var candidates := IDS.filter(func(id): return state.level(id) < 5 and not (state.level("swarm") > 0 and id in ["rocket", "radar"]))
+        var candidates := IDS.filter(func(id): return state.can_upgrade(id) and not (state.level("swarm") > 0 and id in ["rocket", "radar"]))
         if not candidates.is_empty(): state.upgrade(candidates.pick_random())
         return
     mode = "upgrade"
@@ -515,7 +516,7 @@ func choose_upgrade(force_show := false) -> void:
     var box := column()
     box.add_child(heading("AUFSTIEG", 48))
     box.add_child(heading("WÄHLE EIN BAUTEIL", 18))
-    var candidates := IDS.filter(func(id): return state.level(id) < 5 and not (state.level("swarm") > 0 and id in ["rocket", "radar"]))
+    var candidates := IDS.filter(func(id): return state.can_upgrade(id) and not (state.level("swarm") > 0 and id in ["rocket", "radar"]))
     candidates.shuffle()
     if state.can_evolve(): candidates.push_front("swarm")
     if candidates.is_empty():

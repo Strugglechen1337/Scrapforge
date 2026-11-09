@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/upgrade_definition.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/module_visual_3d.gd" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = "sensor"
+title = "Sensor"
+description = "Erh?ht Ziel- und Sammelreichweite."
+socket = "head"
+visual_script = ExtResource("2")
+values = Array[float]([20, 40, 60, 80, 100])

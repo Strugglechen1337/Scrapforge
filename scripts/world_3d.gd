@@ -21,6 +21,7 @@ var ruby_halo := StandardMaterial3D.new()
 var cyan := StandardMaterial3D.new()
 var orange := StandardMaterial3D.new()
 var tracer := StandardMaterial3D.new()
+var plasma_glow := StandardMaterial3D.new()
 var soot := StandardMaterial3D.new()
 var crystal_mesh := PrismMesh.new()
 var enemy_orb_mesh := SphereMesh.new()
@@ -29,6 +30,7 @@ var bullet_core_mesh := BoxMesh.new()
 var bullet_tail_mesh := BoxMesh.new()
 var rocket_body_mesh := BoxMesh.new()
 var rocket_nose_mesh := BoxMesh.new()
+var plasma_orb_mesh := SphereMesh.new()
 var smoke_mesh := SphereMesh.new()
 var smoke_process := ParticleProcessMaterial.new()
 var elapsed := 0.0
@@ -68,6 +70,9 @@ func _ready() -> void:
 	tracer.emission_enabled = true
 	tracer.emission = Color("ff801a")
 	tracer.emission_energy_multiplier = 2.8
+	plasma_glow = emissive(Color("16dfff"))
+	plasma_glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	plasma_glow.emission_energy_multiplier = 3.0
 	soot.albedo_color = Color("8c867e")
 
 	crystal_mesh.size = Vector3(0.24, 0.5, 0.24)
@@ -83,6 +88,10 @@ func _ready() -> void:
 	bullet_tail_mesh.size = Vector3(0.05, 0.05, 0.44)
 	rocket_body_mesh.size = Vector3(0.16, 0.16, 0.44)
 	rocket_nose_mesh.size = Vector3(0.13, 0.13, 0.16)
+	plasma_orb_mesh.radius = 0.18
+	plasma_orb_mesh.height = 0.36
+	plasma_orb_mesh.radial_segments = 12
+	plasma_orb_mesh.rings = 6
 	smoke_mesh.radius = 0.075
 	smoke_mesh.height = 0.15
 	smoke_mesh.material = soot
@@ -336,6 +345,14 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
 				r_nose.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 				node.add_child(r_nose)
 				add_smoke(node)
+				var plasma_orb := MeshInstance3D.new()
+				plasma_orb.name = "PlasmaOrb"
+				plasma_orb.mesh = plasma_orb_mesh
+				plasma_orb.material_override = plasma_glow
+				plasma_orb.position.y = 0.3
+				plasma_orb.visible = false
+				plasma_orb.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				node.add_child(plasma_orb)
 		nodes.append(node)
 	for i in range(nodes.size()):
 		nodes[i].visible = i < count
@@ -393,11 +410,15 @@ func update_view() -> void:
 	for i in range(game.bullets.size()):
 		var p: Vector2 = game.bullets[i].pos
 		projectile_nodes[i].position = Vector3(p.x / 50.0, 0.5, p.y / 50.0)
-		var velocity: Vector2 = game.bullets[i].vel
-		projectile_nodes[i].rotation.y = atan2(velocity.x, velocity.y)
-		var is_rocket: bool = game.bullets[i].get("rocket", false)
+		var is_plasma: bool = game.bullets[i].get("plasma", false)
+		var is_rocket: bool = game.bullets[i].get("rocket", false) and not is_plasma
+		projectile_nodes[i].get_child(0).visible = not is_plasma
+		projectile_nodes[i].get_child(1).visible = not is_plasma
+		projectile_nodes[i].get_node("PlasmaOrb").visible = is_plasma
 		projectile_nodes[i].get_node("RocketBody").visible = is_rocket
 		projectile_nodes[i].get_node("RocketNose").visible = is_rocket
+		var velocity: Vector2 = game.bullets[i].vel
+		projectile_nodes[i].rotation.y = atan2(velocity.x, velocity.y)
 		projectile_nodes[i].get_node("Smoke").emitting = is_rocket
 	for i in range(game.enemy_shots.size()):
 		var p: Vector2 = game.enemy_shots[i].pos

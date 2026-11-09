@@ -1,0 +1,9 @@
+﻿{
+  "tag_name": "v0.2.0",
+  "html_url": "https://github.com/Strugglechen1337/Scrapforge/releases/tag/v0.2.0",
+  "body": "Neue Module und Fehlerbehebungen.",
+  "assets": [
+    {"name": "Scrapforge-windows-x86_64.zip", "browser_download_url": "https://github.com/Strugglechen1337/Scrapforge/releases/download/v0.2.0/Scrapforge-windows-x86_64.zip"},
+    {"name": "Scrapforge-android.apk", "browser_download_url": "https://github.com/Strugglechen1337/Scrapforge/releases/download/v0.2.0/Scrapforge-android.apk"}
+  ]
+}

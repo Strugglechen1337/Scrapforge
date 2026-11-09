@@ -96,12 +96,18 @@ func exhaust(pos: Vector3, material: Material) -> void:
     flame.position = pos
     add_child(flame)
 
-func build(id: String, level: int, metal: Material, dark: Material, glow: Material) -> void:
+func build(id: String, level: int, metal: Material, dark: Material, glow: Material, accent: Material = null) -> void:
+    if accent == null: accent = metal
     var cyan := StandardMaterial3D.new()
     cyan.albedo_color = Color("087b83")
     cyan.emission_enabled = true
     cyan.emission = Color("15cbd4")
     cyan.emission_energy_multiplier = 0.8
+    var sensor_red := StandardMaterial3D.new()
+    sensor_red.albedo_color = Color("d50913")
+    sensor_red.emission_enabled = true
+    sensor_red.emission = Color("ff1020")
+    sensor_red.emission_energy_multiplier = 1.5
     var violet := StandardMaterial3D.new()
     violet.albedo_color = Color("8e42e8")
     violet.emission_enabled = true
@@ -111,7 +117,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
         "chassis_core":
             plate(self, Vector3(0.92,0.48,0.19), Vector3(0,0.05,0.25), metal)
             plate(self, Vector3(0.56,0.21,0.08), Vector3(0,-0.14,0.36), dark)
-            plate(self, Vector3(0.44,0.12,0.07), Vector3(0,0.08,0.37), dark)
+            plate(self, Vector3(0.44,0.12,0.07), Vector3(0,0.08,0.37), accent)
             plate(self, Vector3(0.31,0.055,0.045), Vector3(0,0.08,0.42), glow)
             for side in [-1,1]:
                 plate(self, Vector3(0.18,0.25,0.08), Vector3(side*0.35,0.02,0.34), metal)
@@ -120,13 +126,23 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
         "chassis_shoulder":
             plate(self, Vector3(0.48,0.23,0.42), Vector3(0,0.08,0), metal)
             plate(self, Vector3(0.39,0.12,0.45), Vector3(0,-0.04,-0.04), dark)
-            plate(self, Vector3(0.25,0.04,0.29), Vector3(0,0.22,0), glow)
+            plate(self, Vector3(0.25,0.04,0.29), Vector3(0,0.22,0), accent)
             for side in [-1,1]: cylinder(self, Vector3(side*0.16,0.04,0.24),0.025,0.025,dark)
         "chassis_thigh":
-            plate(self, Vector3(0.34,0.42,0.16), Vector3(0,-0.10,0.15), metal)
+            plate(self, Vector3(0.34,0.42,0.16), Vector3(0,-0.10,0.15), accent)
             plate(self, Vector3(0.24,0.22,0.06), Vector3(0,-0.11,0.25), dark)
             plate(self, Vector3(0.17,0.045,0.03), Vector3(0,-0.13,0.30), glow)
             for side in [-1,1]: cylinder(self,Vector3(side*0.12,-0.2,0.25),0.03,0.025,dark)
+        "chassis_shin":
+            plate(self, Vector3(0.38,0.50,0.22), Vector3(0,-0.12,0.11), metal)
+            plate(self, Vector3(0.27,0.25,0.06), Vector3(0,-0.1,0.25), accent)
+            plate(self, Vector3(0.18,0.04,0.03), Vector3(0,-0.26,0.29), dark)
+        "chassis_foot":
+            plate(self, Vector3(0.38,0.18,0.4), Vector3(0,0,0.08), metal)
+            plate(self, Vector3(0.29,0.06,0.18), Vector3(0,0.10,0.12), accent)
+        "chassis_upper_arm":
+            plate(self, Vector3(0.37,0.36,0.29), Vector3(0,-0.05,0), metal)
+            plate(self, Vector3(0.27,0.18,0.06), Vector3(0,-0.02,0.17), accent)
         "laser":
             plate(self, Vector3(0.42,0.34,0.55), Vector3.ZERO, metal)
             plate(self, Vector3(0.29,0.18,0.60), Vector3(0,0,-0.14), dark)
@@ -139,14 +155,15 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
             plate(self, Vector3(0.4,0.32,0.5), Vector3.ZERO, metal)
             cylinder(self, Vector3(0,0,-0.32), 0.28, 0.22, dark)
             cylinder(self, Vector3(0,0,-0.38), 0.12, 0.18, metal)
-            var n := 3 + level
+            var n := 6
             var length := 0.45 + level * 0.07
             for i in range(n):
                 var angle := TAU * i / n
                 var p := Vector3(cos(angle)*0.12,sin(angle)*0.12,-0.53)
                 cylinder(self, p, length, 0.045, dark)
-                cylinder(self, Vector3(p.x,p.y,p.z-length/2), 0.035, 0.05, metal)
-            cylinder(self, Vector3(0,0,-0.53-length/2), 0.045, 0.14, dark)
+                cylinder(self, Vector3(p.x,p.y,p.z-length/2), 0.035, 0.05, glow)
+            cylinder(self, Vector3(0,0,-0.53), 0.045, 0.14, dark)
+            for i in range(level): plate(self, Vector3(0.035,0.025,0.035), Vector3(-0.1+i*0.05,0.18,0), glow)
         "rocket", "swarm":
             var count := mini(level + 1, 4) if id == "rocket" else 6
             var width := 0.53 if id == "rocket" else 0.72
@@ -165,6 +182,31 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
             if id == "swarm":
                 plate(self, Vector3(0.72,0.42,0.52), Vector3(-0.65,0,0), metal)
                 for i in range(4): cylinder(self, Vector3(-0.8+(i%2)*0.22,(int(i/2)-0.5)*0.2,-0.29),0.05,0.065,glow)
+        "flamethrower", "plasma":
+            plate(self, Vector3(0.42,0.34,0.55), Vector3.ZERO, metal)
+            cylinder(self, Vector3(0,0,-0.45), 0.55, 0.13, dark)
+            cylinder(self, Vector3(0,0,-0.75), 0.08, 0.15, glow if id == "flamethrower" else cyan)
+            for i in range(level):
+                plate(self, Vector3(0.25,0.035,0.035), Vector3(0,0.2,-0.2+i*0.09), glow if id == "flamethrower" else cyan)
+            if id == "flamethrower": exhaust(Vector3(0,0,-0.8), glow)
+        "turret":
+            plate(self, Vector3(0.5,0.3,0.48), Vector3.ZERO, metal)
+            for side in [-1,1]:
+                cylinder(self, Vector3(side*0.13,0,-0.45), 0.5, 0.06, dark)
+                cylinder(self, Vector3(side*0.13,0,-0.72), 0.035, 0.065, glow)
+            for i in range(level): plate(self, Vector3(0.04,0.04,0.04), Vector3(-0.2+i*0.1,0.18,0), glow)
+        "sensor":
+            plate(self, Vector3(0.35,0.22,0.24), Vector3(0,0.17,0), metal)
+            cylinder(self, Vector3(0,0.45,0), 0.4, 0.025, dark, Vector3.ZERO)
+            plate(self, Vector3(0.08,0.06,0.03), Vector3(-0.08,0.18,-0.14), cyan)
+            plate(self, Vector3(0.08,0.06,0.03), Vector3(0.08,0.18,-0.14), sensor_red)
+            for i in range(level): plate(self, Vector3(0.04,0.03,0.03), Vector3(-0.12+i*0.06,0.3,0), cyan)
+        "drone":
+            for i in range(2):
+                var d := drone(self, metal, dark, cyan)
+                d.position = Vector3((i*2-1)*0.7,0.5,0)
+                orbiters.append(d)
+            for i in range(level): plate(self, Vector3(0.06,0.04,0.04), Vector3(-0.12+i*0.06,0,0), cyan)
         "armor":
             for i in range(level): plate(self, Vector3(0.5+i*0.04,0.08,0.18), Vector3(0,-0.17+i*0.09,-0.08), metal)
         "radar":
@@ -189,17 +231,29 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
                 saw_blade(pivot,metal,dark)
                 blades.append(pivot)
         "shield":
+            # A perimeter and seven smaller hexagons form an open honeycomb.
+            var panel := Node3D.new()
+            panel.position.z = -0.32
+            add_child(panel)
+            hex_outline(panel, Vector2.ZERO, 0.41, cyan)
+            hex_outline(panel, Vector2.ZERO, 0.13, cyan)
+            for cell in range(6):
+                var angle := TAU * cell / 6.0 + PI / 6.0
+                hex_outline(panel, Vector2(cos(angle), sin(angle)) * 0.225, 0.13, cyan)
             for i in range(level):
-                var ring := MeshInstance3D.new()
-                var torus := TorusMesh.new()
-                torus.inner_radius = 0.36 + i * 0.04
-                torus.outer_radius = 0.38 + i * 0.04
-                ring.mesh = torus
-                ring.material_override = cyan
-                ring.rotation.x = PI / 2
-                add_child(ring)
+                plate(self, Vector3(0.04, 0.025, 0.015), Vector3((i - 2) * 0.06, -0.46, -0.32), cyan)
         _:
             for i in range(level): plate(self, Vector3(0.28,0.07,0.22), Vector3(0,i*0.08,0), metal if i%2 == 0 else cyan)
+
+func hex_outline(parent: Node3D, center: Vector2, radius: float, material: Material) -> void:
+    for edge in range(6):
+        var a := TAU * edge / 6.0
+        var b := TAU * (edge + 1) / 6.0
+        var p1 := center + Vector2(cos(a), sin(a)) * radius
+        var p2 := center + Vector2(cos(b), sin(b)) * radius
+        var midpoint := (p1 + p2) * 0.5
+        var bar := plate(parent, Vector3(p1.distance_to(p2), 0.012, 0.014), Vector3(midpoint.x, midpoint.y, 0), material)
+        bar.rotation.z = (p2 - p1).angle()
 
 func _process(delta: float) -> void:
     time += delta

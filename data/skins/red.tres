@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SkinDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/skin_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+title = "Rot"
+armor_color = Color(0.7411764705882353, 0.2823529411764706, 0.25098039215686274, 1)
+accent_color = Color(0.4392156862745098, 0.1568627450980392, 0.1450980392156863, 1)
+camouflage = false
