@@ -114,35 +114,6 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
     violet.emission = Color("bc51ff")
     violet.emission_energy_multiplier = 2.0
     match id:
-        "chassis_core":
-            plate(self, Vector3(0.92,0.48,0.19), Vector3(0,0.05,0.25), metal)
-            plate(self, Vector3(0.56,0.21,0.08), Vector3(0,-0.14,0.36), dark)
-            plate(self, Vector3(0.44,0.12,0.07), Vector3(0,0.08,0.37), accent)
-            plate(self, Vector3(0.31,0.055,0.045), Vector3(0,0.08,0.42), glow)
-            for side in [-1,1]:
-                plate(self, Vector3(0.18,0.25,0.08), Vector3(side*0.35,0.02,0.34), metal)
-                cylinder(self, Vector3(side*0.33,-0.12,0.40), 0.03, 0.025, dark)
-                plate(self, Vector3(0.12,0.035,0.03), Vector3(side*0.34,0.13,0.40), glow)
-        "chassis_shoulder":
-            plate(self, Vector3(0.48,0.23,0.42), Vector3(0,0.08,0), metal)
-            plate(self, Vector3(0.39,0.12,0.45), Vector3(0,-0.04,-0.04), dark)
-            plate(self, Vector3(0.25,0.04,0.29), Vector3(0,0.22,0), accent)
-            for side in [-1,1]: cylinder(self, Vector3(side*0.16,0.04,0.24),0.025,0.025,dark)
-        "chassis_thigh":
-            plate(self, Vector3(0.34,0.42,0.16), Vector3(0,-0.10,0.15), accent)
-            plate(self, Vector3(0.24,0.22,0.06), Vector3(0,-0.11,0.25), dark)
-            plate(self, Vector3(0.17,0.045,0.03), Vector3(0,-0.13,0.30), glow)
-            for side in [-1,1]: cylinder(self,Vector3(side*0.12,-0.2,0.25),0.03,0.025,dark)
-        "chassis_shin":
-            plate(self, Vector3(0.38,0.50,0.22), Vector3(0,-0.12,0.11), metal)
-            plate(self, Vector3(0.27,0.25,0.06), Vector3(0,-0.1,0.25), accent)
-            plate(self, Vector3(0.18,0.04,0.03), Vector3(0,-0.26,0.29), dark)
-        "chassis_foot":
-            plate(self, Vector3(0.38,0.18,0.4), Vector3(0,0,0.08), metal)
-            plate(self, Vector3(0.29,0.06,0.18), Vector3(0,0.10,0.12), accent)
-        "chassis_upper_arm":
-            plate(self, Vector3(0.37,0.36,0.29), Vector3(0,-0.05,0), metal)
-            plate(self, Vector3(0.27,0.18,0.06), Vector3(0,-0.02,0.17), accent)
         "laser":
             plate(self, Vector3(0.42,0.34,0.55), Vector3.ZERO, metal)
             plate(self, Vector3(0.29,0.18,0.60), Vector3(0,0,-0.14), dark)

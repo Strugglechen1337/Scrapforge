@@ -16,26 +16,26 @@ func _ready() -> void:
     env.background_color = Color("10151d")
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     env.ambient_light_color = Color("c1c5c7")
-    env.ambient_light_energy = 0.55
+    env.ambient_light_energy = 0.8
     env.tonemap_mode = Environment.TONE_MAPPER_ACES
-    env.tonemap_exposure = 0.72
+    env.tonemap_exposure = 1.0
     env.glow_enabled = true
     var world := WorldEnvironment.new()
     world.environment = env
     add_child(world)
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-38, -25, 0)
-    sun.light_energy = 0.8
+    sun.light_energy = 1.35
     add_child(sun)
     var rim := DirectionalLight3D.new()
     rim.rotation_degrees = Vector3(-25, 150, 0)
     rim.light_color = Color("8aa7b6")
-    rim.light_energy = 0.35
+    rim.light_energy = 0.8
     add_child(rim)
     camera = Camera3D.new()
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
     camera.size = 7.3
-    camera.position = Vector3(0, 4.2, 15)
+    camera.position = Vector3(0, 5.0, 15)
     add_child(camera)
     camera.look_at(Vector3(0, 1.0, 0))
     for id in ["minigun", "laser", "rocket", "shield", "saw", "thruster", "armor", "magnet", "cooldown", "radar", "swarm", "drone"]:
@@ -83,7 +83,7 @@ func create_robot(x: float) -> Robot3D:
     robot.state = UpgradeState.new()
     robot.definitions = definitions
     robot.position.x = x
-    robot.rotation_degrees.y = -25
+    robot.rotation_degrees.y = -30
     display.add_child(robot)
     robot.animation.pause()
     var platform := MeshInstance3D.new()

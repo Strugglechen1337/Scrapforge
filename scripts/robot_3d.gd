@@ -13,7 +13,6 @@ var glow := StandardMaterial3D.new()
 var visor_glow := StandardMaterial3D.new()
 var sockets: Dictionary = {}
 var parts: Node3D
-var base_parts: Node3D
 var animation: AnimationPlayer
 var clock := 0.0
 var visor: MeshInstance3D
@@ -52,8 +51,13 @@ func _ready() -> void:
     body_material = ShaderMaterial.new()
     body_material.shader = load("res://scripts/colossus_paint.gdshader")
     body_material.set_shader_parameter("base_texture", original.albedo_texture)
-    for node in chassis.values():
-        (node as MeshInstance3D).material_override = body_material
+    body_material.set_shader_parameter("normal_texture", original.normal_texture)
+    for part_name in chassis:
+        var node: MeshInstance3D = chassis[part_name]
+        node.material_override = body_material
+        node.set_instance_shader_parameter("orange_panel", 1.0 if part_name in ["shoulder_l", "shoulder_r", "thigh_l", "thigh_r"] else 0.0)
+        node.set_instance_shader_parameter("chest_panel", 1.0 if part_name == "torso" else 0.0)
+        if part_name != "torso": node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     # The AnimationPlayer provides a pause control for the existing hangar and
     # showcase; the actual rigid-part motion is generated below.
     animation = AnimationPlayer.new()
@@ -67,7 +71,7 @@ func _ready() -> void:
     animation.play("Walk")
     for entry in [
         ["left_arm", "forearm_l", Vector3(-0.02, -0.29, 0.14)],
-        ["right_arm", "forearm_r", Vector3(0.05, 0.0, 0.22)],
+        ["right_arm", "forearm_r", Vector3(0.30, 0.0, 0.14)],
         ["left_shoulder", "shoulder_l", Vector3(-0.10, 0.13, 0.0)],
         ["right_shoulder", "shoulder_r", Vector3(0.10, 0.13, 0.0)],
         ["head", "head", Vector3(0, 0.12, 0.25)],
@@ -77,21 +81,6 @@ func _ready() -> void:
         sockets[entry[0]] = make_marker(chassis[entry[1]], entry[0], entry[2])
     parts = Node3D.new()
     add_child(parts)
-    base_parts = Node3D.new()
-    add_child(base_parts)
-    for entry in [["core", "chassis_core"], ["left_shoulder", "chassis_shoulder"], ["right_shoulder", "chassis_shoulder"]]:
-        add_base_plate(sockets[entry[0]], entry[1])
-    for entry in [["thigh_l", "chassis_thigh", Vector3.ZERO], ["thigh_r", "chassis_thigh", Vector3.ZERO], ["shin_l", "chassis_shin", Vector3.ZERO], ["shin_r", "chassis_shin", Vector3.ZERO], ["shin_l", "chassis_foot", Vector3(0,-0.34,0.08)], ["shin_r", "chassis_foot", Vector3(0,-0.34,0.08)], ["upper_arm_l", "chassis_upper_arm", Vector3.ZERO], ["upper_arm_r", "chassis_upper_arm", Vector3.ZERO]]:
-        add_base_plate(make_marker(chassis[entry[0]], "plate", entry[2]), entry[1])
-    # Dark mechanical joints cover the spatial cuts at the main pivots.
-    for part_name in ["shoulder_l", "shoulder_r", "upper_arm_l", "upper_arm_r", "forearm_l", "forearm_r", "thigh_l", "thigh_r", "shin_l", "shin_r"]:
-        var joint := MeshInstance3D.new()
-        var sphere := SphereMesh.new()
-        sphere.radius = 0.09
-        sphere.height = 0.18
-        joint.mesh = sphere
-        joint.material_override = dark
-        (chassis[part_name] as Node3D).add_child(joint)
     visor = MeshInstance3D.new()
     var visor_mesh := BoxMesh.new()
     visor_mesh.size = Vector3(0.24, 0.055, 0.035)
@@ -142,12 +131,6 @@ func set_robot_layer(node: Node) -> void:
         node.layers = 2
     for child in node.get_children(): set_robot_layer(child)
 
-func add_base_plate(marker: Marker3D, id: String) -> void:
-    var module: Node3D = load("res://scripts/module_visual_3d.gd").new()
-    base_parts.add_child(module)
-    module.set_meta("marker", marker)
-    module.build(id, 1, metal, dark, glow, accent)
-
 func refresh() -> void:
     if not state or not is_instance_valid(parts): return
     var next := str(state.levels)
@@ -177,8 +160,6 @@ func update_parts() -> void:
         if part.get_meta("socket") in ["left_shoulder", "right_shoulder"]:
             var side := 1.0 if part.get_meta("socket") == "left_shoulder" else -1.0
             part.position += part.basis.orthonormalized() * Vector3(side * 0.22, 0.13, 0)
-    for part in base_parts.get_children():
-        follow_bone(part, part.get_meta("marker"), false)
 
 func follow_bone(part: Node3D, marker: Marker3D, weapon: bool) -> void:
     var local_transform := global_transform.affine_inverse() * marker.global_transform

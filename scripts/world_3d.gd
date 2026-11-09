@@ -215,7 +215,7 @@ func _ready() -> void:
 	var player_light := OmniLight3D.new()
 	player_light.position = Vector3(-0.8, 2.2, 1.2)
 	player_light.light_color = Color("dae6ff")
-	player_light.light_energy = 1.9
+	player_light.light_energy = 2.8
 	player_light.omni_range = 4.5
 	player_light.light_cull_mask = 2
 	robot.add_child(player_light)
