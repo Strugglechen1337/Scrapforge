@@ -8,3 +8,7 @@ Alle unten genannten Assets stehen unter [CC0 1.0](https://creativecommons.org/p
 
 - **Quaternius – Animated Mech Pack, George**: https://quaternius.com/packs/animatedmech.html – CC0 1.0; animiertes Basismodell, Bezug über https://github.com/agentkaerf/FreeModels, eingebettete Textur auf 1K verkleinert und entsättigt.
 
+
+- **Kenney – Sci-Fi Sounds**: https://kenney.nl/assets/sci-fi-sounds – CC0 1.0; Soundeffekte, bezogen über https://github.com/GeorgeQLe/assets-sfx-combat/tree/main/assets/kenney/sci-fi-sounds/Audio. UI- und Raketensamples wurden gekürzt und mit Fade versehen.
+- **Alex McCulloch (Pro Sensory) – Main Menu Music (Loop)**: https://opengameart.org/content/main-menu-music-loop – CC0 1.0; für das Menü von MP3 nach Ogg Vorbis umgewandelt.
+- **request – Rin’s Theme (Loop)**: https://opengameart.org/content/rins-theme-loopable-chiptune-adventurebattle-bgm – CC0 1.0; Kampfmusik.

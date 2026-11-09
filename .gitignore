@@ -3,9 +3,14 @@
 *.import
 export_presets.cfg.local
 /builds/
+/build/
 /android/build/
+*.pck
+*.exe
+*.x86_64
 *.apk
 *.aab
 *.keystore
+*.jks
 .env*
 

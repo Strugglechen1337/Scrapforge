@@ -16,9 +16,6 @@ var state = UpgradeState.new()
 var definitions: Dictionary = {}
 var skins: Dictionary = {}
 var selected_skin := "standard"
-var master_volume := 0.85
-var music_volume := 0.75
-var sfx_volume := 0.85
 var language := "de"
 var fullscreen_enabled := false
 
@@ -103,6 +100,8 @@ func _ready() -> void:
 		set_process(false)
 		return
 	get_viewport().gui_focus_changed.connect(_on_gui_focus_changed)
+	ui_focus_changed.connect(func(_control): AudioManager.play(&"menu_focus"))
+	ui_confirmed.connect(func(_control): AudioManager.play(&"menu_confirm"))
 	updater = ReleaseUpdater.new()
 	touch_controls = TouchControls.new()
 	touch_controls.game = self
@@ -156,10 +155,8 @@ func _on_gui_focus_changed(control: Control) -> void:
 
 func save_settings(path: String = SETTINGS_PATH) -> void:
 	var cfg := ConfigFile.new()
+	cfg.load(path)
 	cfg.set_value("player", "skin", selected_skin)
-	cfg.set_value("audio", "master_volume", master_volume)
-	cfg.set_value("audio", "music_volume", music_volume)
-	cfg.set_value("audio", "sfx_volume", sfx_volume)
 	cfg.set_value("display", "shake_enabled", shake_enabled)
 	cfg.set_value("display", "language", language)
 	cfg.set_value("display", "fullscreen", fullscreen_enabled)
@@ -172,9 +169,6 @@ func load_settings(path: String = SETTINGS_PATH) -> void:
 		var loaded_skin := str(cfg.get_value("player", "skin", "standard"))
 		if loaded_skin in SKIN_IDS:
 			selected_skin = loaded_skin
-		master_volume = clampf(float(cfg.get_value("audio", "master_volume", 0.85)), 0.0, 1.0)
-		music_volume = clampf(float(cfg.get_value("audio", "music_volume", 0.75)), 0.0, 1.0)
-		sfx_volume = clampf(float(cfg.get_value("audio", "sfx_volume", 0.85)), 0.0, 1.0)
 		shake_enabled = bool(cfg.get_value("display", "shake_enabled", true))
 		language = str(cfg.get_value("display", "language", "de"))
 		fullscreen_enabled = bool(cfg.get_value("display", "fullscreen", false))
@@ -243,6 +237,7 @@ func wire_horizontal_focus(buttons: Array[Button]) -> void:
 
 
 func show_menu() -> void:
+	AudioManager.play_music("menu")
 	mode = "menu"
 	clear_ui()
 	menu_buttons.clear()
@@ -289,6 +284,7 @@ func show_menu() -> void:
 	badge_panel.add_theme_stylebox_override("panel", ScrapUI.make_chamfer_style(Color(0.04, 0.06, 0.095, 0.82), ScrapUI.ORANGE, 1, 8, 4))
 	badge_panel.position = Vector2(740, 36)
 	panel.add_child(badge_panel)
+	ScrapUI.anchor_horizontal(badge_panel, 1.0)
 	var badge_lbl := heading("HANGAR-EINHEIT  //  SKIN: " + skin_title, 15, ScrapUI.CYAN)
 	badge_panel.add_child(badge_lbl)
 
@@ -297,6 +293,7 @@ func show_menu() -> void:
 	ver_lbl.position = Vector2(980, 756)
 	ver_lbl.custom_minimum_size = Vector2(268, 28)
 	panel.add_child(ver_lbl)
+	ScrapUI.anchor_horizontal(ver_lbl, 1.0)
 
 	if not menu_buttons.is_empty():
 		menu_buttons[0].grab_focus()
@@ -407,9 +404,9 @@ func show_settings() -> void:
 	var focus_controls: Array[Control] = []
 
 	var slider_defs := [
-		["GESAMTLAUTSTÄRKE", master_volume, func(v: float): master_volume = v; save_settings()],
-		["MUSIKLAUTSTÄRKE", music_volume, func(v: float): music_volume = v; save_settings()],
-		["EFFEKTLAUTSTÄRKE", sfx_volume, func(v: float): sfx_volume = v; save_settings()],
+		["GESAMTLAUTSTÄRKE", AudioManager.get_volume("Master"), func(v: float): AudioManager.set_volume("Master", v)],
+		["MUSIKLAUTSTÄRKE", AudioManager.get_volume("Musik"), func(v: float): AudioManager.set_volume("Musik", v)],
+		["EFFEKTLAUTSTÄRKE", AudioManager.get_volume("Effekte"), func(v: float): AudioManager.set_volume("Effekte", v)],
 	]
 	for sdef in slider_defs:
 		var row := VBoxContainer.new()
@@ -547,6 +544,7 @@ func spark(at: Vector2, color: Color, count: int) -> void:
 
 
 func start_game() -> void:
+	AudioManager.play_music("combat")
 	weapons = preload("res://scripts/weapons_3d.gd").new()
 	state = UpgradeState.new()
 	state.upgrade("minigun")
@@ -642,6 +640,7 @@ func build_hud() -> void:
 	tc_panel.position = Vector2(535, 18)
 	tc_panel.custom_minimum_size = Vector2(210, 68)
 	panel.add_child(tc_panel)
+	ScrapUI.anchor_horizontal(tc_panel, 0.5)
 
 	var tc_box := VBoxContainer.new()
 	tc_box.add_theme_constant_override("separation", 0)
@@ -656,6 +655,7 @@ func build_hud() -> void:
 	tr_panel.position = Vector2(856, 18)
 	tr_panel.custom_minimum_size = Vector2(328, 68)
 	panel.add_child(tr_panel)
+	ScrapUI.anchor_horizontal(tr_panel, 1.0)
 
 	var tr_box := HBoxContainer.new()
 	tr_box.add_theme_constant_override("separation", 18)
@@ -670,6 +670,7 @@ func build_hud() -> void:
 	pause_btn.position = Vector2(1196, 18)
 	pause_btn.focus_mode = Control.FOCUS_NONE
 	panel.add_child(pause_btn)
+	ScrapUI.anchor_horizontal(pause_btn, 1.0)
 
 	# Bottom-Left: Equipped Module Icons Bar
 	module_bar = HBoxContainer.new()
@@ -694,6 +695,7 @@ func make_boss_bar() -> void:
 	boss_panel.custom_minimum_size = Vector2(520, 56)
 	boss_panel.visible = false
 	panel.add_child(boss_panel)
+	ScrapUI.anchor_horizontal(boss_panel, 0.5)
 
 	var bbox := VBoxContainer.new()
 	bbox.add_theme_constant_override("separation", 4)
@@ -770,6 +772,7 @@ func spawn_boss() -> void:
 	if boss_spawned:
 		return
 	boss_spawned = true
+	AudioManager.play(&"boss")
 	enemies.append(make_enemy(3, player + Vector2(215, 25)))
 
 
@@ -909,6 +912,7 @@ func _process(delta: float) -> void:
 				var angle := randf() * TAU
 				var spawn_dist := 280.0 if elapsed < 5.0 else 580.0
 				enemies.append(make_enemy(kind, player + Vector2.from_angle(angle) * spawn_dist))
+	AudioManager.set_listener(player)
 	weapons.update(self, delta)
 	fire_clock -= delta
 	if fire_clock <= 0 and not enemies.is_empty():
@@ -920,6 +924,7 @@ func _process(delta: float) -> void:
 		var dir: Vector2 = (nearest.pos - player).normalized()
 		shot_index += 1
 		var rocket_shot := state.level("rocket") > 0 and shot_index % 3 == 0
+		AudioManager.play(&"rocket" if rocket_shot else &"minigun", player)
 		bullets.append({"pos": player, "vel": dir * 560, "life": 2.0, "damage": 12 + state.level("minigun") * 6 + state.level("rocket") * 5, "rocket": rocket_shot})
 		spark(player + dir * 35, CYAN, 4)
 		world_3d.effects_3d.burst(player + dir * 28, "muzzle")
@@ -957,6 +962,7 @@ func _process(delta: float) -> void:
 					if enemy.jump_warning <= 0:
 						enemy.pos = enemy.jump_target
 						world_3d.effects_3d.burst(enemy.pos, "explosion")
+						AudioManager.play(&"explosion", enemy.pos)
 						if enemy.pos.distance_to(player) < 100:
 							weapons.damage(self, 25)
 		var saw := state.level("saw")
@@ -981,6 +987,9 @@ func _process(delta: float) -> void:
 				else:
 					enemy.hp -= bullet.damage
 				enemy.flash = 0.15
+				AudioManager.play(&"enemy_hit", enemy.pos)
+				if bullet.get("rocket", false) or bullet.get("plasma", false):
+					AudioManager.play(&"explosion", bullet.pos)
 				if bullet.get("rocket", false):
 					world_3d.effects_3d.burst(bullet.pos, "explosion")
 				hit_flash = 0.15
@@ -1005,6 +1014,7 @@ func _process(delta: float) -> void:
 			kills += 1
 			spark(enemy.pos, PINK, 16)
 			world_3d.effects_3d.burst(enemy.pos, "explosion")
+			AudioManager.play(&"explosion", enemy.pos)
 			if enemy.kind == 3:
 				won = true
 	enemies = enemies.filter(func(e): return e.hp > 0)
@@ -1015,12 +1025,14 @@ func _process(delta: float) -> void:
 			crystals[i] = crystals[i].move_toward(player, 180 * delta)
 		if player.distance_to(crystals[i]) < 35 + state.level("magnet") * 20 + state.level("sensor") * 20:
 			world_3d.effects_3d.burst(crystals[i], "pickup")
+			AudioManager.play(&"pickup", crystals[i])
 			crystals.remove_at(i)
 			xp += 1
 			total_scrap += 1
 			if xp >= level * 5:
 				xp = 0
 				level += 1
+				AudioManager.play(&"level_up")
 				choose_upgrade()
 				break
 	if autoplay:
@@ -1044,6 +1056,7 @@ func choose_upgrade(force_show := false) -> void:
 		var auto_candidates := IDS.filter(func(id): return state.can_upgrade(id) and not (state.level("swarm") > 0 and id in ["rocket", "radar"]))
 		if not auto_candidates.is_empty():
 			state.upgrade(auto_candidates.pick_random())
+			AudioManager.play(&"upgrade")
 		return
 	mode = "upgrade"
 	clear_ui()
@@ -1058,6 +1071,7 @@ func choose_upgrade(force_show := false) -> void:
 	root_box.custom_minimum_size = Vector2(1160, 710)
 	root_box.add_theme_constant_override("separation", 18)
 	panel.add_child(root_box)
+	ScrapUI.anchor_horizontal(root_box, 0.5)
 
 	root_box.add_child(heading("SYSTEM-AUFSTIEG  //  LEVEL %d" % level, 40, ScrapUI.ORANGE, HORIZONTAL_ALIGNMENT_CENTER))
 	root_box.add_child(heading("WÄHLE EIN MODULARES BAUTEIL FÜR DEINEN MECH", 16, ScrapUI.CYAN, HORIZONTAL_ALIGNMENT_CENTER))
@@ -1154,6 +1168,7 @@ func choose_upgrade(force_show := false) -> void:
 		)
 		card.pressed.connect(func():
 			ui_confirmed.emit(card)
+			AudioManager.play(&"upgrade")
 			if id == "swarm":
 				state.evolve()
 			else:
@@ -1216,6 +1231,8 @@ func resume_game() -> void:
 
 
 func show_end(victory: bool) -> void:
+	AudioManager.play(&"victory" if victory else &"game_over")
+	AudioManager.play_music("menu")
 	mode = "end"
 	clear_ui()
 	if is_instance_valid(world_3d):
@@ -1247,6 +1264,7 @@ func show_end(victory: bool) -> void:
 	right_frame.position = Vector2(560, 36)
 	right_frame.custom_minimum_size = Vector2(666, 728)
 	panel.add_child(right_frame)
+	ScrapUI.anchor_horizontal(right_frame, 1.0)
 
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)

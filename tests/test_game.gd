@@ -67,5 +67,7 @@ func run_tests() -> void:
     for i in range(50): game.shoot_enemy(Vector2.ZERO,Vector2.RIGHT)
     assert(game.enemy_shots.size() == 32)
     game.queue_free()
+    root.get_node("AudioManager").stop_all()
+    await create_timer(1.0).timeout
     print("Boss-, Gegnergrößen- und Rundenende-Tests bestanden")
     quit()

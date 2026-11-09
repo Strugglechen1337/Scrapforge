@@ -4,10 +4,14 @@ config/icon="res://assets/ui/icon.svg"
 config/version="0.1.0"
 run/main_scene="res://scenes/main.tscn"
 
+[autoload]
+AudioManager="*res://scripts/audio_manager.gd"
+
 [display]
 window/size/viewport_width=1280
 window/size/viewport_height=800
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 window/handheld/orientation=0
 
 [rendering]

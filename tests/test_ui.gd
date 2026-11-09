@@ -21,13 +21,12 @@ func _initialize() -> void:
 func run() -> void:
 	var theme_res := load("res://ui/theme.tres") as Theme
 	assert(theme_res != null)
-	# 16:9 is letterboxed; a notch intruding into the content must be excluded.
+	# Expanded canvases occupy the full window; a notch must be excluded.
 	var normal := ScrapUI.safe_layout(Vector2(1920, 1080), Rect2(0, 0, 1920, 1080))
-	assert(normal.is_equal_approx(Rect2(0, 0, 1280, 800)))
+	assert(normal.is_equal_approx(Rect2(0, 0, 1920.0 / 1.35, 800)))
 	var notched := ScrapUI.safe_layout(Vector2(2400, 1080), Rect2(400, 0, 2000, 1080))
 	var physical_scale := 1080.0 / 800.0
-	var content_origin := Vector2((2400.0 - 1280.0 * physical_scale) / 2.0, 0)
-	var physical := Rect2(content_origin + notched.position * physical_scale, notched.size * physical_scale)
+	var physical := Rect2(notched.position * physical_scale, notched.size * physical_scale)
 	assert(physical.position.x >= 400.0 - 0.01 and physical.end.x <= 2400.01)
 	assert(physical.position.y >= 0 and physical.end.y <= 1080.01)
 
@@ -64,6 +63,16 @@ func run() -> void:
 	assert(game.selected_skin == "blue")
 	assert(FileAccess.file_exists(test_cfg))
 	assert(game.world_3d.robot.skin == game.skins["blue"])
+	var audio = root.get_node("AudioManager")
+	var previous_music: float = audio.get_volume("Musik")
+	audio.set_volume("Musik", 0.35, false)
+	assert(audio.save_settings(test_cfg) == OK)
+	game.save_settings(test_cfg)
+	var combined := ConfigFile.new()
+	assert(combined.load(test_cfg) == OK)
+	assert(combined.get_value("player", "skin") == "blue")
+	assert(is_equal_approx(float(combined.get_value("audio", "Musik")), 0.35))
+	audio.set_volume("Musik", previous_music, false)
 
 	game.selected_skin = "standard"
 	game.load_settings(test_cfg)
@@ -110,5 +119,7 @@ func run() -> void:
 	assert(confirm_events > 0)
 
 	game.queue_free()
+	root.get_node("AudioManager").stop_all()
+	await create_timer(1.0).timeout
 	print("UI-, Controller-Fokus- und Skin-Tests bestanden")
 	quit()

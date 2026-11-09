@@ -13,22 +13,16 @@ const DESIGN_SIZE := Vector2(1280, 800)
 static var _cached_theme: Theme
 static var _heavy_font: FontVariation
 
-# The project uses canvas_items/keep, so the design canvas is letterboxed in
-# the window. Map the physical safe rectangle through that letterbox first.
+# With expand the entire physical window maps to the extended canvas.
 static func safe_layout(window_size: Vector2, safe_rect: Rect2) -> Rect2:
 	if window_size.x <= 0 or window_size.y <= 0:
 		return Rect2(Vector2.ZERO, DESIGN_SIZE)
 	var pixels_per_unit := minf(window_size.x / DESIGN_SIZE.x, window_size.y / DESIGN_SIZE.y)
-	var content_size := DESIGN_SIZE * pixels_per_unit
-	var content := Rect2((window_size - content_size) * 0.5, content_size)
-	var safe := content.intersection(safe_rect)
+	var safe := Rect2(Vector2.ZERO, window_size).intersection(safe_rect)
 	if safe.size.x <= 0 or safe.size.y <= 0:
 		return Rect2(Vector2.ZERO, DESIGN_SIZE)
 	var available := safe.size / pixels_per_unit
-	var factor := minf(available.x / DESIGN_SIZE.x, available.y / DESIGN_SIZE.y)
-	var size := DESIGN_SIZE * factor
-	var origin := (safe.position - content.position) / pixels_per_unit + (available - size) * 0.5
-	return Rect2(origin, size)
+	return Rect2(safe.position / pixels_per_unit, available)
 
 static func apply_safe_layout(control: Control) -> void:
 	var window_size := Vector2(DisplayServer.window_get_size())
@@ -38,9 +32,17 @@ static func apply_safe_layout(control: Control) -> void:
 		if display_safe.size.x > 0 and display_safe.size.y > 0:
 			safe = Rect2(Vector2(display_safe.position - DisplayServer.window_get_position()), Vector2(display_safe.size))
 	var layout := safe_layout(window_size, safe)
+	var factor := minf(1.0, minf(layout.size.x / DESIGN_SIZE.x, layout.size.y / DESIGN_SIZE.y))
 	control.position = layout.position
-	control.size = DESIGN_SIZE
-	control.scale = Vector2.ONE * (layout.size.x / DESIGN_SIZE.x)
+	control.size = layout.size / factor
+	control.scale = Vector2.ONE * factor
+
+static func anchor_horizontal(control: Control, fraction: float) -> void:
+	var original := control.position
+	var parent := control.get_parent_control()
+	control.set_anchor(SIDE_LEFT, fraction, true)
+	control.set_anchor(SIDE_RIGHT, fraction, true)
+	control.position = original + Vector2((parent.size.x - DESIGN_SIZE.x) * fraction, 0)
 
 static func get_theme() -> Theme:
 	if not _cached_theme:

@@ -9,6 +9,7 @@ func damage(game: Node, amount: float) -> void:
         shield_cooldown = 10.0 - level
         return
     game.hp -= amount
+    AudioManager.play(&"player_hit", game.player)
 
 func show_beam(game: Node, direction: Vector2, length: float, color: Color) -> void:
     var beam := MeshInstance3D.new()
@@ -68,20 +69,26 @@ func update(game: Node, delta: float) -> void:
         clocks[id] = 0.18 if id == "flamethrower" else (1.4 if id == "plasma" else 0.65)
         var damage: float = game.definitions[id].values[level - 1]
         if id == "laser":
+            AudioManager.play(&"laser", game.player)
             show_beam(game, direction, 650, Color("b749ff"))
             for enemy in game.enemies:
                 var offset: Vector2 = enemy.pos - game.player
                 if offset.dot(direction) > 0 and offset.dot(direction) < 650 and absf(offset.cross(direction)) < 23:
                     enemy.hp -= damage
+                    AudioManager.play(&"enemy_hit", enemy.pos)
                     enemy.flash = 0.15
         elif id == "flamethrower":
+            AudioManager.flame_active()
             show_flames(game, direction)
             for enemy in game.enemies:
                 var offset: Vector2 = enemy.pos - game.player
                 if offset.length() < 220 and offset.normalized().dot(direction) > 0.86:
                     enemy.hp -= damage * 0.18
+                    AudioManager.play(&"enemy_hit", enemy.pos)
                     enemy.flash = 0.15
         elif id == "plasma":
+            AudioManager.play(&"plasma", game.player)
             game.bullets.append({"pos": game.player, "vel": direction * 420, "life": 2.0, "damage": damage, "plasma": true})
         else:
+            AudioManager.play(&"minigun", game.player)
             game.bullets.append({"pos": game.player, "vel": direction * 560, "life": 2.0, "damage": damage})

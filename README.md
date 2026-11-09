@@ -1,40 +1,32 @@
 # Scrapforge
 
-Ein origineller Survivor-Prototyp: Der Roboter bewegt sich durch eine Arena und schießt automatisch auf Gegner. Kristalle erhöhen die Stufe; beim Aufstieg wird ein Upgrade gewählt.
+Ein modularer Roguelike-Survivor: Der Mech bewegt sich durch eine Arena, feuert automatisch und sammelt Schrott für Aufstiege. Wähle Bauteile und entwickle Raketenwerfer und Radar zum Schwarm-Werfer. Nach fünf Minuten erscheint der Boss; sein Abschuss oder zehn Minuten Überleben bedeuten den Sieg.
 
-## Entwicklung
+Im Hangar stehen fünf Skins zur Auswahl. Das Ergebnis zeigt Statistiken und den fertigen Mech; ein Screenshot lässt sich im Godot-Benutzerordner speichern. Im Einstellungsmenü werden Lautstärke für Master, Musik und Effekte, Bildschirmwackeln und Vollbild gespeichert. Musik und Soundeffekte können getrennt geregelt werden.
 
-Godot 4.7.2 (Standard-Build) installieren, `project.godot` öffnen und das Projekt starten. Pfeiltasten oder linker Controller-Stick bewegen den Roboter; auf Touch-Geräten zieht man den virtuellen Stick über den Bildschirm. Menüs und Auswahl sind mit Tastatur oder Controller bedienbar.
+## Steuerung
 
-Headless-Prüfung:
+- Tastatur: WASD oder Pfeiltasten bewegen den Mech, Escape pausiert oder geht zurück; Pfeiltasten und Enter bedienen Menüs.
+- Controller: linker Stick bewegt den Mech, Steuerkreuz navigiert, A bestätigt, B geht zurück und Start pausiert.
+- Touch: links den virtuellen Stick ziehen; Menüs, Aufstiegskarten und Pause-Schaltfläche antippen. Android verwendet das Querformat.
+
+## Entwicklung und Plattformen
+
+Das Projekt verwendet Godot 4.7.2 und enthält Exportvorgaben für Windows x86-64, Linux x86-64 und Android arm64. Projekt importieren und Tests ausführen:
 
 ```sh
 godot --headless --editor --path . --quit
-godot --headless --path . --script res://tests/test_upgrades.gd
-godot --headless --path . --script res://tests/test_game.gd
-# Alle weiteren tests/test_*.gd ebenfalls ausf?hren.
+godot --headless --path . --script res://tests/test_ui.gd
+godot --headless --path . --script res://tests/test_audio.gd
+# Ebenso alle weiteren tests/test_*.gd ausführen.
 ```
 
-## Spielrunde
+Unter Windows und Linux gehören die exportierte ausführbare Datei und die gleichnamige `.pck` zusammen. Ein Android-Debug-Export benötigt das Android SDK, JDK und einen Debug-Keystore in den lokalen Godot-Editor-Einstellungen.
 
-Kristalle sammeln und beim Stufenaufstieg eines von drei Bauteilen auswählen. Raketenwerfer und Radar auf Stufe 5 können zum Schwarm-Werfer verschmelzen. Nach fünf Minuten erscheint der Boss; sein Abschuss oder zehn Minuten Überleben bedeuten den Sieg. Der Ergebnisbildschirm zeigt den fertigen Roboter und speichert auf Knopfdruck ein PNG im Godot-Benutzerordner (der vollständige Pfad wird angezeigt).
+## Updates und Releases
 
-Im Hauptmenü lassen sich Lautstärke, Bildschirmwackeln und Vollbild einstellen. Die aktuelle Version enthält noch keine Soundeffekte; der Regler ist für spätere Sounds vorgesehen.
+Beim Start prüft das Spiel anonym das neueste GitHub-Release; im Hauptmenü kann die Suche manuell gestartet werden. Eine verfügbare Version zeigt Release-Notizen und öffnet auf Wunsch die Release-Seite beziehungsweise auf Android den APK-Download im Browser. Die Installation erfolgt anschließend durch den Benutzer; ein automatischer In-App-Download oder Installer ist nicht implementiert.
 
-## Updates
+Ein gepushtes Tag wie `v0.2.0` startet den Release-Workflow für Windows, Linux und eine debug-signierte Android-APK. Der Workflow verwendet einen temporären Debug-Schlüssel: Für Store-Releases ist ein eigener dauerhaft gesicherter Release-Schlüssel und eine entsprechend konfigurierte Signierung erforderlich.
 
-Beim Start pr?ft Scrapforge anonym das neueste GitHub-Release. Unter ?Nach Updates suchen? im Hauptmen? l?sst sich die Suche manuell ausl?sen; bei Netzwerkfehlern oder wenn noch kein Release vorliegt, erscheint nur bei manueller Suche eine Meldung. Eine verf?gbare neue Version zeigt ihre Release-Notizen und die Schaltfl?chen ?Herunterladen? und ?Sp?ter?.
-
-Unter Windows und Linux/Steam Deck ?ffnet ?Herunterladen? die Release-Seite im Browser. Unter Android ?ffnet es die APK-Downloadadresse im Browser; anschlie?end wird die heruntergeladene APK ?ber Android ge?ffnet. Eine direkte Installation aus dem App-Cache ist nicht implementiert: Android ben?tigt f?r die sichere Weitergabe an den Installer eine Content-URI ?ber einen konfigurierten FileProvider und gegebenenfalls die Berechtigung f?r Installationen aus unbekannten Quellen. Es wird kein automatischer Download oder Installationsfortschritt vorget?uscht.
-
-## Release erstellen
-
-Ein Push eines Tags wie `v0.2.0` startet den Release-Workflow. Er setzt daraus die Projektversion, installiert Godot 4.7.2 und die Exportvorlagen, exportiert Windows und Linux als ZIP sowie Android als APK und erstellt ein GitHub-Release mit automatischen Release-Notizen. Der Workflow erzeugt f?r die Android-APK einen **tempor?ren Debug-Keystore**; diese APK ist f?r Tests und nicht f?r einen Store-Release bestimmt. F?r Store-Releases muss ein eigener langlebiger Release-Keystore sicher verwahrt und als GitHub-Secret bereitgestellt werden; Signierung und Secrets m?ssen daf?r getrennt konfiguriert werden. Mit einem anderen Schl?ssel signierte APKs k?nnen nicht ?ber eine bestehende Installation aktualisiert werden.
-
-## Touch-Steuerung
-
-Im Spiel erscheint links beim Aufsetzen des Daumens ein virtueller Stick; ziehen bewegt den Mech, Loslassen h?lt ihn an. Der Stick beachtet die sicheren Bildschirmr?nder und verschwindet bei Tastatur- oder Controller-Eingabe. Men?s, Upgrade-Auswahl und Update-Dialog lassen sich antippen; Android verwendet das Querformat.
-
-## Status
-
-Spielbarer Prototyp. Bitte Issues oder Pull Requests mit reproduzierbaren Schritten und Tests einreichen; keine fremden Assets ohne passende Lizenz hinzuf?gen.
+Quellen und Lizenzen der verwendeten Fremdassets stehen in [CREDITS.md](CREDITS.md).
