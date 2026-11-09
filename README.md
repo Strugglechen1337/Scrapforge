@@ -19,7 +19,7 @@ godot --headless --path . --script res://tests/test_game.gd
 
 Kristalle sammeln und beim Stufenaufstieg eines von drei Bauteilen auswählen. Raketenwerfer und Radar auf Stufe 5 können zum Schwarm-Werfer verschmelzen. Nach fünf Minuten erscheint der Boss; sein Abschuss oder zehn Minuten Überleben bedeuten den Sieg. Der Ergebnisbildschirm zeigt den fertigen Roboter und speichert auf Knopfdruck ein PNG im Godot-Benutzerordner (der vollständige Pfad wird angezeigt).
 
-Im Hauptmenü lassen sich Lautstärke, Bildschirmwackeln und Vollbild einstellen. Die aktuelle Version enthält noch keine Soundeffekte; der Regler ist für spätere Sounds vorgesehen.
+Im Hauptmen? lassen sich Gesamtlautst?rke, Musik und Effekte getrennt einstellen; die Werte werden lokal gespeichert. Bildschirmwackeln und Vollbild lassen sich ebenfalls einstellen.
 
 ## Updates
 

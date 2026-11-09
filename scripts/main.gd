@@ -107,6 +107,8 @@ func button(text: String, action: Callable) -> Button:
         style.content_margin_bottom = 12
         b.add_theme_stylebox_override(style_name, style)
     b.add_theme_color_override("font_color", Color("d5f3f4"))
+    b.focus_entered.connect(func(): AudioManager.play(&"menu_focus"))
+    b.pressed.connect(func(): AudioManager.play(&"menu_confirm"))
     b.pressed.connect(action)
     return b
 
@@ -128,6 +130,7 @@ func column() -> VBoxContainer:
     return box
 
 func show_menu() -> void:
+    AudioManager.play_music("menu")
     mode = "menu"
     clear_ui()
     var box := column()
@@ -146,15 +149,7 @@ func show_settings() -> void:
     clear_ui()
     var box := column()
     box.add_child(heading("EINSTELLUNGEN"))
-    var volume := HSlider.new()
-    volume.min_value = 0
-    volume.max_value = 1
-    volume.step = 0.05
-    volume.value = db_to_linear(AudioServer.get_bus_volume_db(0))
-    volume.custom_minimum_size = Vector2(360, 48)
-    volume.value_changed.connect(func(v): AudioServer.set_bus_volume_db(0, linear_to_db(v)))
-    box.add_child(heading("LAUTSTÄRKE", 20))
-    box.add_child(volume)
+    var volume: HSlider = preload("res://scripts/audio_settings.gd").populate(box)
     var shake_button := CheckButton.new()
     shake_button.text = "BILDSCHIRMWACKELN"
     shake_button.button_pressed = shake_enabled
@@ -192,6 +187,7 @@ func spark(at: Vector2, color: Color, count: int) -> void:
 
 
 func start_game() -> void:
+    AudioManager.play_music("combat")
     weapons = preload("res://scripts/weapons_3d.gd").new()
     state = UpgradeState.new()
     state.upgrade("minigun")
@@ -251,6 +247,7 @@ func make_enemy(kind: int, position: Vector2) -> Dictionary:
 func spawn_boss() -> void:
     if boss_spawned: return
     boss_spawned = true
+    AudioManager.play(&"boss")
     enemies.append(make_enemy(3, player + Vector2(240,0)))
 
 func shoot_enemy(origin: Vector2, direction: Vector2, speed := 240.0) -> void:
@@ -357,6 +354,7 @@ func _process(delta: float) -> void:
         var kind := 0 if roll < 7 else (1 if roll < 9 else 2)
         var angle := randf() * TAU
         enemies.append(make_enemy(kind, player + Vector2.from_angle(angle) * 650))
+    AudioManager.set_listener(player)
     weapons.update(self, delta)
     fire_clock -= delta
     if fire_clock <= 0 and not enemies.is_empty():
@@ -367,6 +365,7 @@ func _process(delta: float) -> void:
         var dir: Vector2 = (nearest.pos - player).normalized()
         shot_index += 1
         var rocket_shot := state.level("rocket") > 0 and shot_index % 3 == 0
+        AudioManager.play(&"rocket" if rocket_shot else &"minigun", player)
         bullets.append({"pos": player, "vel": dir * 560, "life": 2.0, "damage": 12 + state.level("minigun") * 6 + state.level("rocket") * 5, "rocket":rocket_shot})
         spark(player + dir * 35, CYAN, 4)
         world_3d.effects_3d.burst(player + dir * 28, "muzzle")
@@ -396,6 +395,7 @@ func _process(delta: float) -> void:
                     if enemy.jump_warning <= 0:
                         enemy.pos = enemy.jump_target
                         world_3d.effects_3d.burst(enemy.pos,"explosion")
+                        AudioManager.play(&"explosion", enemy.pos)
                         if enemy.pos.distance_to(player) < 100: weapons.damage(self, 25)
         var saw := state.level("saw")
         for i in range(saw):
@@ -416,6 +416,8 @@ func _process(delta: float) -> void:
                     world_3d.effects_3d.burst(bullet.pos, "explosion")
                 else: enemy.hp -= bullet.damage
                 enemy.flash = 0.15
+                AudioManager.play(&"enemy_hit", enemy.pos)
+                if bullet.get("rocket",false) or bullet.get("plasma",false): AudioManager.play(&"explosion", bullet.pos)
                 if bullet.get("rocket",false): world_3d.effects_3d.burst(bullet.pos,"explosion")
                 hit_flash = 0.15
                 shake = 3.0
@@ -439,6 +441,7 @@ func _process(delta: float) -> void:
             kills += 1
             spark(enemy.pos, PINK, 16)
             world_3d.effects_3d.burst(enemy.pos,"explosion")
+            AudioManager.play(&"explosion", enemy.pos)
             if enemy.kind == 3: won = true
     enemies = enemies.filter(func(e): return e.hp > 0)
     for i in range(crystals.size() - 1, -1, -1):
@@ -448,11 +451,13 @@ func _process(delta: float) -> void:
             crystals[i] = crystals[i].move_toward(player, 180 * delta)
         if player.distance_to(crystals[i]) < 35 + state.level("magnet") * 20 + state.level("sensor") * 20:
             world_3d.effects_3d.burst(crystals[i],"pickup")
+            AudioManager.play(&"pickup", crystals[i])
             crystals.remove_at(i)
             xp += 1
             if xp >= level * 5:
                 xp = 0
                 level += 1
+                AudioManager.play(&"level_up")
                 choose_upgrade()
                 break
     if autoplay: hp = 100.0
@@ -469,7 +474,9 @@ func _process(delta: float) -> void:
 func choose_upgrade(force_show := false) -> void:
     if autoplay and not force_show:
         var candidates := IDS.filter(func(id): return state.can_upgrade(id) and not (state.level("swarm") > 0 and id in ["rocket", "radar"]))
-        if not candidates.is_empty(): state.upgrade(candidates.pick_random())
+        if not candidates.is_empty():
+            state.upgrade(candidates.pick_random())
+            AudioManager.play(&"upgrade")
         return
     mode = "upgrade"
     clear_ui()
@@ -489,6 +496,7 @@ func choose_upgrade(force_show := false) -> void:
     for id in candidates.slice(0, 3):
         var definition = definitions[id]
         var b := button("%s  ·  STUFE %d\n%s" % [definition.title, state.level(id) + 1, definition.description], func():
+            AudioManager.play(&"upgrade")
             if id == "swarm": state.evolve()
             else: state.upgrade(id)
             mode = "playing"
@@ -513,6 +521,8 @@ func resume_game() -> void:
 
 
 func show_end(victory: bool) -> void:
+    AudioManager.play(&"victory" if victory else &"game_over")
+    AudioManager.play_music("menu")
     mode = "end"
     clear_ui()
     var box := VBoxContainer.new()

@@ -14,5 +14,7 @@ func run() -> void:
     await process_frame
     assert(root.gui_get_focus_owner() is Button)
     game.queue_free()
+    root.get_node("AudioManager").stop_all()
+    await create_timer(1.0).timeout
     print("Update-Dialog-Tests bestanden")
     quit()

@@ -61,5 +61,7 @@ func run() -> void:
     game._process(0.15)
     assert(game.enemies[1].hp < 70 and game.enemies[0].hp == 70)
     game.queue_free()
+    root.get_node("AudioManager").stop_all()
+    await create_timer(1.0).timeout
     print("Waffen-Tests bestanden")
     quit()

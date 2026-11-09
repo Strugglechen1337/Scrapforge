@@ -132,8 +132,14 @@ func add_button(box: VBoxContainer, title: String, action: Callable) -> Button:
     button.custom_minimum_size = Vector2(0, 48)
     button.add_theme_font_size_override("font_size", 20)
     box.add_child(button)
+    button.focus_entered.connect(func(): ui_sound(&"menu_focus"))
+    button.pressed.connect(func(): ui_sound(&"menu_confirm"))
     button.pressed.connect(action)
     return button
+
+func ui_sound(id: StringName) -> void:
+    var audio := get_node_or_null("/root/AudioManager")
+    if audio: audio.play(id)
 
 func show_release(release: Dictionary) -> void:
     var box := make_panel()
