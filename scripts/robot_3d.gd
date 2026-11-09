@@ -17,6 +17,12 @@ var base_parts: Node3D
 var animation: AnimationPlayer
 var clock := 0.0
 var visor: MeshInstance3D
+var model: Node3D
+var chassis: Dictionary = {}
+var last_position := Vector3.ZERO
+var motion := 0.0
+var recoil := 0.0
+var previous_fire_clock := 0.0
 
 func _ready() -> void:
     metal.albedo_color = Color("a9a39a")
@@ -36,61 +42,71 @@ func _ready() -> void:
     visor_glow.emission_enabled = true
     visor_glow.emission = Color("31eaff")
     visor_glow.emission_energy_multiplier = 2.5
-    var model := (load("res://assets/third_party/quaternius/animated-mech/George.gltf") as PackedScene).instantiate() as Node3D
-    model.scale = Vector3.ONE * 0.33
+    model = (load("res://assets/third_party/sketchfab/colossus/colossus-parts.glb") as PackedScene).instantiate() as Node3D
+    model.position.y = 0.956
     add_child(model)
-    var skeleton := model.get_node("RobotArmature/Skeleton3D") as Skeleton3D
-    var body := skeleton.get_node("George") as MeshInstance3D
-    var material := body.get_active_material(0).duplicate() as StandardMaterial3D
-    material.albedo_color = Color("e1e5e3")
-    material.metallic = 0.08
-    material.roughness = 0.75
-    body.material_override = material
-    body_material = material
-    animation = model.get_node("AnimationPlayer") as AnimationPlayer
-    var walk := animation.get_animation("Walk")
+    for part_name in ["torso", "head", "shoulder_l", "shoulder_r", "upper_arm_l", "upper_arm_r", "forearm_l", "forearm_r", "thigh_l", "thigh_r", "shin_l", "shin_r"]:
+        var node := model.find_child(part_name, true, false) as MeshInstance3D
+        chassis[part_name] = node
+    body_material = (chassis["torso"] as MeshInstance3D).get_active_material(0).duplicate() as StandardMaterial3D
+    body_material.metallic = 0.15
+    body_material.roughness = 0.75
+    for node in chassis.values():
+        (node as MeshInstance3D).material_override = body_material
+    # The AnimationPlayer provides a pause control for the existing hangar and
+    # showcase; the actual rigid-part motion is generated below.
+    animation = AnimationPlayer.new()
+    var library := AnimationLibrary.new()
+    var walk := Animation.new()
+    walk.length = 1.0
     walk.loop_mode = Animation.LOOP_LINEAR
+    library.add_animation("Walk", walk)
+    animation.add_animation_library("", library)
+    add_child(animation)
     animation.play("Walk")
-    for entry in [["left_arm", "LowerArm.L"], ["right_arm", "LowerArm.R"], ["left_shoulder", "Shoulder.L"], ["right_shoulder", "Shoulder.R"], ["head", "Head"], ["back", "Chest"], ["legs", "Body"], ["core", "Chest"]]:
-        var attachment := BoneAttachment3D.new()
-        attachment.name = "attachment_" + entry[0]
-        attachment.bone_name = entry[1]
-        skeleton.add_child(attachment)
-        var marker := Marker3D.new()
-        marker.name = entry[0]
-        attachment.add_child(marker)
-        marker.set_meta("rest_basis", skeleton.get_bone_global_rest(skeleton.find_bone(entry[1])).basis.orthonormalized())
-        sockets[entry[0]] = marker
+    for entry in [
+        ["left_arm", "forearm_l", Vector3(-0.02, -0.29, 0.14)],
+        ["right_arm", "forearm_r", Vector3(0.05, 0.0, 0.22)],
+        ["left_shoulder", "shoulder_l", Vector3(-0.10, 0.13, 0.0)],
+        ["right_shoulder", "shoulder_r", Vector3(0.10, 0.13, 0.0)],
+        ["head", "head", Vector3(0, 0.12, 0.25)],
+        ["back", "torso", Vector3(0, 0.20, -0.34)],
+        ["legs", "torso", Vector3(0, -0.20, 0)],
+        ["core", "torso", Vector3(0, 0.10, 0.22)]]:
+        sockets[entry[0]] = make_marker(chassis[entry[1]], entry[0], entry[2])
     parts = Node3D.new()
     add_child(parts)
     base_parts = Node3D.new()
     add_child(base_parts)
     for entry in [["core", "chassis_core"], ["left_shoulder", "chassis_shoulder"], ["right_shoulder", "chassis_shoulder"]]:
         add_base_plate(sockets[entry[0]], entry[1])
-    for bone in ["UpperLeg.L", "UpperLeg.R"]:
-        var attachment := BoneAttachment3D.new()
-        attachment.bone_name = bone
-        skeleton.add_child(attachment)
-        var marker := Marker3D.new()
-        attachment.add_child(marker)
-        marker.set_meta("rest_basis", skeleton.get_bone_global_rest(skeleton.find_bone(bone)).basis.orthonormalized())
-        add_base_plate(marker, "chassis_thigh")
-    for pair in [["LowerLeg.L", "chassis_shin"], ["LowerLeg.R", "chassis_shin"], ["Foot.L", "chassis_foot"], ["Foot.R", "chassis_foot"], ["UpperArm.L", "chassis_upper_arm"], ["UpperArm.R", "chassis_upper_arm"]]:
-        var attachment := BoneAttachment3D.new()
-        attachment.bone_name = pair[0]
-        skeleton.add_child(attachment)
-        var marker := Marker3D.new()
-        attachment.add_child(marker)
-        marker.set_meta("rest_basis", skeleton.get_bone_global_rest(skeleton.find_bone(pair[0])).basis.orthonormalized())
-        add_base_plate(marker, pair[1])
+    for entry in [["thigh_l", "chassis_thigh", Vector3.ZERO], ["thigh_r", "chassis_thigh", Vector3.ZERO], ["shin_l", "chassis_shin", Vector3.ZERO], ["shin_r", "chassis_shin", Vector3.ZERO], ["shin_l", "chassis_foot", Vector3(0,-0.34,0.08)], ["shin_r", "chassis_foot", Vector3(0,-0.34,0.08)], ["upper_arm_l", "chassis_upper_arm", Vector3.ZERO], ["upper_arm_r", "chassis_upper_arm", Vector3.ZERO]]:
+        add_base_plate(make_marker(chassis[entry[0]], "plate", entry[2]), entry[1])
+    # Dark mechanical joints cover the spatial cuts at the main pivots.
+    for part_name in ["shoulder_l", "shoulder_r", "upper_arm_l", "upper_arm_r", "forearm_l", "forearm_r", "thigh_l", "thigh_r", "shin_l", "shin_r"]:
+        var joint := MeshInstance3D.new()
+        var sphere := SphereMesh.new()
+        sphere.radius = 0.09
+        sphere.height = 0.18
+        joint.mesh = sphere
+        joint.material_override = dark
+        (chassis[part_name] as Node3D).add_child(joint)
     visor = MeshInstance3D.new()
     var visor_mesh := BoxMesh.new()
-    visor_mesh.size = Vector3(0.24, 0.065, 0.04)
+    visor_mesh.size = Vector3(0.24, 0.055, 0.035)
     visor.mesh = visor_mesh
     visor.material_override = visor_glow
-    add_child(visor)
+    sockets["head"].add_child(visor)
     set_skin(load("res://data/skins/standard.tres"))
     set_robot_layer(self)
+
+func make_marker(parent: Node3D, marker_name: String, offset: Vector3) -> Marker3D:
+    var marker := Marker3D.new()
+    marker.name = marker_name
+    marker.position = offset
+    marker.set_meta("rest_basis", Basis.IDENTITY)
+    parent.add_child(marker)
+    return marker
 
 func set_skin(value: Resource) -> void:
     skin = value
@@ -153,8 +169,6 @@ func refresh() -> void:
     update_parts()
 
 func update_parts() -> void:
-    if is_instance_valid(visor):
-        visor.position = to_local(sockets["head"].global_position) + Vector3(0, 0.12, 0.20)
     for part in parts.get_children():
         var socket: Marker3D = sockets[part.get_meta("socket")]
         follow_bone(part, socket, true)
@@ -173,5 +187,25 @@ func follow_bone(part: Node3D, marker: Marker3D, weapon: bool) -> void:
 
 func _process(delta: float) -> void:
     clock += delta
+    var speed := global_position.distance_to(last_position) / maxf(delta, 0.001)
+    last_position = global_position
+    motion = move_toward(motion, clampf(speed / 1.5, 0.0, 1.0), delta * 5.0)
+    if get_parent() is ScrapWorld3D:
+        var game = get_parent().game
+        if game and game.mode == "playing":
+            if game.fire_clock > previous_fire_clock + 0.04 and state and not state.levels.is_empty():
+                recoil = 1.0
+            previous_fire_clock = game.fire_clock
+    recoil = move_toward(recoil, 0.0, delta * 6.0)
+    if animation.is_playing():
+        var stride := sin(clock * 7.0) * motion
+        (chassis["thigh_l"] as Node3D).rotation.x = stride * 0.32
+        (chassis["thigh_r"] as Node3D).rotation.x = -stride * 0.32
+        (chassis["shin_l"] as Node3D).rotation.x = maxf(0.0, -stride) * 0.25
+        (chassis["shin_r"] as Node3D).rotation.x = maxf(0.0, stride) * 0.25
+        (chassis["upper_arm_l"] as Node3D).rotation.x = -stride * 0.12 - recoil * 0.13
+        (chassis["upper_arm_r"] as Node3D).rotation.x = stride * 0.12 - recoil * 0.13
+        (chassis["torso"] as Node3D).rotation.z = sin(clock * 3.5) * motion * 0.025
+        model.position.y = 0.956 + absf(sin(clock * 7.0)) * motion * 0.025 + sin(clock * 1.8) * 0.006
     refresh()
     update_parts()
