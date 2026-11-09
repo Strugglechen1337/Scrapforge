@@ -11,7 +11,7 @@ func run_tests() -> void:
     robot.state.upgrade("minigun")
     robot.refresh()
     assert(robot.parts.get_child_count() == 1)
-    assert(robot.base_parts.get_child_count() == 5)
+    assert(robot.base_parts.get_child_count() == 11)
     var gun := robot.parts.get_child(0)
     assert(gun.get_children().any(func(node): return node is MeshInstance3D and node.mesh is CylinderMesh))
     var first := robot.parts.get_child(0).get_child_count()

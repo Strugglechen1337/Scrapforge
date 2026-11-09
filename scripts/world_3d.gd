@@ -298,6 +298,7 @@ func update_view() -> void:
     for i in range(game.bullets.size()):
         var p: Vector2 = game.bullets[i].pos
         projectile_nodes[i].position = Vector3(p.x / 50.0, 0.5, p.y / 50.0)
+        projectile_nodes[i].get_child(0).material_override = cyan if game.bullets[i].get("plasma", false) else orange
         var velocity: Vector2 = game.bullets[i].vel
         projectile_nodes[i].rotation.y = atan2(velocity.x,velocity.y)
         projectile_nodes[i].get_node("Smoke").emitting = game.bullets[i].get("rocket",false)

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SkinDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/skin_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+title = "Blau"
+armor_color = Color(0.32941176470588235, 0.4980392156862745, 0.6509803921568628, 1)
+accent_color = Color(0.1607843137254902, 0.3058823529411765, 0.4666666666666667, 1)
+camouflage = false

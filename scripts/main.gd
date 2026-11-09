@@ -1,9 +1,10 @@
 extends Node2D
 
-const IDS = ["minigun", "laser", "rocket", "shield", "saw", "thruster", "armor", "magnet", "cooldown", "radar"]
+const IDS = ["minigun", "laser", "rocket", "shield", "saw", "thruster", "armor", "magnet", "cooldown", "radar", "flamethrower", "plasma", "turret", "sensor", "drone"]
 const BG = Color("080f1c")
 const CYAN = Color("46f6ef")
 const PINK = Color("ff568d")
+var weapons = preload("res://scripts/weapons_3d.gd").new()
 var state = UpgradeState.new()
 var definitions: Dictionary = {}
 var player := Vector2.ZERO
@@ -186,6 +187,7 @@ func spark(at: Vector2, color: Color, count: int) -> void:
 
 
 func start_game() -> void:
+    weapons = preload("res://scripts/weapons_3d.gd").new()
     state = UpgradeState.new()
     state.upgrade("minigun")
     player = Vector2.ZERO
@@ -361,6 +363,7 @@ func _process(delta: float) -> void:
         var kind := 0 if roll < 7 else (1 if roll < 9 else 2)
         var angle := randf() * TAU
         enemies.append(make_enemy(kind, player + Vector2.from_angle(angle) * 650))
+    weapons.update(self, delta)
     fire_clock -= delta
     if fire_clock <= 0 and not enemies.is_empty():
         fire_clock = maxf(0.12, 0.65 - state.level("cooldown") * 0.05)
@@ -370,7 +373,7 @@ func _process(delta: float) -> void:
         var dir: Vector2 = (nearest.pos - player).normalized()
         shot_index += 1
         var rocket_shot := state.level("rocket") > 0 and shot_index % 3 == 0
-        bullets.append({"pos": player, "vel": dir * 560, "life": 2.0, "damage": 12 + state.level("minigun") * 6 + state.level("laser") * 6 + state.level("rocket") * 5, "rocket":rocket_shot})
+        bullets.append({"pos": player, "vel": dir * 560, "life": 2.0, "damage": 12 + state.level("minigun") * 6 + state.level("rocket") * 5, "rocket":rocket_shot})
         spark(player + dir * 35, CYAN, 4)
         world_3d.effects_3d.burst(player + dir * 28, "muzzle")
         if state.level("swarm"):
@@ -399,13 +402,13 @@ func _process(delta: float) -> void:
                     if enemy.jump_warning <= 0:
                         enemy.pos = enemy.jump_target
                         world_3d.effects_3d.burst(enemy.pos,"explosion")
-                        if enemy.pos.distance_to(player) < 100: hp -= 25
+                        if enemy.pos.distance_to(player) < 100: weapons.damage(self, 25)
         var saw := state.level("saw")
         for i in range(saw):
             var blade := player + Vector2.from_angle(elapsed * 1.8 + TAU * i / saw) * 78
             if enemy.pos.distance_to(blade) < 23: enemy.hp -= delta * 24
         if diff.length() < 33:
-            hp -= delta * (8.0 - state.level("shield")) * (1.0 - state.level("armor") * 0.05)
+            weapons.damage(self, delta * 8.0 * (1.0 - state.level("armor") * 0.05))
             hit_flash = 0.4
             shake = 2.0
     for bullet in bullets:
@@ -413,7 +416,11 @@ func _process(delta: float) -> void:
         bullet.life -= delta
         for enemy in enemies:
             if bullet.pos.distance_to(enemy.pos) < 22:
-                enemy.hp -= bullet.damage
+                if bullet.get("plasma", false):
+                    for victim in enemies:
+                        if victim.pos.distance_to(enemy.pos) < 100: victim.hp -= bullet.damage
+                    world_3d.effects_3d.burst(bullet.pos, "explosion")
+                else: enemy.hp -= bullet.damage
                 enemy.flash = 0.15
                 if bullet.get("rocket",false): world_3d.effects_3d.burst(bullet.pos,"explosion")
                 hit_flash = 0.15
@@ -428,7 +435,7 @@ func _process(delta: float) -> void:
         shot.pos += shot.vel * delta
         shot.life -= delta
         if shot.pos.distance_to(player) < 25:
-            hp -= 8
+            weapons.damage(self, 8)
             shake = 3.0
             shot.life = 0
     enemy_shots = enemy_shots.filter(func(b): return b.life > 0)
@@ -442,10 +449,10 @@ func _process(delta: float) -> void:
     enemies = enemies.filter(func(e): return e.hp > 0)
     for i in range(crystals.size() - 1, -1, -1):
         var distance := player.distance_to(crystals[i])
-        var magnet_range := 35 + state.level("magnet") * 20
+        var magnet_range := 35 + state.level("magnet") * 20 + state.level("sensor") * 20
         if distance < magnet_range * 2 and distance > 8:
             crystals[i] = crystals[i].move_toward(player, 180 * delta)
-        if player.distance_to(crystals[i]) < 35 + state.level("magnet") * 20:
+        if player.distance_to(crystals[i]) < 35 + state.level("magnet") * 20 + state.level("sensor") * 20:
             world_3d.effects_3d.burst(crystals[i],"pickup")
             crystals.remove_at(i)
             xp += 1
@@ -467,7 +474,7 @@ func _process(delta: float) -> void:
 
 func choose_upgrade(force_show := false) -> void:
     if autoplay and not force_show:
-        var candidates := IDS.filter(func(id): return state.level(id) < 5 and not (state.level("swarm") > 0 and id in ["rocket", "radar"]))
+        var candidates := IDS.filter(func(id): return state.can_upgrade(id) and not (state.level("swarm") > 0 and id in ["rocket", "radar"]))
         if not candidates.is_empty(): state.upgrade(candidates.pick_random())
         return
     mode = "upgrade"
@@ -479,7 +486,7 @@ func choose_upgrade(force_show := false) -> void:
     var box := column()
     box.add_child(heading("AUFSTIEG", 48))
     box.add_child(heading("WÄHLE EIN BAUTEIL", 18))
-    var candidates := IDS.filter(func(id): return state.level(id) < 5 and not (state.level("swarm") > 0 and id in ["rocket", "radar"]))
+    var candidates := IDS.filter(func(id): return state.can_upgrade(id) and not (state.level("swarm") > 0 and id in ["rocket", "radar"]))
     candidates.shuffle()
     if state.can_evolve(): candidates.push_front("swarm")
     if candidates.is_empty():

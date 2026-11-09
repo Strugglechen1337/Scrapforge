@@ -19,7 +19,7 @@ func _ready() -> void:
     add_child(sun)
     var camera := Camera3D.new()
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    camera.size = 8.5
+    camera.size = 6.4
     camera.position = Vector3(0, 6.0, 13)
     camera.look_at_from_position(camera.position, Vector3(0, 1.2, 0))
     add_child(camera)
@@ -36,9 +36,9 @@ func _ready() -> void:
     rim.light_energy = 0.8
     add_child(rim)
     var defs: Dictionary = {}
-    for id in ["minigun", "laser", "rocket", "shield", "saw", "thruster", "armor", "magnet", "cooldown", "radar", "swarm"]:
+    for id in ["minigun", "laser", "rocket", "shield", "saw", "thruster", "armor", "magnet", "cooldown", "radar", "swarm", "drone"]:
         defs[id] = load("res://data/" + id + ".tres")
-    for stage in range(5):
+    for stage in range(4):
         var r := Robot3D.new()
         r.state = UpgradeState.new()
         r.definitions = defs
@@ -47,15 +47,33 @@ func _ready() -> void:
         if stage >= 2:
             for n in range(3): r.state.upgrade("rocket")
         if stage >= 3:
-            for id in ["armor", "shield", "thruster", "saw", "radar", "laser", "magnet", "cooldown"]:
-                for n in range(5): r.state.upgrade(id)
-            for n in range(2):
-                r.state.upgrade("minigun")
-                r.state.upgrade("rocket")
-        if stage == 4:
-            r.state.evolve()
-        r.position.x = (stage - 2) * 2.45
+            for id in ["armor", "drone", "thruster"]:
+                for n in range(3): r.state.upgrade(id)
+        r.position.x = (stage - 1.5) * 2.15
         add_child(r)
+        var platform := MeshInstance3D.new()
+        var disc := CylinderMesh.new()
+        disc.top_radius = 0.95
+        disc.bottom_radius = 0.95
+        disc.height = 0.12
+        platform.mesh = disc
+        var base_mat := StandardMaterial3D.new()
+        base_mat.albedo_color = Color("30333a")
+        platform.material_override = base_mat
+        platform.position = Vector3(r.position.x, -0.08, 0)
+        add_child(platform)
+        var ring := MeshInstance3D.new()
+        var ring_mesh := TorusMesh.new()
+        ring_mesh.inner_radius = 0.87
+        ring_mesh.outer_radius = 0.91
+        ring.mesh = ring_mesh
+        var orange := StandardMaterial3D.new()
+        orange.albedo_color = Color("ff7010")
+        orange.emission_enabled = true
+        orange.emission = Color("ff7010")
+        ring.material_override = orange
+        ring.position = Vector3(r.position.x, 0, 0)
+        add_child(ring)
     var layer := CanvasLayer.new()
     add_child(layer)
     var title := Label.new()
@@ -63,11 +81,11 @@ func _ready() -> void:
     title.position = Vector2(75, 75)
     title.add_theme_font_size_override("font_size", 30)
     layer.add_child(title)
-    var labels := ["BASIS-CHASSIS", "+ MINIGUN 3", "+ RAKETEN 3", "VOLLAUSBAU", "ENTWICKLUNG"]
-    for i in range(5):
+    var labels := ["BASIS-CHASSIS", "+ MINIGUN", "+ RAKETEN", "+ DROHNEN & PANZERUNG"]
+    for i in range(4):
         var label := Label.new()
         label.text = labels[i]
-        label.position = Vector2(60 + i * 240, 590)
+        label.position = Vector2(145 + i * 300, 590)
         label.size = Vector2(225, 50)
         label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
         label.add_theme_font_size_override("font_size", 18)
@@ -80,4 +98,22 @@ func _ready() -> void:
             DirAccess.make_dir_recursive_absolute(path)
             var result := get_viewport().get_texture().get_image().save_png(path.path_join("roboter-stufen.png"))
             print("Showcase: ", result)
+    for child in get_children():
+        if child is Robot3D: child.queue_free()
+    for i in range(5):
+        var r := Robot3D.new()
+        r.state = UpgradeState.new()
+        r.state.upgrade("minigun")
+        r.definitions = defs
+        r.position.x = (i - 2) * 1.9
+        add_child(r)
+        r.set_skin(load("res://data/skins/" + ["standard", "red", "green", "yellow", "blue"][i] + ".tres"))
+    title.text = "SCRAPFORGE  |  SKINS"
+    for child in layer.get_children():
+        if child != title: child.queue_free()
+    await get_tree().create_timer(2.0).timeout
+    await RenderingServer.frame_post_draw
+    for arg in OS.get_cmdline_user_args():
+        if arg.begins_with("--shot-dir="):
+            get_viewport().get_texture().get_image().save_png(arg.trim_prefix("--shot-dir=").path_join("roboter-skins.png"))
     get_tree().quit()
