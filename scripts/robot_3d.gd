@@ -16,12 +16,15 @@ var clock := 0.0
 var visor: MeshInstance3D
 
 func _ready() -> void:
-    metal.albedo_color = Color("c8d2d3")
-    metal.metallic = 0.72
-    metal.roughness = 0.38
+    metal.albedo_color = Color("c9ccc6")
+    metal.metallic = 0.58
+    metal.roughness = 0.48
+    metal.albedo_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Color.jpg")
+    metal.normal_enabled = true
+    metal.normal_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_NormalGL.jpg")
     dark.albedo_color = Color("192431")
-    dark.metallic = 0.72
-    dark.roughness = 0.42
+    dark.metallic = 0.68
+    dark.roughness = 0.44
     glow.albedo_color = Color("e94e04")
     glow.emission_enabled = true
     glow.emission = Color("ff620d")
@@ -36,9 +39,9 @@ func _ready() -> void:
     var skeleton := model.get_node("RobotArmature/Skeleton3D") as Skeleton3D
     var body := skeleton.get_node("George") as MeshInstance3D
     var material := body.get_active_material(0).duplicate() as StandardMaterial3D
-    material.albedo_color = Color("e1e5e3")
+    material.albedo_color = Color("d8dbd5")
     material.metallic = 0.45
-    material.roughness = 0.55
+    material.roughness = 0.58
     body.material_override = material
     animation = model.get_node("AnimationPlayer") as AnimationPlayer
     var walk := animation.get_animation("Walk")

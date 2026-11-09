@@ -168,6 +168,7 @@ func save_image(path: String) -> void:
     var before := Time.get_ticks_usec()
     var image := get_viewport().get_texture().get_image()
     var readback := Time.get_ticks_usec()
+    previous_frame_usec = readback
     screenshot_stats.append("%s at %.3fs: main-thread readback %.1fms; PNG encoded asynchronously" % [path.get_file(), demo_time, (readback-before)/1000.0])
     var task := WorkerThreadPool.add_task(func():
         var result := image.save_png(path)
@@ -181,6 +182,7 @@ func capture_demo(name: String) -> void:
         save_image(shot_dir.path_join(name + ".png"))
 
 func spark(at: Vector2, color: Color, count: int) -> void:
+    if particles.size() > 64: return
     for i in range(count):
         particles.append({"pos": at, "vel": Vector2.from_angle(randf()*TAU)*randf_range(40,180), "life": randf_range(0.2,0.6), "color": color})
 
@@ -194,7 +196,7 @@ func start_game() -> void:
     enemy_shots.clear()
     crystals.clear()
     elapsed = 0.0
-    spawn_clock = 0.0
+    spawn_clock = 0.85
     fire_clock = 0.0
     shot_index = 0
     hp = 100.0
@@ -239,12 +241,14 @@ func make_boss_bar() -> void:
     panel.add_child(boss_label)
 
 func make_enemy(kind: int, position: Vector2) -> Dictionary:
-    return {"pos":position, "hp":[24,70,34,1800][kind], "kind":kind, "speed":[120.0,50.0,75.0,45.0][kind], "attack":randf_range(1.0,3.0), "jump_clock":6.0, "jump_warning":0.0, "jump_target":position, "flash":0.0}
+    var initial_attack := randf_range(2.5, 6.5) if kind == 2 else (1.0 if kind == 3 else 2.0)
+    var stop_d := 68.0 if kind == 3 else (220.0 if kind == 2 else 30.0)
+    return {"pos":position, "hp":[24,70,34,1800][kind], "kind":kind, "speed":[120.0,50.0,75.0,45.0][kind], "attack":initial_attack, "jump_clock":6.0, "jump_warning":0.0, "jump_target":position, "flash":0.0, "stop_dist":stop_d, "fresh":true}
 
 func spawn_boss() -> void:
     if boss_spawned: return
     boss_spawned = true
-    enemies.append(make_enemy(3, player + Vector2(240,0)))
+    enemies.append(make_enemy(3, player + Vector2(215, 25)))
 
 func shoot_enemy(origin: Vector2, direction: Vector2, speed := 240.0) -> void:
     if enemy_shots.size() >= 32: return
@@ -289,14 +293,23 @@ func _process(delta: float) -> void:
         if demo_stage == 0 and demo_time >= 2:
             capture_demo("spiel-start")
             demo_stage = 1
-        elif demo_stage == 1 and demo_time >= 6:
+        elif demo_stage == 1 and demo_time >= 5.5 and level == 1:
             for id in ["minigun","rocket","shield","saw","thruster","radar","armor"]:
                 for n in range(3): state.upgrade(id)
+            level = 8
+        elif demo_stage == 1 and demo_time >= 6:
             for i in range(175):
-                var angle := TAU * i / 175.0
-                var distance := 300.0 + (i % 10) * 38.0
-                var kind := 2 if i % 10 == 0 else (1 if i % 4 == 0 else 0)
-                enemies.append(make_enemy(kind, player + Vector2.from_angle(angle) * distance))
+                var angle := PI * 0.32 + TAU * 0.78 * (float(i) / 175.0) + float(i % 5) * 0.03
+                var ring := i % 12
+                var distance := 230.0 + ring * 32.0
+                var kind := 2 if i % 14 == 0 else (1 if i % 5 == 0 else 0)
+                var e := make_enemy(kind, player + Vector2.from_angle(angle) * distance)
+                if kind != 2:
+                    var hold_r := 65.0 + float(ring) * 24.0 + float(i % 4) * 8.0
+                    e["slot"] = Vector2.from_angle(angle) * hold_r
+                enemies.append(e)
+            world_3d.swarm.update_swarm(enemies, player, 0.0)
+            previous_frame_usec = Time.get_ticks_usec()
             demo_stage = 2
         elif demo_stage == 2 and demo_time >= 8:
             var has_explosion := world_3d.effects_3d.effects.any(func(e): return e.get("kind","") == "explosion")
@@ -356,11 +369,28 @@ func _process(delta: float) -> void:
     player = player.clamp(Vector2(-1800, -1200), Vector2(1800, 1200))
     spawn_clock -= delta
     if spawn_clock <= 0:
-        spawn_clock = maxf(0.2, 1.15 - elapsed / 650.0)
-        var roll := randi() % 10
-        var kind := 0 if roll < 7 else (1 if roll < 9 else 2)
-        var angle := randf() * TAU
-        enemies.append(make_enemy(kind, player + Vector2.from_angle(angle) * 650))
+        if autoplay and demo_stage >= 2:
+            spawn_clock = 0.22 if enemies.size() < 168 else 0.85
+            var roll_auto := randi() % 12
+            var kind_auto := 0 if roll_auto < 9 else (1 if roll_auto < 11 else 2)
+            var a_auto := PI * 0.32 + randf() * TAU * 0.78
+            var e_auto := make_enemy(kind_auto, player + Vector2.from_angle(a_auto) * 460)
+            if kind_auto != 2:
+                e_auto["slot"] = Vector2.from_angle(a_auto) * randf_range(65.0, 280.0)
+            enemies.append(e_auto)
+        else:
+            spawn_clock = lerpf(2.2, 0.28, clampf(elapsed / 240.0, 0.0, 1.0))
+            var wave_count := 2 if (elapsed < 2.0 or elapsed >= 180.0) else 1
+            for w in range(wave_count):
+                var roll := randi() % 100
+                var kind := 0
+                if elapsed >= 60.0:
+                    kind = 0 if roll < 72 else (1 if roll < 92 else 2)
+                elif elapsed >= 25.0:
+                    kind = 0 if roll < 80 else 1
+                var angle := randf() * TAU
+                var spawn_dist := 280.0 if elapsed < 5.0 else 580.0
+                enemies.append(make_enemy(kind, player + Vector2.from_angle(angle) * spawn_dist))
     fire_clock -= delta
     if fire_clock <= 0 and not enemies.is_empty():
         fire_clock = maxf(0.12, 0.65 - state.level("cooldown") * 0.05)
@@ -379,12 +409,18 @@ func _process(delta: float) -> void:
     for enemy in enemies:
         var diff: Vector2 = player - enemy.pos
         enemy.flash = maxf(0.0, enemy.get("flash",0.0)-delta)
-        if (enemy.kind != 2 and diff.length() > 25) or (enemy.kind == 2 and diff.length() > 220):
+        var goal: Vector2 = player + enemy.get("slot", Vector2.ZERO)
+        var to_goal: Vector2 = goal - enemy.pos
+        var stop_dist: float = enemy.get("stop_dist", 32.0)
+        if enemy.has("slot"):
+            if to_goal.length() > 12.0:
+                enemy.pos += to_goal.normalized() * enemy.speed * delta
+        elif diff.length() > stop_dist:
             enemy.pos += diff.normalized() * enemy.speed * delta
         if enemy.kind in [2,3]:
             enemy.attack = enemy.get("attack",2.0) - delta
             if enemy.attack <= 0:
-                enemy.attack = randf_range(5.5,8.0) if enemy.kind == 2 else 3.0
+                enemy.attack = randf_range(5.8,8.5) if enemy.kind == 2 else 3.2
                 if enemy.kind == 2: shoot_enemy(enemy.pos,diff)
                 else:
                     for spread in [-0.5,-0.25,0.0,0.25,0.5]: shoot_enemy(enemy.pos,diff.rotated(spread),280.0)
@@ -404,7 +440,7 @@ func _process(delta: float) -> void:
         for i in range(saw):
             var blade := player + Vector2.from_angle(elapsed * 1.8 + TAU * i / saw) * 78
             if enemy.pos.distance_to(blade) < 23: enemy.hp -= delta * 24
-        if diff.length() < 33:
+        if diff.length() < 36:
             hp -= delta * (8.0 - state.level("shield")) * (1.0 - state.level("armor") * 0.05)
             hit_flash = 0.4
             shake = 2.0
