@@ -47,6 +47,9 @@ var fps_seconds := 0.0
 var fps_min := INF
 var fps_peak_enemies := 0
 var previous_frame_usec := 0
+var fps_worst_at := 0.0
+var screenshot_stats: Array[String] = []
+var screenshot_tasks: Array[int] = []
 
 
 func _ready() -> void:
@@ -162,9 +165,15 @@ func show_settings() -> void:
 
 func save_image(path: String) -> void:
     await RenderingServer.frame_post_draw
+    var before := Time.get_ticks_usec()
     var image := get_viewport().get_texture().get_image()
-    var result := image.save_png(path)
-    print("Screenshot: ", path, " (", result, ")")
+    var readback := Time.get_ticks_usec()
+    screenshot_stats.append("%s at %.3fs: main-thread readback %.1fms; PNG encoded asynchronously" % [path.get_file(), demo_time, (readback-before)/1000.0])
+    var task := WorkerThreadPool.add_task(func():
+        var result := image.save_png(path)
+        print("Screenshot: ",path," (",result,")")
+    )
+    screenshot_tasks.append(task)
 
 func capture_demo(name: String) -> void:
     if not shot_dir.is_empty():
@@ -185,6 +194,8 @@ func start_game() -> void:
     enemy_shots.clear()
     crystals.clear()
     elapsed = 0.0
+    spawn_clock = 0.0
+    fire_clock = 0.0
     shot_index = 0
     hp = 100.0
     xp = 0
@@ -236,6 +247,7 @@ func spawn_boss() -> void:
     enemies.append(make_enemy(3, player + Vector2(240,0)))
 
 func shoot_enemy(origin: Vector2, direction: Vector2, speed := 240.0) -> void:
+    if enemy_shots.size() >= 32: return
     enemy_shots.append({"pos":origin,"vel":direction.normalized()*speed,"life":4.0})
 
 func write_fps_report() -> void:
@@ -245,6 +257,8 @@ func write_fps_report() -> void:
     if file:
         var result := "FPS min %.1f average %.1f samples %d peak_enemies %d (only frames with >=150 enemies)" % [fps_min, fps_samples / fps_seconds, fps_samples, fps_peak_enemies]
         file.store_line(result)
+        file.store_line("worst_frame_at %.3fs" % fps_worst_at)
+        for stat in screenshot_stats: file.store_line(stat)
         print(result)
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -266,7 +280,9 @@ func _process(delta: float) -> void:
             if frame_time > 0:
                 fps_samples += 1
                 fps_seconds += frame_time
-                fps_min = minf(fps_min, 1.0 / frame_time)
+                if 1.0 / frame_time < fps_min:
+                    fps_min = 1.0 / frame_time
+                    fps_worst_at = demo_time
                 fps_peak_enemies = maxi(fps_peak_enemies, enemies.size())
         previous_frame_usec = now
         demo_time += delta
@@ -279,7 +295,8 @@ func _process(delta: float) -> void:
             for i in range(175):
                 var angle := TAU * i / 175.0
                 var distance := 300.0 + (i % 10) * 38.0
-                enemies.append(make_enemy(i % 3, player + Vector2.from_angle(angle) * distance))
+                var kind := 2 if i % 10 == 0 else (1 if i % 4 == 0 else 0)
+                enemies.append(make_enemy(kind, player + Vector2.from_angle(angle) * distance))
             demo_stage = 2
         elif demo_stage == 2 and demo_time >= 8:
             var has_explosion := world_3d.effects_3d.effects.any(func(e): return e.get("kind","") == "explosion")
@@ -300,6 +317,7 @@ func _process(delta: float) -> void:
             capture_demo("ende")
             demo_stage = 7
         elif demo_stage == 7 and demo_time >= 60:
+            for task in screenshot_tasks: WorkerThreadPool.wait_for_task_completion(task)
             write_fps_report()
             get_tree().quit()
             return
@@ -339,7 +357,8 @@ func _process(delta: float) -> void:
     spawn_clock -= delta
     if spawn_clock <= 0:
         spawn_clock = maxf(0.2, 1.15 - elapsed / 650.0)
-        var kind := randi() % 3
+        var roll := randi() % 10
+        var kind := 0 if roll < 7 else (1 if roll < 9 else 2)
         var angle := randf() * TAU
         enemies.append(make_enemy(kind, player + Vector2.from_angle(angle) * 650))
     fire_clock -= delta
@@ -360,12 +379,12 @@ func _process(delta: float) -> void:
     for enemy in enemies:
         var diff: Vector2 = player - enemy.pos
         enemy.flash = maxf(0.0, enemy.get("flash",0.0)-delta)
-        if (enemy.kind != 2 and diff.length() > 55) or (enemy.kind == 2 and diff.length() > 220):
+        if (enemy.kind != 2 and diff.length() > 25) or (enemy.kind == 2 and diff.length() > 220):
             enemy.pos += diff.normalized() * enemy.speed * delta
         if enemy.kind in [2,3]:
             enemy.attack = enemy.get("attack",2.0) - delta
             if enemy.attack <= 0:
-                enemy.attack = 2.6 if enemy.kind == 2 else 2.0
+                enemy.attack = randf_range(5.5,8.0) if enemy.kind == 2 else 3.0
                 if enemy.kind == 2: shoot_enemy(enemy.pos,diff)
                 else:
                     for spread in [-0.5,-0.25,0.0,0.25,0.5]: shoot_enemy(enemy.pos,diff.rotated(spread),280.0)

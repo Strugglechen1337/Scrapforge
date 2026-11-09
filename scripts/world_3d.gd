@@ -221,9 +221,25 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
                 gem.position.y = 0.3
                 node.add_child(gem)
             else:
-                box(node, Vector3(0.16,0.16,0.36), Vector3(0,0.3,0), red if kind == "enemy_bullet" else orange)
-                box(node, Vector3(0.06,0.06,0.5), Vector3(0,0.3,0.42), orange)
-                if kind == "bullet": add_smoke(node)
+                if kind == "enemy_bullet":
+                    var orb := MeshInstance3D.new()
+                    var orb_mesh := SphereMesh.new()
+                    orb_mesh.radius = 0.10
+                    orb_mesh.height = 0.20
+                    orb.mesh = orb_mesh
+                    var ruby := StandardMaterial3D.new()
+                    ruby.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+                    ruby.albedo_color = Color(0.85,0.005,0.002)
+                    ruby.emission_enabled = true
+                    ruby.emission = Color(0.8,0.005,0.002)
+                    ruby.emission_energy_multiplier = 0.4
+                    orb.material_override = ruby
+                    orb.position.y = 0.3
+                    node.add_child(orb)
+                else:
+                    box(node, Vector3(0.16,0.16,0.36), Vector3(0,0.3,0), orange)
+                    box(node, Vector3(0.06,0.06,0.5), Vector3(0,0.3,0.42), orange)
+                    add_smoke(node)
         nodes.append(node)
     for i in range(nodes.size()): nodes[i].visible = i < count
 

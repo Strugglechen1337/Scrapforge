@@ -102,18 +102,40 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
     cyan.emission_enabled = true
     cyan.emission = Color("15cbd4")
     cyan.emission_energy_multiplier = 0.8
+    var violet := StandardMaterial3D.new()
+    violet.albedo_color = Color("8e42e8")
+    violet.emission_enabled = true
+    violet.emission = Color("bc51ff")
+    violet.emission_energy_multiplier = 2.0
     match id:
         "chassis_core":
             plate(self, Vector3(0.92,0.48,0.19), Vector3(0,0.05,0.25), metal)
             plate(self, Vector3(0.56,0.21,0.08), Vector3(0,-0.14,0.36), dark)
-            plate(self, Vector3(0.32,0.035,0.03), Vector3(0,0.06,0.37), glow)
+            plate(self, Vector3(0.44,0.12,0.07), Vector3(0,0.08,0.37), dark)
+            plate(self, Vector3(0.31,0.055,0.045), Vector3(0,0.08,0.42), glow)
+            for side in [-1,1]:
+                plate(self, Vector3(0.18,0.25,0.08), Vector3(side*0.35,0.02,0.34), metal)
+                cylinder(self, Vector3(side*0.33,-0.12,0.40), 0.03, 0.025, dark)
+                plate(self, Vector3(0.12,0.035,0.03), Vector3(side*0.34,0.13,0.40), glow)
         "chassis_shoulder":
             plate(self, Vector3(0.48,0.23,0.42), Vector3(0,0.08,0), metal)
             plate(self, Vector3(0.39,0.12,0.45), Vector3(0,-0.04,-0.04), dark)
+            plate(self, Vector3(0.25,0.04,0.29), Vector3(0,0.22,0), glow)
+            for side in [-1,1]: cylinder(self, Vector3(side*0.16,0.04,0.24),0.025,0.025,dark)
         "chassis_thigh":
             plate(self, Vector3(0.34,0.42,0.16), Vector3(0,-0.10,0.15), metal)
             plate(self, Vector3(0.24,0.22,0.06), Vector3(0,-0.11,0.25), dark)
-        "minigun", "laser":
+            plate(self, Vector3(0.17,0.045,0.03), Vector3(0,-0.13,0.30), glow)
+            for side in [-1,1]: cylinder(self,Vector3(side*0.12,-0.2,0.25),0.03,0.025,dark)
+        "laser":
+            plate(self, Vector3(0.42,0.34,0.55), Vector3.ZERO, metal)
+            plate(self, Vector3(0.29,0.18,0.60), Vector3(0,0,-0.14), dark)
+            cylinder(self, Vector3(0,0,-0.57), 0.48, 0.13, dark)
+            cylinder(self, Vector3(0,0,-0.82), 0.10, 0.15, metal)
+            cylinder(self, Vector3(0,0,-0.88), 0.035, 0.09, violet)
+            for i in range(level):
+                plate(self, Vector3(0.24,0.035,0.035), Vector3(0,0.20,-0.20+i*0.09), violet)
+        "minigun":
             plate(self, Vector3(0.4,0.32,0.5), Vector3.ZERO, metal)
             cylinder(self, Vector3(0,0,-0.32), 0.28, 0.22, dark)
             cylinder(self, Vector3(0,0,-0.38), 0.12, 0.18, metal)
@@ -130,6 +152,9 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
             var width := 0.53 if id == "rocket" else 0.72
             plate(self, Vector3(width,0.42,0.52), Vector3.ZERO, dark)
             plate(self, Vector3(width+0.08,0.12,0.55), Vector3(0,0.2,0), metal)
+            plate(self, Vector3(width*0.5,0.025,0.35), Vector3(0,0.275,0), glow)
+            for side in [-1,1]:
+                plate(self, Vector3(0.06,0.27,0.38), Vector3(side*(width/2+0.02),0,0), metal)
             for i in range(count):
                 var columns := 2 if id == "rocket" else 3
                 var x := (float(i % columns) - (columns - 1)*0.5)*0.20

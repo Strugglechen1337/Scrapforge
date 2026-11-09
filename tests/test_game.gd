@@ -25,6 +25,8 @@ func run_tests() -> void:
     assert(game.enemy_shots.size() >= 5)
     assert(boss_attack.jump_warning > 0)
     assert(game.boss_bar.visible)
+    assert(game.world_3d.swarm.boss_lights.multimesh.visible_instance_count == 8)
+    assert(game.world_3d.swarm.legs.multimesh.visible_instance_count >= 16)
     var target: Vector2 = boss_attack.jump_target
     game._process(1.2)
     assert(boss_attack.pos.distance_to(target) < 0.01)
@@ -40,6 +42,17 @@ func run_tests() -> void:
     game.hp = 0
     game._process(0.01)
     assert(game.mode == "end" and not game.won)
+    game.start_game()
+    for frame in range(80): game._process(0.1)
+    assert(game.enemies.size() < 15)
+    var fx: CombatEffects3D = game.world_3d.effects_3d
+    for i in range(30): fx.burst(Vector2.ZERO,"explosion")
+    assert(fx.burst_pool.size() == 20 and fx.light_count <= 8)
+    fx._process(1.0)
+    assert(fx.light_count == 0)
+    game.enemy_shots.clear()
+    for i in range(50): game.shoot_enemy(Vector2.ZERO,Vector2.RIGHT)
+    assert(game.enemy_shots.size() == 32)
     game.queue_free()
     print("Boss- und Rundenende-Tests bestanden")
     quit()

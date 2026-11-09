@@ -7,6 +7,7 @@ var signature := ""
 var metal := StandardMaterial3D.new()
 var dark := StandardMaterial3D.new()
 var glow := StandardMaterial3D.new()
+var visor_glow := StandardMaterial3D.new()
 var sockets: Dictionary = {}
 var parts: Node3D
 var base_parts: Node3D
@@ -15,28 +16,29 @@ var clock := 0.0
 var visor: MeshInstance3D
 
 func _ready() -> void:
-    metal.albedo_color = Color("bfc1c2")
-    metal.metallic = 0.35
-    metal.roughness = 0.85
-    metal.albedo_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Color.jpg")
-    metal.normal_enabled = true
-    metal.normal_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_NormalGL.jpg")
-    dark.albedo_color = Color("242a32")
-    dark.metallic = 0.35
-    dark.roughness = 0.85
+    metal.albedo_color = Color("c8d2d3")
+    metal.metallic = 0.72
+    metal.roughness = 0.38
+    dark.albedo_color = Color("192431")
+    dark.metallic = 0.72
+    dark.roughness = 0.42
     glow.albedo_color = Color("e94e04")
     glow.emission_enabled = true
     glow.emission = Color("ff620d")
-    glow.emission_energy_multiplier = 1.2
+    glow.emission_energy_multiplier = 2.0
+    visor_glow.albedo_color = Color("21dbea")
+    visor_glow.emission_enabled = true
+    visor_glow.emission = Color("31eaff")
+    visor_glow.emission_energy_multiplier = 2.5
     var model := (load("res://assets/third_party/quaternius/animated-mech/George.gltf") as PackedScene).instantiate() as Node3D
     model.scale = Vector3.ONE * 0.33
     add_child(model)
     var skeleton := model.get_node("RobotArmature/Skeleton3D") as Skeleton3D
     var body := skeleton.get_node("George") as MeshInstance3D
     var material := body.get_active_material(0).duplicate() as StandardMaterial3D
-    material.albedo_color = Color("e1e3e5")
-    material.metallic = 0.35
-    material.roughness = 0.88
+    material.albedo_color = Color("e1e5e3")
+    material.metallic = 0.45
+    material.roughness = 0.55
     body.material_override = material
     animation = model.get_node("AnimationPlayer") as AnimationPlayer
     var walk := animation.get_animation("Walk")
@@ -70,7 +72,7 @@ func _ready() -> void:
     var visor_mesh := BoxMesh.new()
     visor_mesh.size = Vector3(0.24, 0.065, 0.04)
     visor.mesh = visor_mesh
-    visor.material_override = glow
+    visor.material_override = visor_glow
     add_child(visor)
     set_robot_layer(self)
 
