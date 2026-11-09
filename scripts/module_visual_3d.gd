@@ -103,6 +103,11 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
     cyan.emission_enabled = true
     cyan.emission = Color("15cbd4")
     cyan.emission_energy_multiplier = 0.8
+    var sensor_red := StandardMaterial3D.new()
+    sensor_red.albedo_color = Color("d50913")
+    sensor_red.emission_enabled = true
+    sensor_red.emission = Color("ff1020")
+    sensor_red.emission_energy_multiplier = 1.5
     var violet := StandardMaterial3D.new()
     violet.albedo_color = Color("8e42e8")
     violet.emission_enabled = true
@@ -157,7 +162,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
                 var p := Vector3(cos(angle)*0.12,sin(angle)*0.12,-0.53)
                 cylinder(self, p, length, 0.045, dark)
                 cylinder(self, Vector3(p.x,p.y,p.z-length/2), 0.035, 0.05, glow)
-            cylinder(self, Vector3(0,0,-0.53-length/2), 0.045, 0.14, dark)
+            cylinder(self, Vector3(0,0,-0.53), 0.045, 0.14, dark)
             for i in range(level): plate(self, Vector3(0.035,0.025,0.035), Vector3(-0.1+i*0.05,0.18,0), glow)
         "rocket", "swarm":
             var count := mini(level + 1, 4) if id == "rocket" else 6
@@ -194,7 +199,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
             plate(self, Vector3(0.35,0.22,0.24), Vector3(0,0.17,0), metal)
             cylinder(self, Vector3(0,0.45,0), 0.4, 0.025, dark, Vector3.ZERO)
             plate(self, Vector3(0.08,0.06,0.03), Vector3(-0.08,0.18,-0.14), cyan)
-            plate(self, Vector3(0.08,0.06,0.03), Vector3(0.08,0.18,-0.14), glow)
+            plate(self, Vector3(0.08,0.06,0.03), Vector3(0.08,0.18,-0.14), sensor_red)
             for i in range(level): plate(self, Vector3(0.04,0.03,0.03), Vector3(-0.12+i*0.06,0.3,0), cyan)
         "drone":
             for i in range(2):
@@ -226,20 +231,29 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
                 saw_blade(pivot,metal,dark)
                 blades.append(pivot)
         "shield":
+            # A perimeter and seven smaller hexagons form an open honeycomb.
+            var panel := Node3D.new()
+            panel.position.z = -0.32
+            add_child(panel)
+            hex_outline(panel, Vector2.ZERO, 0.41, cyan)
+            hex_outline(panel, Vector2.ZERO, 0.13, cyan)
+            for cell in range(6):
+                var angle := TAU * cell / 6.0 + PI / 6.0
+                hex_outline(panel, Vector2(cos(angle), sin(angle)) * 0.225, 0.13, cyan)
             for i in range(level):
-                var ring := MeshInstance3D.new()
-                var mesh := CylinderMesh.new()
-                mesh.top_radius = 0.36 + i * 0.05
-                mesh.bottom_radius = mesh.top_radius
-                mesh.height = 0.025
-                mesh.radial_segments = 6
-                ring.mesh = mesh
-                ring.material_override = cyan
-                ring.rotation.x = PI / 2
-                ring.position.z = -0.3 - i * 0.035
-                add_child(ring)
+                plate(self, Vector3(0.04, 0.025, 0.015), Vector3((i - 2) * 0.06, -0.46, -0.32), cyan)
         _:
             for i in range(level): plate(self, Vector3(0.28,0.07,0.22), Vector3(0,i*0.08,0), metal if i%2 == 0 else cyan)
+
+func hex_outline(parent: Node3D, center: Vector2, radius: float, material: Material) -> void:
+    for edge in range(6):
+        var a := TAU * edge / 6.0
+        var b := TAU * (edge + 1) / 6.0
+        var p1 := center + Vector2(cos(a), sin(a)) * radius
+        var p2 := center + Vector2(cos(b), sin(b)) * radius
+        var midpoint := (p1 + p2) * 0.5
+        var bar := plate(parent, Vector3(p1.distance_to(p2), 0.012, 0.014), Vector3(midpoint.x, midpoint.y, 0), material)
+        bar.rotation.z = (p2 - p1).angle()
 
 func _process(delta: float) -> void:
     time += delta

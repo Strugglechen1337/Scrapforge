@@ -19,12 +19,12 @@ var clock := 0.0
 var visor: MeshInstance3D
 
 func _ready() -> void:
-    metal.albedo_color = Color("d8d4c8")
+    metal.albedo_color = Color("a9a39a")
     accent.albedo_color = Color("e97220")
-    accent.metallic = 0.4
-    accent.roughness = 0.6
-    metal.metallic = 0.72
-    metal.roughness = 0.38
+    accent.metallic = 0.08
+    accent.roughness = 0.72
+    metal.metallic = 0.08
+    metal.roughness = 0.72
     dark.albedo_color = Color("192431")
     dark.metallic = 0.72
     dark.roughness = 0.42
@@ -43,8 +43,8 @@ func _ready() -> void:
     var body := skeleton.get_node("George") as MeshInstance3D
     var material := body.get_active_material(0).duplicate() as StandardMaterial3D
     material.albedo_color = Color("e1e5e3")
-    material.metallic = 0.45
-    material.roughness = 0.55
+    material.metallic = 0.08
+    material.roughness = 0.75
     body.material_override = material
     body_material = material
     animation = model.get_node("AnimationPlayer") as AnimationPlayer
@@ -98,14 +98,27 @@ func set_skin(value: Resource) -> void:
     metal.albedo_color = skin.armor_color
     accent.albedo_color = skin.accent_color
     if body_material: body_material.albedo_color = skin.armor_color
-    if skin.camouflage:
-        var image := Image.create(128, 128, false, Image.FORMAT_RGBA8)
-        for y in range(128):
-            for x in range(128):
-                var pattern := sin(float(x) * 0.14 + sin(float(y) * 0.08) * 2.0) + cos(float(y) * 0.12 + float(x) * 0.05)
-                image.set_pixel(x, y, Color(0.55, 0.55, 0.55) if pattern > 0.8 else Color.WHITE)
-        metal.albedo_texture = ImageTexture.create_from_image(image)
-    else: metal.albedo_texture = null
+    # A reusable, deterministic paint-wear mask: chipped edges and fine scratches.
+    var image := Image.create(256, 256, false, Image.FORMAT_RGBA8)
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 47021
+    for y in range(256):
+        for x in range(256):
+            var pattern := sin(float(x) * 0.07 + sin(float(y) * 0.04) * 2.0) + cos(float(y) * 0.06 + float(x) * 0.025)
+            var shade := 0.65 if skin.camouflage and pattern > 0.8 else 1.0
+            var edge := mini(mini(x, 255 - x), mini(y, 255 - y))
+            if edge < 9 and rng.randf() < (9.0 - edge) * 0.018: shade = rng.randf_range(0.35, 0.62)
+            image.set_pixel(x, y, Color(shade, shade, shade, 1))
+    for i in range(95):
+        var x := rng.randi_range(3, 244)
+        var y := rng.randi_range(3, 252)
+        var length := rng.randi_range(2, 11)
+        var shade := rng.randf_range(0.42, 0.78)
+        for j in range(length):
+            image.set_pixel(x + j, y + int(j / 5), Color(shade, shade, shade, 1))
+    var wear := ImageTexture.create_from_image(image)
+    metal.albedo_texture = wear
+    accent.albedo_texture = wear
 
 func set_robot_layer(node: Node) -> void:
     if node is GeometryInstance3D:
@@ -134,6 +147,7 @@ func refresh() -> void:
         parts.add_child(module)
         var socket_name: String = state.arm_socket(id) if id in state.ARM_WEAPONS else definition.socket
         module.set_meta("socket", socket_name)
+        module.set_meta("module_id", id)
         module.build(id, level, metal, dark, glow, accent)
         set_robot_layer(module)
     update_parts()
@@ -144,6 +158,7 @@ func update_parts() -> void:
     for part in parts.get_children():
         var socket: Marker3D = sockets[part.get_meta("socket")]
         follow_bone(part, socket, true)
+        if part.get_meta("module_id") == "minigun": part.scale *= 1.45
         if part.get_meta("socket") in ["left_shoulder", "right_shoulder"]:
             var side := 1.0 if part.get_meta("socket") == "left_shoulder" else -1.0
             part.position += part.basis.orthonormalized() * Vector3(side * 0.22, 0.13, 0)

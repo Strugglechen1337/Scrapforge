@@ -240,6 +240,18 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
                     box(node, Vector3(0.16,0.16,0.36), Vector3(0,0.3,0), orange)
                     box(node, Vector3(0.06,0.06,0.5), Vector3(0,0.3,0.42), orange)
                     add_smoke(node)
+                    var plasma_orb := MeshInstance3D.new()
+                    plasma_orb.name = "PlasmaOrb"
+                    var plasma_mesh := SphereMesh.new()
+                    plasma_mesh.radius = 0.18
+                    plasma_mesh.height = 0.36
+                    plasma_orb.mesh = plasma_mesh
+                    var plasma_glow := emissive(Color("16dfff"))
+                    plasma_glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+                    plasma_glow.emission_energy_multiplier = 3.0
+                    plasma_orb.material_override = plasma_glow
+                    plasma_orb.position.y = 0.3
+                    node.add_child(plasma_orb)
         nodes.append(node)
     for i in range(nodes.size()): nodes[i].visible = i < count
 
@@ -298,7 +310,10 @@ func update_view() -> void:
     for i in range(game.bullets.size()):
         var p: Vector2 = game.bullets[i].pos
         projectile_nodes[i].position = Vector3(p.x / 50.0, 0.5, p.y / 50.0)
-        projectile_nodes[i].get_child(0).material_override = cyan if game.bullets[i].get("plasma", false) else orange
+        var is_plasma: bool = game.bullets[i].get("plasma", false)
+        projectile_nodes[i].get_child(0).visible = not is_plasma
+        projectile_nodes[i].get_child(1).visible = not is_plasma
+        projectile_nodes[i].get_node("PlasmaOrb").visible = is_plasma
         var velocity: Vector2 = game.bullets[i].vel
         projectile_nodes[i].rotation.y = atan2(velocity.x,velocity.y)
         projectile_nodes[i].get_node("Smoke").emitting = game.bullets[i].get("rocket",false)
