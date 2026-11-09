@@ -509,7 +509,7 @@ func update_view() -> void:
 			robot.set_skin(skin_res)
 			if is_instance_valid(hangar_robot):
 				hangar_robot.set_skin(skin_res)
-	var in_hangar: bool = game.mode in ["menu", "hangar", "settings", "end"]
+	var in_hangar: bool = game.mode in ["menu", "hangar", "settings", "end", "credits"]
 	if is_instance_valid(hangar_stage):
 		hangar_stage.visible = in_hangar
 		hangar_robot.set_process(in_hangar)

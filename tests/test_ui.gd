@@ -1,4 +1,4 @@
-extends SceneTree
+﻿extends SceneTree
 
 var focus_events := 0
 var confirm_events := 0
@@ -39,7 +39,7 @@ func run() -> void:
 	# 1. Main menu initial focus & gamepad D-Pad navigation
 	assert(game.mode == "menu")
 	assert(game.panel.theme == theme_res)
-	assert(game.menu_buttons.size() == 5)
+	assert(game.menu_buttons.size() == 6)
 	for b in game.menu_buttons:
 		assert(b.custom_minimum_size.y >= 48)
 	assert(root.gui_get_focus_owner() == game.menu_buttons[0])
@@ -56,6 +56,17 @@ func run() -> void:
 	send_joy_button(JOY_BUTTON_DPAD_UP)
 	await process_frame
 	assert(root.gui_get_focus_owner() == game.menu_buttons[1])
+
+	# Credits are available in the menu and contain the actual attribution file.
+	game.show_credits()
+	await process_frame
+	assert(game.mode == "credits")
+	var credits_labels: Array[Node] = game.panel.find_children("*", "RichTextLabel", true, false)
+	assert(credits_labels.size() == 1)
+	assert(credits_labels[0].text == FileAccess.get_file_as_string("res://CREDITS.md"))
+	assert(root.gui_get_focus_owner() != null)
+	game.show_menu()
+	await process_frame
 
 	# 2. Hangar & saving/loading skin in user://settings.cfg
 	var test_cfg := "user://test_ui_settings.cfg"
@@ -123,3 +134,4 @@ func run() -> void:
 	await create_timer(1.0).timeout
 	print("UI-, Controller-Fokus- und Skin-Tests bestanden")
 	quit()
+

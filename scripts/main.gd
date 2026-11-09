@@ -267,6 +267,7 @@ func show_menu() -> void:
 		["DEIN HANGAR", show_hangar, ScrapUI.CYAN],
 		["EINSTELLUNGEN", func(): resume_mode = "menu"; show_settings(), ScrapUI.ORANGE],
 		["NACH UPDATES SUCHEN", func(): updater.check(true), ScrapUI.CYAN],
+		["MITWIRKENDE", show_credits, ScrapUI.CYAN],
 		["BEENDEN", func(): get_tree().quit(), ScrapUI.ORANGE],
 	]
 	var focus_controls: Array[Control] = []
@@ -297,6 +298,39 @@ func show_menu() -> void:
 
 	if not menu_buttons.is_empty():
 		menu_buttons[0].grab_focus()
+	if is_instance_valid(world_3d):
+		world_3d.update_view()
+	queue_redraw()
+
+
+func show_credits() -> void:
+	mode = "credits"
+	clear_ui()
+	var frame := PanelContainer.new()
+	frame.position = Vector2(54, 34)
+	frame.custom_minimum_size = Vector2(1100, 720)
+	frame.add_theme_stylebox_override("panel", ScrapUI.make_chamfer_style(Color(0.045, 0.068, 0.105, 0.96), ScrapUI.CYAN, 2, 12, 6))
+	panel.add_child(frame)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	frame.add_child(box)
+	box.add_child(heading("MITWIRKENDE", 28, ScrapUI.CYAN))
+	var credits := RichTextLabel.new()
+	credits.custom_minimum_size = Vector2(1000, 560)
+	credits.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	credits.scroll_active = true
+	credits.text = FileAccess.get_file_as_string("res://CREDITS.md")
+	credits.add_theme_font_size_override("normal_font_size", 18)
+	box.add_child(credits)
+	var controls := HBoxContainer.new()
+	box.add_child(controls)
+	var up := button("?", func(): credits.get_v_scroll_bar().value -= 180, ScrapUI.CYAN, Vector2(90, 52))
+	var down := button("?", func(): credits.get_v_scroll_bar().value += 180, ScrapUI.CYAN, Vector2(90, 52))
+	var back := button("ZUR?CK (ESC / B)", show_menu, ScrapUI.ORANGE, Vector2(300, 52))
+	for control in [up, down, back]:
+		controls.add_child(control)
+	wire_horizontal_focus([up, down, back])
+	down.grab_focus()
 	if is_instance_valid(world_3d):
 		world_3d.update_view()
 	queue_redraw()
@@ -497,7 +531,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				show_menu()
 			get_viewport().set_input_as_handled()
-		elif mode == "hangar":
+		elif mode == "hangar" or mode == "credits":
 			show_menu()
 			get_viewport().set_input_as_handled()
 
