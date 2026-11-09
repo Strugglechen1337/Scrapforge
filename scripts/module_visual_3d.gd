@@ -24,6 +24,11 @@ func barrel(pos: Vector3, length: float, radius: float, material: Material) -> v
     add_child(instance)
 
 func build(id: String, level: int, metal: Material, dark: Material, glow: Material) -> void:
+    var cyan := StandardMaterial3D.new()
+    cyan.albedo_color = Color("087b83")
+    cyan.emission_enabled = true
+    cyan.emission = Color("15cbd4")
+    cyan.emission_energy_multiplier = 0.8
     match id:
         "minigun", "laser":
             make_box(self, Vector3(0.35, 0.32, 0.45), Vector3.ZERO, metal)
@@ -43,11 +48,11 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
                 make_box(self, Vector3(0.5 + i * 0.04, 0.08, 0.18), Vector3(0, -0.17 + i * 0.09, -0.08), metal)
         "radar":
             make_box(self, Vector3(0.08, 0.2 + level * 0.09, 0.08), Vector3(0, 0.1 + level * 0.045, 0), dark)
-            for i in range(level): make_box(self, Vector3(0.18 + i * 0.06, 0.025, 0.03), Vector3(0, 0.28 + i * 0.08, 0), glow)
+            for i in range(level): make_box(self, Vector3(0.18 + i * 0.06, 0.025, 0.03), Vector3(0, 0.28 + i * 0.08, 0), cyan)
         "thruster":
             for side in [-1, 1]:
                 make_box(self, Vector3(0.2 + level * 0.02, 0.35, 0.25), Vector3(side * 0.3, 0, 0), metal)
-                make_box(self, Vector3(0.12, 0.12 + level * 0.06, 0.12), Vector3(side * 0.3, -0.24, 0), glow)
+                make_box(self, Vector3(0.12, 0.12 + level * 0.06, 0.12), Vector3(side * 0.3, -0.24, 0), cyan)
         "saw":
             for i in range(level):
                 var a := TAU * i / level
@@ -59,9 +64,9 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
                 torus.inner_radius = 0.36 + i * 0.04
                 torus.outer_radius = 0.38 + i * 0.04
                 ring.mesh = torus
-                ring.material_override = glow
+                ring.material_override = cyan
                 ring.rotation.x = PI / 2
                 add_child(ring)
         _:
             for i in range(level):
-                make_box(self, Vector3(0.28, 0.07, 0.22), Vector3(0, i * 0.08, 0), metal if i % 2 == 0 else glow)
+                make_box(self, Vector3(0.28, 0.07, 0.22), Vector3(0, i * 0.08, 0), metal if i % 2 == 0 else cyan)

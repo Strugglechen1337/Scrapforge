@@ -22,6 +22,12 @@ func _ready() -> void:
     red = emissive(Color("ff3428"))
     cyan = emissive(Color("33f5ff"))
     orange = emissive(Color("ff7a1a"))
+    cyan.albedo_color = Color("087b83")
+    cyan.emission = Color("09b8c2")
+    cyan.emission_energy_multiplier = 0.9
+    orange.albedo_color = Color("7a3109")
+    orange.emission = Color("b4480c")
+    orange.emission_energy_multiplier = 0.6
     var env := Environment.new()
     env.background_mode = Environment.BG_COLOR
     env.background_color = Color("10131b")
@@ -29,6 +35,7 @@ func _ready() -> void:
     env.ambient_light_color = Color("798a9c")
     env.ambient_light_energy = 0.6
     env.tonemap_mode = Environment.TONE_MAPPER_ACES
+    env.tonemap_exposure = 0.8
     env.glow_enabled = true
     env.fog_enabled = true
     env.fog_light_color = Color("202b39")
@@ -38,17 +45,17 @@ func _ready() -> void:
     add_child(environment)
     var light := DirectionalLight3D.new()
     light.rotation_degrees = Vector3(-55, -35, 0)
-    light.light_energy = 1.6
+    light.light_energy = 1.0
     light.shadow_enabled = true
     add_child(light)
     camera = Camera3D.new()
-    camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-    camera.size = 20
-    camera.position = Vector3(0, 18, 12)
-    camera.rotation_degrees.x = -56
+    camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+    camera.fov = 40
+    camera.position = Vector3(7, 18, 12)
     add_child(camera)
+    camera.look_at(Vector3(0, 0.7, 0))
     var floor_material := StandardMaterial3D.new()
-    floor_material.albedo_color = Color("8e98a8")
+    floor_material.albedo_color = Color("42464e")
     floor_material.metallic = 0.4
     floor_material.roughness = 0.85
     floor_material.albedo_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Color.jpg")
@@ -57,6 +64,21 @@ func _ready() -> void:
     floor_material.roughness_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Roughness.jpg")
     floor_material.uv1_scale = Vector3(20, 14, 1)
     box(self, Vector3(80, 0.2, 55), Vector3(0, -0.2, 0), floor_material)
+    for z in [-25.0, 25.0]:
+        box(self, Vector3(76, 2.5, 0.6), Vector3(0, 1.15, z), metal)
+        for x in range(-34, 35, 4): box(self, Vector3(0.25, 3.0, 1.0), Vector3(x, 1.4, z), metal)
+    for x in [-37.0, 37.0]:
+        box(self, Vector3(0.6, 2.5, 50), Vector3(x, 1.15, 0), metal)
+    # Discontinuous industrial barriers and salvage clusters frame the first view.
+    for z in [-10.0, 10.0]:
+        for x in [-16.0, -11.0, 9.0, 15.0]:
+            box(self, Vector3(3.5, 1.5, 0.35), Vector3(x, 0.7, z), metal)
+            box(self, Vector3(3.65, 0.12, 0.5), Vector3(x, 1.5, z), metal)
+            for side in [-1, 1]:
+                box(self, Vector3(0.14, 1.7, 0.55), Vector3(x + side * 1.5, 0.8, z), metal)
+        for x in [-13.0, 11.0]:
+            box(self, Vector3(1.8, 1.3, 1.2), Vector3(x, 0.65, z + 1.2), metal)
+            box(self, Vector3(1.95, 0.12, 1.3), Vector3(x, 1.35, z + 1.2), metal)
     for x in range(-20, 21):
         box(self, Vector3(0.035, 0.012, 55), Vector3(x * 2, -0.09, 0), metal)
     for z in range(-14, 15):
@@ -65,11 +87,11 @@ func _ready() -> void:
         box(self, Vector3(0.8, 0.02, 0.08), Vector3(x * 2, -0.08, -25), orange)
         box(self, Vector3(0.8, 0.02, 0.08), Vector3(x * 2, -0.08, 25), cyan)
     for z in [-8.0, 8.0]:
-        box(self, Vector3(35, 0.02, 0.11), Vector3(0, -0.07, z), orange if z < 0 else cyan)
+        box(self, Vector3(35, 0.02, 0.05), Vector3(0, -0.07, z), orange if z < 0 else cyan)
         for i in range(-14, 15):
             var stripe := MeshInstance3D.new()
             var mesh := BoxMesh.new()
-            mesh.size = Vector3(0.55, 0.015, 0.15)
+            mesh.size = Vector3(0.45, 0.015, 0.07)
             stripe.mesh = mesh
             stripe.material_override = orange if z < 0 else cyan
             stripe.position = Vector3(i * 1.2, -0.06, z + 0.22)
@@ -89,12 +111,11 @@ func _ready() -> void:
             var lamp := OmniLight3D.new()
             lamp.position = Vector3(x, 1.0, z)
             lamp.light_color = Color("ff7a1a") if z < 0 else Color("33f5ff")
-            lamp.light_energy = 1.2
+            lamp.light_energy = 0.5
             lamp.omni_range = 5.0
             add_child(lamp)
     robot = Robot3D.new()
     add_child(robot)
-    robot.rotation.y = PI
     collection_ring = MeshInstance3D.new()
     var ring := TorusMesh.new()
     ring.inner_radius = 1.15
@@ -161,7 +182,8 @@ func update_view() -> void:
     robot.position = center
     collection_ring.position = center + Vector3(0, 0.03, 0)
     collection_ring.scale = Vector3.ONE * (1.0 + game.state.level("magnet") * 0.2)
-    camera.position = center + Vector3(0, 18, 12)
+    camera.position = center + Vector3(7, 18, 12)
+    camera.look_at(center + Vector3(0, 0.7, 0))
     sync_nodes(enemy_nodes, game.enemies.size(), "enemy")
     sync_nodes(projectile_nodes, game.bullets.size(), "bullet")
     sync_nodes(crystal_nodes, game.crystals.size(), "crystal")

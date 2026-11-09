@@ -6,29 +6,35 @@ func _ready() -> void:
     env.background_color = Color("10151d")
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     env.ambient_light_color = Color("a4b7cb")
-    env.ambient_light_energy = 0.9
+    env.ambient_light_energy = 0.8
     env.tonemap_mode = Environment.TONE_MAPPER_ACES
+    env.tonemap_exposure = 0.8
     env.glow_enabled = true
     var w := WorldEnvironment.new()
     w.environment = env
     add_child(w)
     var sun := DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-35, -25, 0)
-    sun.light_energy = 2
+    sun.light_energy = 1.0
     add_child(sun)
     var camera := Camera3D.new()
     camera.projection = Camera3D.PROJECTION_ORTHOGONAL
     camera.size = 8.5
-    camera.position = Vector3(0, 3.4, 13)
+    camera.position = Vector3(0, 6.0, 13)
     camera.look_at_from_position(camera.position, Vector3(0, 1.2, 0))
     add_child(camera)
     for x in [-5.0, 0.0, 5.0]:
         var fill := OmniLight3D.new()
         fill.position = Vector3(x, 3, 4)
         fill.light_color = Color("c6ddff")
-        fill.light_energy = 4.0
+        fill.light_energy = 1.2
         fill.omni_range = 12
         add_child(fill)
+    var rim := DirectionalLight3D.new()
+    rim.rotation_degrees = Vector3(-25, 150, 0)
+    rim.light_color = Color("76adc3")
+    rim.light_energy = 0.8
+    add_child(rim)
     var defs: Dictionary = {}
     for id in ["minigun", "laser", "rocket", "shield", "saw", "thruster", "armor", "magnet", "cooldown", "radar", "swarm"]:
         defs[id] = load("res://data/" + id + ".tres")
@@ -49,7 +55,6 @@ func _ready() -> void:
         if stage == 4:
             r.state.evolve()
         r.position.x = (stage - 2) * 2.45
-        r.rotation.y = PI
         add_child(r)
     var layer := CanvasLayer.new()
     add_child(layer)
