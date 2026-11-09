@@ -101,7 +101,7 @@ func make_marker(parent: Node3D, marker_name: String, offset: Vector3) -> Marker
 func set_skin(value: Resource) -> void:
     skin = value
     if not skin: return
-    metal.albedo_color = skin.armor_color
+    metal.albedo_color = skin.armor_color * Color(0.55, 0.55, 0.55)
     accent.albedo_color = skin.accent_color
     if body_material: body_material.set_shader_parameter("paint_color", skin.armor_color)
     # A reusable, deterministic paint-wear mask: chipped edges and fine scratches.
@@ -156,7 +156,6 @@ func update_parts() -> void:
     for part in parts.get_children():
         var socket: Marker3D = sockets[part.get_meta("socket")]
         follow_bone(part, socket, true)
-        if part.get_meta("module_id") == "minigun": part.scale *= 1.45
         if part.get_meta("socket") in ["left_shoulder", "right_shoulder"]:
             var side := 1.0 if part.get_meta("socket") == "left_shoulder" else -1.0
             part.position += part.basis.orthonormalized() * Vector3(side * 0.22, 0.13, 0)

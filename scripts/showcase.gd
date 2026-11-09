@@ -76,6 +76,38 @@ func _ready() -> void:
         robot.set_skin(load("res://data/skins/" + skins[i] + ".tres"))
         add_label(names[i], x)
     await capture("roboter-skins.png")
+    display.queue_free()
+    for child in layer.get_children():
+        if child != title: child.queue_free()
+    display = Node3D.new()
+    add_child(display)
+    title.text = "SCRAPFORGE  |  BAUTEILE STUFE 5"
+    var module_ids := ["minigun", "laser", "rocket", "turret", "drone", "shield", "swarm", "radar", "plasma", "flamethrower", "sensor", "thruster", "saw", "armor", "magnet", "cooldown"]
+    camera.size = 8.4
+    var metal := StandardMaterial3D.new()
+    metal.albedo_color = Color("56524d")
+    var dark := StandardMaterial3D.new()
+    dark.albedo_color = Color("1c242c")
+    var glow := StandardMaterial3D.new()
+    glow.albedo_color = Color("ff7a1a")
+    glow.emission_enabled = true
+    glow.emission = Color("ff7a1a")
+    glow.emission_energy_multiplier = 1.5
+    for i in range(module_ids.size()):
+        var module: Node3D = load("res://scripts/module_visual_3d.gd").new()
+        display.add_child(module)
+        module.position = Vector3((i % 8 - 3.5) * 1.48, 2.2 - int(i / 8) * 2.3, 0)
+        module.rotation_degrees.y = 155
+        module.build(module_ids[i], 5, metal, dark, glow)
+        var label := Label.new()
+        label.text = module_ids[i].to_upper()
+        label.size = Vector2(125, 30)
+        var screen := camera.unproject_position(module.position + Vector3(0, -0.65, 0))
+        label.position = Vector2(screen.x - 62.5, screen.y)
+        label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+        label.add_theme_font_size_override("font_size", 15)
+        layer.add_child(label)
+    await capture("bauteile.png")
     get_tree().quit()
 
 func create_robot(x: float) -> Robot3D:
