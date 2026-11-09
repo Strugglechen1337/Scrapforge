@@ -5,7 +5,7 @@ var state: UpgradeState
 var definitions: Dictionary = {}
 var signature := ""
 var skin: Resource
-var body_material: StandardMaterial3D
+var body_material: ShaderMaterial
 var accent := StandardMaterial3D.new()
 var metal := StandardMaterial3D.new()
 var dark := StandardMaterial3D.new()
@@ -48,9 +48,10 @@ func _ready() -> void:
     for part_name in ["torso", "head", "shoulder_l", "shoulder_r", "upper_arm_l", "upper_arm_r", "forearm_l", "forearm_r", "thigh_l", "thigh_r", "shin_l", "shin_r"]:
         var node := model.find_child(part_name, true, false) as MeshInstance3D
         chassis[part_name] = node
-    body_material = (chassis["torso"] as MeshInstance3D).get_active_material(0).duplicate() as StandardMaterial3D
-    body_material.metallic = 0.15
-    body_material.roughness = 0.75
+    var original := (chassis["torso"] as MeshInstance3D).get_active_material(0) as StandardMaterial3D
+    body_material = ShaderMaterial.new()
+    body_material.shader = load("res://scripts/colossus_paint.gdshader")
+    body_material.set_shader_parameter("base_texture", original.albedo_texture)
     for node in chassis.values():
         (node as MeshInstance3D).material_override = body_material
     # The AnimationPlayer provides a pause control for the existing hangar and
@@ -113,7 +114,7 @@ func set_skin(value: Resource) -> void:
     if not skin: return
     metal.albedo_color = skin.armor_color
     accent.albedo_color = skin.accent_color
-    if body_material: body_material.albedo_color = skin.armor_color
+    if body_material: body_material.set_shader_parameter("paint_color", skin.armor_color)
     # A reusable, deterministic paint-wear mask: chipped edges and fine scratches.
     var image := Image.create(256, 256, false, Image.FORMAT_RGBA8)
     var rng := RandomNumberGenerator.new()

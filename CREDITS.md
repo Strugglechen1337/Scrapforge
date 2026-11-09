@@ -2,7 +2,7 @@
 
 Die nachfolgenden Assets stehen, sofern nicht anders angegeben, unter [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 
-- **Colossus Walker 2** von Vavtrudner (https://sketchfab.com/Vavtrudner): https://sketchfab.com/3d-models/colossus-walker-2-810e57d8fbff4d5dab1e5683ec8bc65a – [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), bearbeitet (Geometrie vereinfacht, Texturen verkleinert). Die vorbereitete statische Fassung ist noch nicht in das Spiel integriert.
+- **Colossus Walker 2** von Vavtrudner (https://sketchfab.com/Vavtrudner): https://sketchfab.com/3d-models/colossus-walker-2-810e57d8fbff4d5dab1e5683ec8bc65a – [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), bearbeitet (Geometrie vereinfacht und in animierbare Teile zerlegt, Texturen verkleinert; als Spieler-Chassis integriert).
 
 - **ambientCG – Metal Plates 001**: https://ambientcg.com/view?id=MetalPlates001 – 1K Farb-, Normal-, und Rauheitskarten für Arenaboden und Roboterpanzerung.
 - **Kenney – Space Kit**: https://kenney.nl/assets/space-kit – Fass, Generator, Rohr und Frachtwagen als Arenadekoration; GLB-Dateien aus dem CC0-Spiegel https://github.com/Hidencod/tge-assets/tree/main/packs/space-kit.
