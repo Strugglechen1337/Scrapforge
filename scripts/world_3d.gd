@@ -19,6 +19,9 @@ func _ready() -> void:
     metal.albedo_color = Color("30343d")
     metal.metallic = 0.6
     metal.roughness = 0.7
+    metal.albedo_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Color.jpg")
+    metal.normal_enabled = true
+    metal.normal_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_NormalGL.jpg")
     red = emissive(Color("ff3428"))
     cyan = emissive(Color("33f5ff"))
     orange = emissive(Color("ff7a1a"))
@@ -51,7 +54,7 @@ func _ready() -> void:
     camera = Camera3D.new()
     camera.projection = Camera3D.PROJECTION_PERSPECTIVE
     camera.fov = 40
-    camera.position = Vector3(7, 18, 12)
+    camera.position = Vector3(6, 15.5, 10.3)
     add_child(camera)
     camera.look_at(Vector3(0, 0.7, 0))
     var floor_material := StandardMaterial3D.new()
@@ -64,6 +67,23 @@ func _ready() -> void:
     floor_material.roughness_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Roughness.jpg")
     floor_material.uv1_scale = Vector3(20, 14, 1)
     box(self, Vector3(80, 0.2, 55), Vector3(0, -0.2, 0), floor_material)
+    var dirt := StandardMaterial3D.new()
+    dirt.albedo_color = Color("0b0d10")
+    dirt.roughness = 0.5
+    var random := RandomNumberGenerator.new()
+    random.seed = 8125
+    var stain_mesh := CylinderMesh.new()
+    stain_mesh.top_radius = 1.0
+    stain_mesh.bottom_radius = 1.0
+    stain_mesh.height = 0.012
+    stain_mesh.radial_segments = 12
+    for i in range(75):
+        var stain := MeshInstance3D.new()
+        stain.mesh = stain_mesh
+        stain.material_override = dirt
+        stain.position = Vector3(random.randf_range(-35,35), -0.078, random.randf_range(-24,24))
+        stain.scale = Vector3(random.randf_range(0.15,0.8), 1, random.randf_range(0.12,0.5))
+        add_child(stain)
     for z in [-25.0, 25.0]:
         box(self, Vector3(76, 2.5, 0.6), Vector3(0, 1.15, z), metal)
         for x in range(-34, 35, 4): box(self, Vector3(0.25, 3.0, 1.0), Vector3(x, 1.4, z), metal)
@@ -116,6 +136,13 @@ func _ready() -> void:
             add_child(lamp)
     robot = Robot3D.new()
     add_child(robot)
+    var player_light := OmniLight3D.new()
+    player_light.position = Vector3(-0.8, 2.2, 1.2)
+    player_light.light_color = Color("dae6ff")
+    player_light.light_energy = 1.9
+    player_light.omni_range = 4.5
+    player_light.light_cull_mask = 2
+    robot.add_child(player_light)
     collection_ring = MeshInstance3D.new()
     var ring := TorusMesh.new()
     ring.inner_radius = 1.15
@@ -182,7 +209,7 @@ func update_view() -> void:
     robot.position = center
     collection_ring.position = center + Vector3(0, 0.03, 0)
     collection_ring.scale = Vector3.ONE * (1.0 + game.state.level("magnet") * 0.2)
-    camera.position = center + Vector3(7, 18, 12)
+    camera.position = center + Vector3(6, 15.5, 10.3)
     camera.look_at(center + Vector3(0, 0.7, 0))
     sync_nodes(enemy_nodes, game.enemies.size(), "enemy")
     sync_nodes(projectile_nodes, game.bullets.size(), "bullet")

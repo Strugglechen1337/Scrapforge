@@ -26,8 +26,8 @@ func _ready() -> void:
     for x in [-5.0, 0.0, 5.0]:
         var fill := OmniLight3D.new()
         fill.position = Vector3(x, 3, 4)
-        fill.light_color = Color("c6ddff")
-        fill.light_energy = 1.2
+        fill.light_color = Color("e0e0df")
+        fill.light_energy = 2.0
         fill.omni_range = 12
         add_child(fill)
     var rim := DirectionalLight3D.new()
