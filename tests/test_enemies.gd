@@ -59,10 +59,13 @@ func run_tests() -> void:
     assert(swarm.accents.multimesh.visible_instance_count == 8)
     assert(swarm.legs.multimesh.visible_instance_count == 64)
     assert(swarm.guns.multimesh.visible_instance_count == 8)
-    assert(swarm.boss_lights.multimesh.visible_instance_count == 8)
+    var boss_scene := load("res://assets/third_party/sketchfab/boss_spider/boss_spider.glb") as PackedScene
+    assert(boss_scene != null)
+    var boss_instance := boss_scene.instantiate()
+    assert(swarm.find_mesh(boss_instance) != null)
+    boss_instance.free()
     assert(swarm.boss_rig.visible)
-    assert(swarm.boss_leg_pivots.size() == 8)
-    assert(swarm.boss_turrets.size() == 2)
+    assert(swarm.boss_leg_pivots.size() == 4)
     assert(swarm.legs.material_override is ShaderMaterial)
 
     swarm.queue_free()

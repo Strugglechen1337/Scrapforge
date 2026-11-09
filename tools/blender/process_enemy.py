@@ -98,7 +98,7 @@ red = (rgb[:,:,0] > rgb[:,:,1] * 1.5) & (rgb[:,:,0] > rgb[:,:,2] * 1.25) & (rgb[
 red[int(h*0.24):int(h*0.56), int(w*0.74):] = False
 luma = rgb[:,:,0]*0.2126 + rgb[:,:,1]*0.7152 + rgb[:,:,2]*0.0722
 for channel, factor in enumerate((0.72, 0.78, 0.84)):
-    colors[:,:,channel] = np.where(red, rgb[:,:,channel], luma * factor)
+    colors[:,:,channel] = np.where(red, rgb[:,:,channel], (0.055 + np.sqrt(luma) * 0.52) * factor)
 source.pixels.foreach_set(colors.ravel())
 source.filepath_raw = str(OUT / 'gunmetal.png')
 source.file_format = 'PNG'

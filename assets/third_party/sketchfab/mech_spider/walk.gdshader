@@ -19,8 +19,11 @@ void vertex() {
 void fragment() {
     vec3 tex = texture(albedo_texture, UV).rgb;
     float red = step(0.08, tex.r) * step(tex.g * 1.5, tex.r) * step(tex.b * 1.25, tex.r);
+    float optic = red * step(0.78, UV.x) * step(0.76, UV.y);
+    tex = mix(tex, vec3(dot(tex, vec3(0.2126, 0.7152, 0.0722))) * vec3(0.65, 0.70, 0.75), red * (1.0 - optic) * 0.8);
+    tex = mix(tex, vec3(0.20, 0.23, 0.27), 0.38);
     ALBEDO = mix(tex, vec3(1.0), instance_tint.r);
-    EMISSION = mix(vec3(0.0), tex * vec3(1.8, 0.15, 0.08), red);
-    METALLIC = 0.6;
-    ROUGHNESS = 0.55;
+    EMISSION = mix(vec3(0.0), tex * vec3(1.8, 0.15, 0.08), optic);
+    METALLIC = 0.3;
+    ROUGHNESS = 0.42;
 }
