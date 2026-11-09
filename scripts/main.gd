@@ -20,6 +20,7 @@ var master_volume := 0.85
 var music_volume := 0.75
 var sfx_volume := 0.85
 var language := "de"
+var fullscreen_enabled := false
 
 var player := Vector2.ZERO
 var enemies: Array[Dictionary] = []
@@ -91,6 +92,8 @@ func _ready() -> void:
 	for skin_id in SKIN_IDS:
 		skins[skin_id] = load("res://data/skins/" + skin_id + ".tres")
 	load_settings()
+	if fullscreen_enabled:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	if "--showcase" in OS.get_cmdline_user_args():
 		mode = "showcase"
 		var showcase = load("res://scripts/showcase.gd").new()
@@ -150,6 +153,7 @@ func save_settings(path: String = SETTINGS_PATH) -> void:
 	cfg.set_value("audio", "sfx_volume", sfx_volume)
 	cfg.set_value("display", "shake_enabled", shake_enabled)
 	cfg.set_value("display", "language", language)
+	cfg.set_value("display", "fullscreen", fullscreen_enabled)
 	cfg.save(path)
 
 
@@ -164,6 +168,7 @@ func load_settings(path: String = SETTINGS_PATH) -> void:
 		sfx_volume = clampf(float(cfg.get_value("audio", "sfx_volume", 0.85)), 0.0, 1.0)
 		shake_enabled = bool(cfg.get_value("display", "shake_enabled", true))
 		language = str(cfg.get_value("display", "language", "de"))
+		fullscreen_enabled = bool(cfg.get_value("display", "fullscreen", false))
 
 
 func select_skin(skin_id: String, path: String = SETTINGS_PATH) -> void:
@@ -431,11 +436,13 @@ func show_settings() -> void:
 
 	var fullscreen := CheckButton.new()
 	fullscreen.text = "VOLLBILDMODUS"
-	fullscreen.button_pressed = DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
+	fullscreen.button_pressed = fullscreen_enabled
 	fullscreen.custom_minimum_size = Vector2(480, 52)
 	fullscreen.toggled.connect(func(v: bool):
 		ui_confirmed.emit(fullscreen)
+		fullscreen_enabled = v
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if v else DisplayServer.WINDOW_MODE_WINDOWED)
+		save_settings()
 	)
 	box.add_child(fullscreen)
 	focus_controls.append(fullscreen)
@@ -1234,7 +1241,7 @@ func show_end(victory: bool) -> void:
 	for pair in [
 		["ZEIT", "%02d:%02d" % [int(elapsed) / 60, int(elapsed) % 60], ScrapUI.TEXT_LIGHT],
 		["ABSCHÜSSE", str(kills), ScrapUI.ORANGE],
-		["SCHROTT", str(maxi(total_scrap, kills)), ScrapUI.CYAN],
+		["SCHROTT", str(total_scrap), ScrapUI.CYAN],
 		["STUFE", "LEVEL %d" % level, ScrapUI.ORANGE],
 	]:
 		var cell := VBoxContainer.new()
@@ -1245,13 +1252,17 @@ func show_end(victory: bool) -> void:
 
 	box.add_child(heading("INSTALLIERTE BAUTEILE (%d)" % equipped_ids.size(), 16, ScrapUI.CYAN))
 
+	var module_scroll := ScrollContainer.new()
+	module_scroll.custom_minimum_size = Vector2(0, 240)
+	module_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	box.add_child(module_scroll)
 	var mod_grid := GridContainer.new()
 	mod_grid.columns = 2
 	mod_grid.add_theme_constant_override("h_separation", 10)
 	mod_grid.add_theme_constant_override("v_separation", 8)
-	box.add_child(mod_grid)
+	module_scroll.add_child(mod_grid)
 
-	for id: String in equipped_ids.slice(0, 8):
+	for id: String in equipped_ids:
 		var def: UpgradeDefinition = definitions[id]
 		var lv: int = state.level(id)
 		var mcard := PanelContainer.new()
@@ -1293,6 +1304,7 @@ func show_end(victory: bool) -> void:
 
 
 func run_menu_shots() -> void:
+	var original_skin := selected_skin
 	show_menu()
 	await get_tree().create_timer(1.2).timeout
 	capture_demo("menue")
@@ -1304,7 +1316,7 @@ func run_menu_shots() -> void:
 	await get_tree().create_timer(0.8).timeout
 	capture_demo("hangar")
 	await get_tree().create_timer(0.4).timeout
-	select_skin("standard")
+	select_skin(original_skin)
 
 	show_settings()
 	await get_tree().create_timer(0.6).timeout

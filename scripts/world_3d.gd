@@ -528,10 +528,10 @@ func update_view() -> void:
 		var base_pos := hangar_stage.position
 		camera.fov = 35
 		if game.mode == "end":
-			camera.position = base_pos + Vector3(0.82, 1.32, 3.55)
+			camera.position = base_pos + Vector3(0.82, 1.55, 4.65)
 			camera.look_at(base_pos + Vector3(0.82, 0.88, 0.0))
 		else:
-			camera.position = base_pos + Vector3(-0.78, 1.32, 3.55)
+			camera.position = base_pos + Vector3(-0.78, 1.55, 4.65)
 			camera.look_at(base_pos + Vector3(-0.78, 0.88, 0.0))
 		return
 	camera.fov = 40

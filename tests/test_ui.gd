@@ -50,7 +50,7 @@ func run() -> void:
 	assert(root.gui_get_focus_owner() == game.menu_buttons[1])
 
 	# 2. Hangar & saving/loading skin in user://settings.cfg
-	var test_cfg := "user://settings.cfg"
+	var test_cfg := "user://test_ui_settings.cfg"
 	game.select_skin("blue", test_cfg)
 	assert(game.selected_skin == "blue")
 	assert(FileAccess.file_exists(test_cfg))
@@ -59,6 +59,12 @@ func run() -> void:
 	game.selected_skin = "standard"
 	game.load_settings(test_cfg)
 	assert(game.selected_skin == "blue")
+	game.fullscreen_enabled = true
+	game.save_settings(test_cfg)
+	game.fullscreen_enabled = false
+	game.load_settings(test_cfg)
+	assert(game.fullscreen_enabled)
+	game.fullscreen_enabled = false
 
 	# Restore default skin in settings
 	game.select_skin("standard", test_cfg)
