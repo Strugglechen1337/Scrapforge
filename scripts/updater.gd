@@ -90,55 +90,63 @@ func make_panel() -> VBoxContainer:
     if not is_instance_valid(overlay): previous_focus = get_viewport().gui_get_focus_owner()
     if is_instance_valid(overlay): overlay.queue_free()
     overlay = Control.new()
+    overlay.theme = ScrapUI.get_theme()
     add_child(overlay)
     overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     var shade := ColorRect.new()
-    shade.color = Color(0.01, 0.03, 0.06, 0.9)
+    shade.color = Color(0.015, 0.03, 0.055, 0.84)
     shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     overlay.add_child(shade)
     var center := CenterContainer.new()
     center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     overlay.add_child(center)
     var panel := PanelContainer.new()
-    var style := StyleBoxFlat.new()
-    style.bg_color = Color("101f30")
-    style.border_color = Color("46f6ef")
-    style.set_border_width_all(2)
-    style.set_corner_radius_all(6)
-    style.content_margin_left = 28
-    style.content_margin_right = 28
-    style.content_margin_top = 24
-    style.content_margin_bottom = 24
+    var style := ScrapUI.make_chamfer_style(Color(0.055, 0.08, 0.125, 0.96), ScrapUI.CYAN, 2, 12, 6, Color(0.2, 0.96, 1.0, 0.28), 12)
+    style.content_margin_left = 30
+    style.content_margin_right = 30
+    style.content_margin_top = 26
+    style.content_margin_bottom = 26
     panel.add_theme_stylebox_override("panel", style)
-    panel.custom_minimum_size = Vector2(560, 0)
+    panel.custom_minimum_size = Vector2(580, 0)
     center.add_child(panel)
     var box := VBoxContainer.new()
     box.add_theme_constant_override("separation", 16)
     panel.add_child(box)
     return box
 
-func label(text: String, font_size: int) -> Label:
+func label(text: String, font_size: int, color: Color = Color("e8f2fa")) -> Label:
     var result := Label.new()
     result.text = text
     result.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    result.custom_minimum_size.x = 500
+    result.custom_minimum_size.x = 510
     result.add_theme_font_size_override("font_size", font_size)
-    result.add_theme_color_override("font_color", Color("d5f3f4"))
+    result.add_theme_color_override("font_color", color)
     return result
 
-func add_button(box: VBoxContainer, title: String, action: Callable) -> Button:
+func add_button(box: VBoxContainer, title: String, action: Callable, accent: Color = ScrapUI.ORANGE) -> Button:
     var button := Button.new()
     button.text = title
-    button.custom_minimum_size = Vector2(0, 48)
+    ScrapUI.style_button(button, accent, Vector2(0, 52))
     button.add_theme_font_size_override("font_size", 20)
     box.add_child(button)
-    button.pressed.connect(action)
+    button.pressed.connect(func():
+        var parent_game := get_parent()
+        if parent_game and parent_game.has_signal("ui_confirmed"):
+            parent_game.emit_signal("ui_confirmed", button)
+        action.call()
+    )
     return button
 
 func show_release(release: Dictionary) -> void:
     var box := make_panel()
-    box.add_child(label("Update verfügbar: " + str(release.tag_name), 28))
-    box.add_child(label("Was ist neu?", 20))
+    var badge := label("SYSTEM-UPDATE  //  NEUE VERSION", 14, ScrapUI.ORANGE)
+    box.add_child(badge)
+    box.add_child(label("Update verfügbar: " + str(release.tag_name), 28, ScrapUI.CYAN))
+    var sep := ColorRect.new()
+    sep.custom_minimum_size = Vector2(0, 2)
+    sep.color = Color(1.0, 0.48, 0.10, 0.65)
+    box.add_child(sep)
+    box.add_child(label("WAS IST NEU?", 18, ScrapUI.ORANGE))
     var notes: String = str(release.get("body", "")).strip_edges()
     if notes.is_empty(): notes = "Weitere Informationen auf der Release-Seite."
     if notes.length() > 320: notes = notes.substr(0, 317) + "..."
@@ -147,8 +155,8 @@ func show_release(release: Dictionary) -> void:
     var download := add_button(box, "Herunterladen", func():
         if not url.is_empty(): OS.shell_open(url)
         else: notice("Keine APK für dieses Release verfügbar.")
-    )
-    add_button(box, "Später", close)
+    , ScrapUI.ORANGE)
+    add_button(box, "Später", close, ScrapUI.CYAN)
     download.grab_focus()
 
 func notice(message: String) -> void:

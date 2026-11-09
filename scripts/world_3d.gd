@@ -13,6 +13,11 @@ var swarm: EnemySwarm3D
 var effects_3d: CombatEffects3D
 var boss_warning: MeshInstance3D
 var collection_ring: MeshInstance3D
+var hangar_stage: Node3D
+var hangar_robot: Robot3D
+var menu_state := UpgradeState.new()
+var hangar_angle := -0.45
+var applied_skin_id := ""
 var metal := StandardMaterial3D.new()
 var dark_rocket := StandardMaterial3D.new()
 var red := StandardMaterial3D.new()
@@ -247,6 +252,113 @@ func _ready() -> void:
 		enemy_projectile_nodes[0].visible = true
 	if not crystal_nodes.is_empty():
 		crystal_nodes[0].visible = true
+	for id in ["minigun", "rocket", "armor"]:
+		for n in range(3 if id != "armor" else 2):
+			menu_state.upgrade(id)
+	build_hangar_stage()
+
+func build_hangar_stage() -> void:
+	hangar_stage = Node3D.new()
+	hangar_stage.position = Vector3(0, -40, 0)
+	add_child(hangar_stage)
+	var hall_dark := StandardMaterial3D.new()
+	hall_dark.albedo_color = Color("141922")
+	hall_dark.metallic = 0.55
+	hall_dark.roughness = 0.68
+	var hall_trim := StandardMaterial3D.new()
+	hall_trim.albedo_color = Color("232b38")
+	hall_trim.metallic = 0.65
+	hall_trim.roughness = 0.52
+	var ring_orange := StandardMaterial3D.new()
+	ring_orange.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring_orange.albedo_color = Color("ff7a1a")
+	ring_orange.emission_enabled = true
+	ring_orange.emission = Color("ff7a1a")
+	ring_orange.emission_energy_multiplier = 1.25
+	var lamp_orange := StandardMaterial3D.new()
+	lamp_orange.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	lamp_orange.albedo_color = Color("ff8c2b")
+	lamp_orange.emission_enabled = true
+	lamp_orange.emission = Color("ff6e0a")
+	lamp_orange.emission_energy_multiplier = 2.2
+	# Floor & back wall of the industrial hangar hall
+	box(hangar_stage, Vector3(26, 0.2, 18), Vector3(0, -0.18, -2.5), hall_dark)
+	box(hangar_stage, Vector3(26, 9.0, 0.4), Vector3(0, 4.2, -6.2), hall_dark)
+	# Turntable pedestal
+	var ped := MeshInstance3D.new()
+	var ped_mesh := CylinderMesh.new()
+	ped_mesh.top_radius = 1.12
+	ped_mesh.bottom_radius = 1.24
+	ped_mesh.height = 0.14
+	ped_mesh.radial_segments = 48
+	ped.mesh = ped_mesh
+	ped.material_override = hall_trim
+	ped.position = Vector3(0, -0.07, 0)
+	hangar_stage.add_child(ped)
+	var inner_disc := MeshInstance3D.new()
+	var inner_mesh := CylinderMesh.new()
+	inner_mesh.top_radius = 0.94
+	inner_mesh.bottom_radius = 0.96
+	inner_mesh.height = 0.15
+	inner_mesh.radial_segments = 48
+	inner_disc.mesh = inner_mesh
+	inner_disc.material_override = hall_dark
+	inner_disc.position = Vector3(0, -0.06, 0)
+	hangar_stage.add_child(inner_disc)
+	for radii in [[1.01, 1.07], [0.76, 0.79]]:
+		var ring_inst := MeshInstance3D.new()
+		var torus := TorusMesh.new()
+		torus.inner_radius = radii[0]
+		torus.outer_radius = radii[1]
+		ring_inst.mesh = torus
+		ring_inst.material_override = ring_orange
+		ring_inst.position = Vector3(0, 0.012, 0)
+		hangar_stage.add_child(ring_inst)
+	for i in range(12):
+		var a := TAU * float(i) / 12.0
+		var tick := MeshInstance3D.new()
+		var tick_mesh := BoxMesh.new()
+		tick_mesh.size = Vector3(0.06, 0.02, 0.16)
+		tick.mesh = tick_mesh
+		tick.material_override = ring_orange
+		tick.position = Vector3(cos(a) * 0.90, 0.015, sin(a) * 0.90)
+		tick.rotation.y = -a
+		hangar_stage.add_child(tick)
+	# Industrial columns, girders, and glowing orange wall lamps
+	for x in [-5.2, -3.4, -1.6, 1.6, 3.4, 5.2]:
+		box(hangar_stage, Vector3(0.42, 6.5, 0.55), Vector3(x, 3.0, -4.6), hall_trim)
+		box(hangar_stage, Vector3(0.54, 0.5, 0.72), Vector3(x, 0.2, -4.5), hall_dark)
+		box(hangar_stage, Vector3(0.28, 0.16, 0.12), Vector3(x, 1.85, -4.28), lamp_orange)
+		box(hangar_stage, Vector3(0.22, 0.10, 0.12), Vector3(x, 0.38, -4.12), lamp_orange)
+		if absf(x) > 2.0:
+			box(hangar_stage, Vector3(0.05, 1.6, 0.05), Vector3(x + (0.24 if x < 0 else -0.24), 2.8, -4.3), cyan)
+	for y_beam in [3.4, 4.8]:
+		box(hangar_stage, Vector3(16.0, 0.28, 0.35), Vector3(0, y_beam, -4.4), hall_trim)
+	for lx in [-3.4, 0.0, 3.4]:
+		var wall_light := OmniLight3D.new()
+		wall_light.position = Vector3(lx, 1.6, -3.5)
+		wall_light.light_color = Color("ff7a1a")
+		wall_light.light_energy = 1.15
+		wall_light.omni_range = 6.5
+		hangar_stage.add_child(wall_light)
+	hangar_robot = Robot3D.new()
+	hangar_stage.add_child(hangar_robot)
+	hangar_robot.animation.pause()
+	hangar_robot.animation.seek(0.18, true)
+	var key_light := OmniLight3D.new()
+	key_light.position = Vector3(-1.4, 2.5, 2.4)
+	key_light.light_color = Color("fff0e0")
+	key_light.light_energy = 1.75
+	key_light.omni_range = 6.5
+	key_light.light_cull_mask = 2
+	hangar_stage.add_child(key_light)
+	var rim_light := OmniLight3D.new()
+	rim_light.position = Vector3(1.6, 2.2, -1.8)
+	rim_light.light_color = Color("5cc8ff")
+	rim_light.light_energy = 1.1
+	rim_light.omni_range = 5.5
+	rim_light.light_cull_mask = 2
+	hangar_stage.add_child(rim_light)
 
 func emissive(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
@@ -380,13 +492,49 @@ func add_smoke(node: Node3D) -> void:
 func update_view() -> void:
 	if not game:
 		return
+	var delta := get_process_delta_time()
 	if prewarm_frames > 0:
 		prewarm_frames -= 1
 		if prewarm_frames == 0:
 			boss_warning.visible = false
 			if not projectile_nodes.is_empty():
 				projectile_nodes[0].get_node("Smoke").emitting = false
-	visible = game.mode != "menu" and game.mode != "settings"
+	visible = true
+	var skin_id: String = game.get("selected_skin") if game.get("selected_skin") != null else "standard"
+	if skin_id != applied_skin_id:
+		applied_skin_id = skin_id
+		var skin_res: Resource = load("res://data/skins/" + skin_id + ".tres")
+		if skin_res:
+			robot.set_skin(skin_res)
+			if is_instance_valid(hangar_robot):
+				hangar_robot.set_skin(skin_res)
+	var in_hangar: bool = game.mode in ["menu", "hangar", "settings", "end"]
+	if is_instance_valid(hangar_stage):
+		hangar_stage.visible = in_hangar
+		hangar_robot.set_process(in_hangar)
+	robot.visible = not in_hangar
+	collection_ring.visible = not in_hangar
+	entities.visible = not in_hangar
+	swarm.visible = not in_hangar
+	effects_3d.visible = not in_hangar
+	if in_hangar:
+		boss_warning.visible = false
+		hangar_robot.definitions = game.definitions
+		hangar_robot.state = game.state if game.mode == "end" else menu_state
+		hangar_robot.refresh()
+		hangar_angle += delta * 0.42
+		hangar_robot.rotation.y = hangar_angle
+		hangar_robot.update_parts()
+		var base_pos := hangar_stage.position
+		camera.fov = 35
+		if game.mode == "end":
+			camera.position = base_pos + Vector3(0.82, 1.32, 3.55)
+			camera.look_at(base_pos + Vector3(0.82, 0.88, 0.0))
+		else:
+			camera.position = base_pos + Vector3(-0.78, 1.32, 3.55)
+			camera.look_at(base_pos + Vector3(-0.78, 0.88, 0.0))
+		return
+	camera.fov = 40
 	robot.state = game.state
 	robot.definitions = game.definitions
 	var center := Vector3(game.player.x / 50.0, 0, game.player.y / 50.0)
