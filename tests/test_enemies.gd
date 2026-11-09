@@ -45,6 +45,12 @@ func run_tests() -> void:
     assert(swarm.spider.multimesh.visible_instance_count == 4)
     enemies[0].flash = 1.0
     swarm.update_swarm(enemies, Vector2.ZERO, 0.016)
+    enemies[0].kind = 1
+    swarm.update_swarm(enemies, Vector2.ZERO, 0.016)
+    assert(swarm.previous_kinds[0] == 1)
+    enemies[0].kind = 0
+    swarm.update_swarm(enemies, Vector2.ZERO, 0.016)
+    assert(swarm.previous_kinds[0] == 0)
     assert(swarm.bodies.multimesh.visible_instance_count == 4)
     assert(swarm.heads.multimesh.visible_instance_count == 4)
     assert(swarm.armor.multimesh.visible_instance_count == 4)

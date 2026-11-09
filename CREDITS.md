@@ -13,4 +13,4 @@ Die nachfolgend als CC0 bezeichneten Assets stehen unter [CC0 1.0](https://creat
 - **Alex McCulloch (Pro Sensory) – Main Menu Music (Loop)**: https://opengameart.org/content/main-menu-music-loop – CC0 1.0; für das Menü von MP3 nach Ogg Vorbis umgewandelt.
 - **request – Rin’s Theme (Loop)**: https://opengameart.org/content/rins-theme-loopable-chiptune-adventurebattle-bgm – CC0 1.0; Kampfmusik.
 
-- **Mech Spider** von ???_Shima Daisuke (https://sketchfab.com/Dusk_Aims): https://sketchfab.com/3d-models/mech-spider-70bcd7115d8643b6b647a2c8a8a92d5e ? [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); bearbeitet (umgef?rbt und Laufanimation als Vertex-Animationstextur gebacken).
+- **Mech Spider** von Shima Daisuke (https://sketchfab.com/Dusk_Aims): https://sketchfab.com/3d-models/mech-spider-70bcd7115d8643b6b647a2c8a8a92d5e ? [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); bearbeitet (umgef?rbt und Laufanimation als Vertex-Animationstextur gebacken).

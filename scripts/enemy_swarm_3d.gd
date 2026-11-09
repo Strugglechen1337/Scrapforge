@@ -26,6 +26,7 @@ var eye_mat := StandardMaterial3D.new()
 var time := 0.0
 var leg_phase := 0
 var prewarm_boss_frames := 2
+var previous_kinds: Array[int] = []
 
 func enemy_scale(kind: int) -> float:
 	return SIZES[clampi(kind, 0, SIZES.size() - 1)]
@@ -353,24 +354,30 @@ func update_swarm(enemies: Array, player: Vector2, delta: float) -> void:
 		var rotation := Basis(Vector3.UP, yaw)
 		var flash: bool = e.get("flash", 0.0) > 0.0
 
+		if previous_kinds.size() <= i:
+			previous_kinds.append(-1)
+		var kind_changed := previous_kinds[i] != kind
+		previous_kinds[i] = kind
 		var spider_hidden := Transform3D(Basis.from_scale(Vector3.ONE * 0.001), pos)
 		if kind == 0:
 			spider.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3.ZERO, Vector3.ONE * size))
 			spider.multimesh.set_instance_color(i, Color.WHITE if flash else Color.BLACK)
-			for node in [bodies, heads, armor]:
-				node.multimesh.set_instance_transform(i, spider_hidden)
-			for k in range(3):
-				seams.multimesh.set_instance_transform(i * 3 + k, spider_hidden)
-			for k in range(4):
-				eyes.multimesh.set_instance_transform(i * 4 + k, spider_hidden)
-			for k in range(2):
-				accents.multimesh.set_instance_transform(i * 2 + k, spider_hidden)
-				guns.multimesh.set_instance_transform(i * 2 + k, spider_hidden)
-			for k in range(16):
-				legs.multimesh.set_instance_transform(i * 16 + k, spider_hidden)
-				legs.multimesh.set_instance_color(i * 16 + k, Color(0, 0, 0, 0))
+			if kind_changed:
+				for node in [bodies, heads, armor]:
+					node.multimesh.set_instance_transform(i, spider_hidden)
+				for k in range(3):
+					seams.multimesh.set_instance_transform(i * 3 + k, spider_hidden)
+				for k in range(4):
+					eyes.multimesh.set_instance_transform(i * 4 + k, spider_hidden)
+				for k in range(2):
+					accents.multimesh.set_instance_transform(i * 2 + k, spider_hidden)
+					guns.multimesh.set_instance_transform(i * 2 + k, spider_hidden)
+				for k in range(16):
+					legs.multimesh.set_instance_transform(i * 16 + k, spider_hidden)
+					legs.multimesh.set_instance_color(i * 16 + k, Color(0, 0, 0, 0))
 			continue
-		spider.multimesh.set_instance_transform(i, spider_hidden)
+		if kind_changed:
+			spider.multimesh.set_instance_transform(i, spider_hidden)
 
 		if kind == 3:
 			boss_rig.visible = true

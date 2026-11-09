@@ -86,7 +86,7 @@ image.file_format = 'PNG'
 image.save()
 # Preserve the source's dark details while making the armor neutral gunmetal.
 source = bpy.data.images.load(str(SOURCE / 'textures/lambert3_baseColor.png'), check_existing=True)
-if max(source.size) > 1024:
+if tuple(source.size) != (1024, 1024):
     source.scale(1024, 1024)
 w, h = source.size
 colors = np.empty(w*h*4, dtype=np.float32)
@@ -94,6 +94,8 @@ source.pixels.foreach_get(colors)
 colors = colors.reshape((h,w,4))
 rgb = colors[:,:,:3].copy()
 red = (rgb[:,:,0] > rgb[:,:,1] * 1.5) & (rgb[:,:,0] > rgb[:,:,2] * 1.25) & (rgb[:,:,0] > 0.08)
+# The large red atlas patch is armor, not an optic.
+red[int(h*0.24):int(h*0.56), int(w*0.74):] = False
 luma = rgb[:,:,0]*0.2126 + rgb[:,:,1]*0.7152 + rgb[:,:,2]*0.0722
 for channel, factor in enumerate((0.72, 0.78, 0.84)):
     colors[:,:,channel] = np.where(red, rgb[:,:,channel], luma * factor)
