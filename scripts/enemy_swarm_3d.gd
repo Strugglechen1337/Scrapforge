@@ -4,6 +4,7 @@ class_name EnemySwarm3D
 const CAPACITY := 600
 const SIZES := [0.45, 0.80, 0.60, 2.50]
 
+var spider: MultiMeshInstance3D
 var bodies: MultiMeshInstance3D
 var heads: MultiMeshInstance3D
 var armor: MultiMeshInstance3D
@@ -128,6 +129,15 @@ void fragment() {
 	eye_sphere.radial_segments = 8
 	eye_sphere.rings = 4
 
+	var spider_scene := load("res://assets/third_party/sketchfab/mech_spider/mech_spider.glb") as PackedScene
+	var spider_root := spider_scene.instantiate()
+	var spider_mesh: Mesh = find_mesh(spider_root)
+	spider_root.free()
+	var spider_material := ShaderMaterial.new()
+	spider_material.shader = load("res://assets/third_party/sketchfab/mech_spider/walk.gdshader")
+	spider_material.set_shader_parameter("albedo_texture", load("res://assets/third_party/sketchfab/mech_spider/gunmetal.png"))
+	spider_material.set_shader_parameter("walk_vat", load("res://assets/third_party/sketchfab/mech_spider/walk_vat.png"))
+	spider = batch(spider_mesh, spider_material, CAPACITY, true)
 	bodies = batch(dome, shell, CAPACITY, true)
 	heads = batch(block, shell, CAPACITY, true)
 	armor = batch(dome, shell, CAPACITY, true)
@@ -138,6 +148,15 @@ void fragment() {
 	legs = batch(block, leg_mat, CAPACITY * 16, true)
 	guns = batch(block, shell, CAPACITY * 2, true)
 	build_boss_rig()
+
+func find_mesh(node: Node) -> Mesh:
+	if node is MeshInstance3D:
+		return node.mesh
+	for child in node.get_children():
+		var found := find_mesh(child)
+		if found:
+			return found
+	return null
 
 func batch(mesh: Mesh, material: Material, count: int, colors: bool) -> MultiMeshInstance3D:
 	var mm := MultiMesh.new()
@@ -309,6 +328,7 @@ func update_swarm(enemies: Array, player: Vector2, delta: float) -> void:
 	time += delta
 	leg_phase = 1 - leg_phase
 	var count := mini(enemies.size(), CAPACITY)
+	spider.multimesh.visible_instance_count = count
 	for node in [bodies, heads, armor]:
 		node.multimesh.visible_instance_count = count
 	seams.multimesh.visible_instance_count = count * 3
@@ -332,6 +352,25 @@ func update_swarm(enemies: Array, player: Vector2, delta: float) -> void:
 		var yaw := atan2(player.x - e.pos.x, player.y - e.pos.y)
 		var rotation := Basis(Vector3.UP, yaw)
 		var flash: bool = e.get("flash", 0.0) > 0.0
+
+		var spider_hidden := Transform3D(Basis.from_scale(Vector3.ONE * 0.001), pos)
+		if kind == 0:
+			spider.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3.ZERO, Vector3.ONE * size))
+			spider.multimesh.set_instance_color(i, Color.WHITE if flash else Color.BLACK)
+			for node in [bodies, heads, armor]:
+				node.multimesh.set_instance_transform(i, spider_hidden)
+			for k in range(3):
+				seams.multimesh.set_instance_transform(i * 3 + k, spider_hidden)
+			for k in range(4):
+				eyes.multimesh.set_instance_transform(i * 4 + k, spider_hidden)
+			for k in range(2):
+				accents.multimesh.set_instance_transform(i * 2 + k, spider_hidden)
+				guns.multimesh.set_instance_transform(i * 2 + k, spider_hidden)
+			for k in range(16):
+				legs.multimesh.set_instance_transform(i * 16 + k, spider_hidden)
+				legs.multimesh.set_instance_color(i * 16 + k, Color(0, 0, 0, 0))
+			continue
+		spider.multimesh.set_instance_transform(i, spider_hidden)
 
 		if kind == 3:
 			boss_rig.visible = true

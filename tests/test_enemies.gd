@@ -1,4 +1,4 @@
-extends SceneTree
+﻿extends SceneTree
 
 func _initialize() -> void:
     call_deferred("run_tests")
@@ -6,6 +6,14 @@ func _initialize() -> void:
 func run_tests() -> void:
     var swarm := EnemySwarm3D.new()
     root.add_child(swarm)
+    var spider_scene := load("res://assets/third_party/sketchfab/mech_spider/mech_spider.glb") as PackedScene
+    assert(spider_scene != null)
+    var spider_instance := spider_scene.instantiate()
+    var imported_mesh := swarm.find_mesh(spider_instance)
+    assert(imported_mesh != null)
+    assert(swarm.spider.multimesh.mesh == imported_mesh)
+    assert(imported_mesh.surface_get_arrays(0)[Mesh.ARRAY_TEX_UV2].size() > 0)
+    spider_instance.free()
     assert(is_equal_approx(swarm.enemy_scale(0), 0.45))
     assert(is_equal_approx(swarm.enemy_scale(1), 0.80))
     assert(is_equal_approx(swarm.enemy_scale(2), 0.60))
@@ -34,6 +42,9 @@ func run_tests() -> void:
         {"pos": Vector2(400, 0), "kind": 3, "flash": 0.0}
     ]
     swarm.update_swarm(enemies, Vector2.ZERO, 0.016)
+    assert(swarm.spider.multimesh.visible_instance_count == 4)
+    enemies[0].flash = 1.0
+    swarm.update_swarm(enemies, Vector2.ZERO, 0.016)
     assert(swarm.bodies.multimesh.visible_instance_count == 4)
     assert(swarm.heads.multimesh.visible_instance_count == 4)
     assert(swarm.armor.multimesh.visible_instance_count == 4)
@@ -49,5 +60,6 @@ func run_tests() -> void:
     assert(swarm.legs.material_override is ShaderMaterial)
 
     swarm.queue_free()
-    print("Gegnergrößen- und Typen-Tests bestanden")
+    print("GegnergrÃ¶ÃŸen- und Typen-Tests bestanden")
     quit()
+
