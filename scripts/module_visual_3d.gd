@@ -161,7 +161,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
                 var angle := TAU * i / n
                 var p := Vector3(cos(angle)*0.12,sin(angle)*0.12,-0.53)
                 cylinder(self, p, length, 0.045, dark)
-                cylinder(self, Vector3(p.x,p.y,p.z-length/2), 0.035, 0.05, glow)
+                cylinder(self, Vector3(p.x,p.y,p.z-length/2), 0.035, 0.027, glow)
             cylinder(self, Vector3(0,0,-0.53), 0.045, 0.14, dark)
             for i in range(level): plate(self, Vector3(0.035,0.025,0.035), Vector3(-0.1+i*0.05,0.18,0), glow)
         "rocket", "swarm":

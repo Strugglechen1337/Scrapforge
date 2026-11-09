@@ -8,9 +8,39 @@ const PANEL_DARK := Color(0.035, 0.052, 0.082, 0.94)
 const BORDER_STEEL := Color("4f647d")
 const TEXT_LIGHT := Color("edf4fa")
 const TEXT_MUTED := Color("9bb0c4")
+const DESIGN_SIZE := Vector2(1280, 800)
 
 static var _cached_theme: Theme
 static var _heavy_font: FontVariation
+
+# The project uses canvas_items/keep, so the design canvas is letterboxed in
+# the window. Map the physical safe rectangle through that letterbox first.
+static func safe_layout(window_size: Vector2, safe_rect: Rect2) -> Rect2:
+	if window_size.x <= 0 or window_size.y <= 0:
+		return Rect2(Vector2.ZERO, DESIGN_SIZE)
+	var pixels_per_unit := minf(window_size.x / DESIGN_SIZE.x, window_size.y / DESIGN_SIZE.y)
+	var content_size := DESIGN_SIZE * pixels_per_unit
+	var content := Rect2((window_size - content_size) * 0.5, content_size)
+	var safe := content.intersection(safe_rect)
+	if safe.size.x <= 0 or safe.size.y <= 0:
+		return Rect2(Vector2.ZERO, DESIGN_SIZE)
+	var available := safe.size / pixels_per_unit
+	var factor := minf(available.x / DESIGN_SIZE.x, available.y / DESIGN_SIZE.y)
+	var size := DESIGN_SIZE * factor
+	var origin := (safe.position - content.position) / pixels_per_unit + (available - size) * 0.5
+	return Rect2(origin, size)
+
+static func apply_safe_layout(control: Control) -> void:
+	var window_size := Vector2(DisplayServer.window_get_size())
+	var safe := Rect2(Vector2.ZERO, window_size)
+	if OS.has_feature("mobile"):
+		var display_safe := DisplayServer.get_display_safe_area()
+		if display_safe.size.x > 0 and display_safe.size.y > 0:
+			safe = Rect2(Vector2(display_safe.position - DisplayServer.window_get_position()), Vector2(display_safe.size))
+	var layout := safe_layout(window_size, safe)
+	control.position = layout.position
+	control.size = DESIGN_SIZE
+	control.scale = Vector2.ONE * (layout.size.x / DESIGN_SIZE.x)
 
 static func get_theme() -> Theme:
 	if not _cached_theme:

@@ -47,6 +47,7 @@ static func asset_url(release: Dictionary, platform: String) -> String:
 
 func _ready() -> void:
     layer = 30
+    get_viewport().size_changed.connect(_update_safe_layout)
     request = HTTPRequest.new()
     request.timeout = 12.0
     add_child(request)
@@ -92,7 +93,7 @@ func make_panel() -> VBoxContainer:
     overlay = Control.new()
     overlay.theme = ScrapUI.get_theme()
     add_child(overlay)
-    overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    _update_safe_layout()
     var shade := ColorRect.new()
     shade.color = Color(0.015, 0.03, 0.055, 0.84)
     shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -113,6 +114,9 @@ func make_panel() -> VBoxContainer:
     box.add_theme_constant_override("separation", 16)
     panel.add_child(box)
     return box
+
+func _update_safe_layout() -> void:
+    if is_instance_valid(overlay): ScrapUI.apply_safe_layout(overlay)
 
 func label(text: String, font_size: int, color: Color = Color("e8f2fa")) -> Label:
     var result := Label.new()

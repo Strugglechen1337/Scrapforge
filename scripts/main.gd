@@ -70,6 +70,8 @@ var hit_flash := 0.0
 var particles: Array[Dictionary] = []
 var damage_texts: Array[Dictionary] = []
 var shot_dir := ""
+var shot_suffix := ""
+var shot_frame := Vector2i.ZERO
 var resume_mode := "menu"
 var fps_samples := 0
 var fps_seconds := 0.0
@@ -114,6 +116,12 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--shot-dir="):
 			shot_dir = arg.trim_prefix("--shot-dir=")
+		elif arg.begins_with("--shot-suffix="):
+			shot_suffix = arg.trim_prefix("--shot-suffix=")
+		elif arg.begins_with("--shot-frame="):
+			var dimensions := arg.trim_prefix("--shot-frame=").split("x")
+			if dimensions.size() == 2:
+				shot_frame = Vector2i(int(dimensions[0]), int(dimensions[1]))
 	for binding in [["ui_left", KEY_A], ["ui_right", KEY_D], ["ui_up", KEY_W], ["ui_down", KEY_S]]:
 		var key := InputEventKey.new()
 		key.physical_keycode = binding[1]
@@ -138,6 +146,7 @@ func _ready() -> void:
 	add_child(updater)
 	if shot_menu:
 		call_deferred("run_menu_shots")
+	get_viewport().size_changed.connect(_update_safe_layout)
 
 
 func _on_gui_focus_changed(control: Control) -> void:
@@ -190,7 +199,12 @@ func clear_ui() -> void:
 	panel = Control.new()
 	panel.theme = ScrapUI.get_theme()
 	add_child(panel)
-	panel.size = get_viewport_rect().size
+	_update_safe_layout()
+
+
+func _update_safe_layout() -> void:
+	if is_instance_valid(panel):
+		ScrapUI.apply_safe_layout(panel)
 
 
 func button(text: String, action: Callable, accent: Color = ScrapUI.ORANGE, min_size := Vector2(380, 54)) -> Button:
@@ -495,6 +509,20 @@ func save_image(path: String) -> void:
 	await RenderingServer.frame_post_draw
 	var before := Time.get_ticks_usec()
 	var image := get_viewport().get_texture().get_image()
+	if shot_frame.x > 0 and shot_frame.y > 0:
+		# Viewport readback excludes the keep-aspect letterbox. Reconstruct it
+		# at the requested window dimensions, preserving the rendered aspect.
+		var source_size := image.get_size()
+		var factor := minf(float(shot_frame.x) / source_size.x, float(shot_frame.y) / source_size.y)
+		var content_size := Vector2i(roundi(source_size.x * factor), roundi(source_size.y * factor))
+		image.resize(content_size.x, content_size.y, Image.INTERPOLATE_LANCZOS)
+		var framed := Image.create(shot_frame.x, shot_frame.y, false, Image.FORMAT_RGBA8)
+		framed.fill(Color.BLACK)
+		if image.get_format() != Image.FORMAT_RGBA8:
+			image.convert(Image.FORMAT_RGBA8)
+		framed.blit_rect(image, Rect2i(Vector2i.ZERO, content_size), (shot_frame - content_size) / 2)
+		print("Screenshot viewport ", source_size, " framed to ", shot_frame)
+		image = framed
 	var readback := Time.get_ticks_usec()
 	previous_frame_usec = readback
 	screenshot_stats.append("%s at %.3fs: main-thread readback %.1fms; PNG encoded asynchronously" % [path.get_file(), demo_time, (readback - before) / 1000.0])
@@ -508,7 +536,7 @@ func save_image(path: String) -> void:
 func capture_demo(name: String) -> void:
 	if not shot_dir.is_empty():
 		DirAccess.make_dir_recursive_absolute(shot_dir)
-		save_image(shot_dir.path_join(name + ".png"))
+		save_image(shot_dir.path_join(name + shot_suffix + ".png"))
 
 
 func spark(at: Vector2, color: Color, count: int) -> void:
@@ -1110,8 +1138,9 @@ func choose_upgrade(force_show := false) -> void:
 		inner.add_child(desc_lbl)
 
 		var stat_val := definition.values[clampi(next_lv - 1, 0, definition.values.size() - 1)] if not definition.values.is_empty() else 0.0
-		var stat_lbl := heading("MODULLEISTUNG: %d" % int(round(stat_val)), 15, ScrapUI.TEXT_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
-		inner.add_child(stat_lbl)
+		if int(round(stat_val)) != 0:
+			var stat_lbl := heading("MODULLEISTUNG: %d" % int(round(stat_val)), 15, ScrapUI.TEXT_MUTED, HORIZONTAL_ALIGNMENT_CENTER)
+			inner.add_child(stat_lbl)
 
 		var action_lbl := heading("[ BAUTEIL MONTIEREN ]", 16, card_accent, HORIZONTAL_ALIGNMENT_CENTER)
 		inner.add_child(action_lbl)

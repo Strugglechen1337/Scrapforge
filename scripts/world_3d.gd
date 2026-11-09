@@ -343,6 +343,7 @@ func build_hangar_stage() -> void:
 		hangar_stage.add_child(wall_light)
 	hangar_robot = Robot3D.new()
 	hangar_stage.add_child(hangar_robot)
+	hangar_robot.glow.emission_energy_multiplier = 0.25
 	hangar_robot.animation.pause()
 	hangar_robot.animation.seek(0.18, true)
 	var key_light := OmniLight3D.new()
@@ -528,10 +529,10 @@ func update_view() -> void:
 		var base_pos := hangar_stage.position
 		camera.fov = 35
 		if game.mode == "end":
-			camera.position = base_pos + Vector3(0.82, 1.55, 4.65)
+			camera.position = base_pos + Vector3(0.82, 1.55, 5.0)
 			camera.look_at(base_pos + Vector3(0.82, 0.88, 0.0))
 		else:
-			camera.position = base_pos + Vector3(-0.78, 1.55, 4.65)
+			camera.position = base_pos + Vector3(-0.78, 1.55, 5.0)
 			camera.look_at(base_pos + Vector3(-0.78, 0.88, 0.0))
 		return
 	camera.fov = 40
