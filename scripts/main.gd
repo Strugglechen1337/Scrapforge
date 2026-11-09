@@ -9,10 +9,12 @@ var definitions: Dictionary = {}
 var player := Vector2.ZERO
 var enemies: Array[Dictionary] = []
 var bullets: Array[Dictionary] = []
+var enemy_shots: Array[Dictionary] = []
 var crystals: Array[Vector2] = []
 var elapsed := 0.0
 var spawn_clock := 0.0
 var fire_clock := 0.0
+var shot_index := 0
 var hp := 100.0
 var xp := 0
 var level := 1
@@ -38,6 +40,13 @@ var particles: Array[Dictionary] = []
 var damage_texts: Array[Dictionary] = []
 var shot_dir := ""
 var resume_mode := "playing"
+var boss_bar: ProgressBar
+var boss_label: Label
+var fps_samples := 0
+var fps_seconds := 0.0
+var fps_min := INF
+var fps_peak_enemies := 0
+var previous_frame_usec := 0
 
 
 func _ready() -> void:
@@ -173,8 +182,10 @@ func start_game() -> void:
     player = Vector2.ZERO
     enemies.clear()
     bullets.clear()
+    enemy_shots.clear()
     crystals.clear()
     elapsed = 0.0
+    shot_index = 0
     hp = 100.0
     xp = 0
     level = 1
@@ -191,6 +202,50 @@ func start_game() -> void:
     status.position = Vector2(30, 24)
     status.add_theme_font_size_override("font_size", 24)
     panel.add_child(status)
+    make_boss_bar()
+
+func make_boss_bar() -> void:
+    boss_bar = ProgressBar.new()
+    boss_bar.position = Vector2(400,65)
+    boss_bar.size = Vector2(480,24)
+    boss_bar.max_value = 1800
+    boss_bar.show_percentage = false
+    boss_bar.visible = false
+    var bg_style := StyleBoxFlat.new()
+    bg_style.bg_color = Color("1c2028")
+    bg_style.border_color = Color("87909a")
+    bg_style.set_border_width_all(1)
+    boss_bar.add_theme_stylebox_override("background",bg_style)
+    var fill_style := StyleBoxFlat.new()
+    fill_style.bg_color = Color("e34f20")
+    boss_bar.add_theme_stylebox_override("fill",fill_style)
+    panel.add_child(boss_bar)
+    boss_label = Label.new()
+    boss_label.text = "BOSS  //  SPINNEN-MECH"
+    boss_label.position = Vector2(400,91)
+    boss_label.add_theme_font_size_override("font_size",16)
+    boss_label.visible = false
+    panel.add_child(boss_label)
+
+func make_enemy(kind: int, position: Vector2) -> Dictionary:
+    return {"pos":position, "hp":[24,70,34,1800][kind], "kind":kind, "speed":[120.0,50.0,75.0,45.0][kind], "attack":randf_range(1.0,3.0), "jump_clock":6.0, "jump_warning":0.0, "jump_target":position, "flash":0.0}
+
+func spawn_boss() -> void:
+    if boss_spawned: return
+    boss_spawned = true
+    enemies.append(make_enemy(3, player + Vector2(240,0)))
+
+func shoot_enemy(origin: Vector2, direction: Vector2, speed := 240.0) -> void:
+    enemy_shots.append({"pos":origin,"vel":direction.normalized()*speed,"life":4.0})
+
+func write_fps_report() -> void:
+    if fps_samples == 0 or shot_dir.is_empty(): return
+    DirAccess.make_dir_recursive_absolute(shot_dir)
+    var file := FileAccess.open(shot_dir.path_join("fps.txt"), FileAccess.WRITE)
+    if file:
+        var result := "FPS min %.1f average %.1f samples %d peak_enemies %d (only frames with >=150 enemies)" % [fps_min, fps_samples / fps_seconds, fps_samples, fps_peak_enemies]
+        file.store_line(result)
+        print(result)
 
 func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventScreenTouch:
@@ -205,27 +260,47 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
     if autoplay:
+        var now := Time.get_ticks_usec()
+        if previous_frame_usec > 0 and mode == "playing" and enemies.size() >= 150:
+            var frame_time := float(now - previous_frame_usec) / 1000000.0
+            if frame_time > 0:
+                fps_samples += 1
+                fps_seconds += frame_time
+                fps_min = minf(fps_min, 1.0 / frame_time)
+                fps_peak_enemies = maxi(fps_peak_enemies, enemies.size())
+        previous_frame_usec = now
         demo_time += delta
         if demo_stage == 0 and demo_time >= 2:
             capture_demo("spiel-start")
             demo_stage = 1
-        elif demo_stage == 1 and demo_time >= 20:
-            choose_upgrade(true)
+        elif demo_stage == 1 and demo_time >= 6:
+            for id in ["minigun","rocket","shield","saw","thruster","radar","armor"]:
+                for n in range(3): state.upgrade(id)
+            for i in range(175):
+                var angle := TAU * i / 175.0
+                var distance := 300.0 + (i % 10) * 38.0
+                enemies.append(make_enemy(i % 3, player + Vector2.from_angle(angle) * distance))
             demo_stage = 2
-        elif demo_stage == 2 and demo_time >= 21:
-            capture_demo("level-up")
-            demo_stage = 3
-        elif demo_stage == 3 and demo_time >= 24:
-            state.upgrade("laser")
-            resume_game()
+        elif demo_stage == 2 and demo_time >= 8:
+            var has_explosion := world_3d.effects_3d.effects.any(func(e): return e.get("kind","") == "explosion")
+            var has_damage := world_3d.effects_3d.effects.any(func(e): return e.get("label",false))
+            if (has_explosion and has_damage) or demo_time >= 11:
+                capture_demo("spiel-spaet")
+                demo_stage = 3
+        elif demo_stage == 3 and demo_time >= 18:
+            spawn_boss()
             demo_stage = 4
-        elif demo_stage == 4 and demo_time >= 57:
-            show_end(false)
+        elif demo_stage == 4 and demo_time >= 19.4:
+            capture_demo("boss")
             demo_stage = 5
-        elif demo_stage == 5 and demo_time >= 58:
-            capture_demo("ende")
+        elif demo_stage == 5 and demo_time >= 57:
+            show_end(false)
             demo_stage = 6
-        elif demo_stage == 6 and demo_time >= 60:
+        elif demo_stage == 6 and demo_time >= 58:
+            capture_demo("ende")
+            demo_stage = 7
+        elif demo_stage == 7 and demo_time >= 60:
+            write_fps_report()
             get_tree().quit()
             return
     robot.visible = false
@@ -252,13 +327,13 @@ func _process(delta: float) -> void:
         label.life -= delta
     damage_texts = damage_texts.filter(func(d): return d.life > 0)
     if elapsed >= 300 and not boss_spawned:
-        boss_spawned = true
-        enemies.append({"pos": player + Vector2(600,0), "hp": 1800, "kind": 3, "speed": 45.0})
+        spawn_boss()
     var direction := Vector2(Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left"), Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up"))
     direction += Vector2(Input.get_joy_axis(0, JOY_AXIS_LEFT_X), Input.get_joy_axis(0, JOY_AXIS_LEFT_Y)).limit_length(1.0)
     direction += touch_direction
     if autoplay:
         direction = Vector2(cos(elapsed * 0.4), sin(elapsed * 0.4))
+        if demo_stage in [2,4]: direction = Vector2.ZERO
     player += direction.limit_length(1.0) * (190.0 + state.level("thruster") * 12.0) * delta
     player = player.clamp(Vector2(-1800, -1200), Vector2(1800, 1200))
     spawn_clock -= delta
@@ -266,7 +341,7 @@ func _process(delta: float) -> void:
         spawn_clock = maxf(0.2, 1.15 - elapsed / 650.0)
         var kind := randi() % 3
         var angle := randf() * TAU
-        enemies.append({"pos": player + Vector2.from_angle(angle) * 650, "hp": [24, 70, 34][kind], "kind": kind, "speed": [120.0, 50.0, 75.0][kind]})
+        enemies.append(make_enemy(kind, player + Vector2.from_angle(angle) * 650))
     fire_clock -= delta
     if fire_clock <= 0 and not enemies.is_empty():
         fire_clock = maxf(0.12, 0.65 - state.level("cooldown") * 0.05)
@@ -274,14 +349,38 @@ func _process(delta: float) -> void:
         for enemy in enemies:
             if player.distance_squared_to(enemy.pos) < player.distance_squared_to(nearest.pos): nearest = enemy
         var dir: Vector2 = (nearest.pos - player).normalized()
-        bullets.append({"pos": player, "vel": dir * 560, "life": 2.0, "damage": 12 + state.level("minigun") * 6 + state.level("laser") * 6 + state.level("rocket") * 5})
+        shot_index += 1
+        var rocket_shot := state.level("rocket") > 0 and shot_index % 3 == 0
+        bullets.append({"pos": player, "vel": dir * 560, "life": 2.0, "damage": 12 + state.level("minigun") * 6 + state.level("laser") * 6 + state.level("rocket") * 5, "rocket":rocket_shot})
         spark(player + dir * 35, CYAN, 4)
+        world_3d.effects_3d.burst(player + dir * 28, "muzzle")
         if state.level("swarm"):
             for angle in [-0.25, -0.12, 0.12, 0.25]:
                 bullets.append({"pos": player, "vel": dir.rotated(angle) * 460, "life": 2.0, "damage": 36})
     for enemy in enemies:
         var diff: Vector2 = player - enemy.pos
-        enemy.pos += diff.normalized() * enemy.speed * delta
+        enemy.flash = maxf(0.0, enemy.get("flash",0.0)-delta)
+        if (enemy.kind != 2 and diff.length() > 55) or (enemy.kind == 2 and diff.length() > 220):
+            enemy.pos += diff.normalized() * enemy.speed * delta
+        if enemy.kind in [2,3]:
+            enemy.attack = enemy.get("attack",2.0) - delta
+            if enemy.attack <= 0:
+                enemy.attack = 2.6 if enemy.kind == 2 else 2.0
+                if enemy.kind == 2: shoot_enemy(enemy.pos,diff)
+                else:
+                    for spread in [-0.5,-0.25,0.0,0.25,0.5]: shoot_enemy(enemy.pos,diff.rotated(spread),280.0)
+            if enemy.kind == 3:
+                enemy.jump_clock = enemy.get("jump_clock",6.0) - delta
+                if enemy.jump_clock <= 0 and enemy.get("jump_warning",0.0) <= 0:
+                    enemy.jump_target = player
+                    enemy.jump_warning = 1.1
+                    enemy.jump_clock = 8.0
+                if enemy.get("jump_warning",0.0) > 0:
+                    enemy.jump_warning -= delta
+                    if enemy.jump_warning <= 0:
+                        enemy.pos = enemy.jump_target
+                        world_3d.effects_3d.burst(enemy.pos,"explosion")
+                        if enemy.pos.distance_to(player) < 100: hp -= 25
         var saw := state.level("saw")
         for i in range(saw):
             var blade := player + Vector2.from_angle(elapsed * 1.8 + TAU * i / saw) * 78
@@ -296,22 +395,39 @@ func _process(delta: float) -> void:
         for enemy in enemies:
             if bullet.pos.distance_to(enemy.pos) < 22:
                 enemy.hp -= bullet.damage
+                enemy.flash = 0.15
+                if bullet.get("rocket",false): world_3d.effects_3d.burst(bullet.pos,"explosion")
                 hit_flash = 0.15
                 shake = 3.0
                 spark(bullet.pos, CYAN, 5)
                 damage_texts.append({"pos": enemy.pos, "value": bullet.damage, "life": 0.7})
+                world_3d.effects_3d.damage(enemy.pos,bullet.damage)
                 bullet.life = 0
                 break
     bullets = bullets.filter(func(b): return b.life > 0)
+    for shot in enemy_shots:
+        shot.pos += shot.vel * delta
+        shot.life -= delta
+        if shot.pos.distance_to(player) < 25:
+            hp -= 8
+            shake = 3.0
+            shot.life = 0
+    enemy_shots = enemy_shots.filter(func(b): return b.life > 0)
     for enemy in enemies:
         if enemy.hp <= 0:
             crystals.append(enemy.pos)
             kills += 1
             spark(enemy.pos, PINK, 16)
+            world_3d.effects_3d.burst(enemy.pos,"explosion")
             if enemy.kind == 3: won = true
     enemies = enemies.filter(func(e): return e.hp > 0)
     for i in range(crystals.size() - 1, -1, -1):
+        var distance := player.distance_to(crystals[i])
+        var magnet_range := 35 + state.level("magnet") * 20
+        if distance < magnet_range * 2 and distance > 8:
+            crystals[i] = crystals[i].move_toward(player, 180 * delta)
         if player.distance_to(crystals[i]) < 35 + state.level("magnet") * 20:
+            world_3d.effects_3d.burst(crystals[i],"pickup")
             crystals.remove_at(i)
             xp += 1
             if xp >= level * 5:
@@ -319,7 +435,13 @@ func _process(delta: float) -> void:
                 level += 1
                 choose_upgrade()
                 break
+    if autoplay: hp = 100.0
     status.text = "HÜLLE %d   ·   LEVEL %d   ·   EP %d/%d   ·   %02d:%02d   ·   %d SCHROTT" % [hp, level, xp, level * 5, int(elapsed) / 60, int(elapsed) % 60, kills]
+    if is_instance_valid(boss_bar):
+        var bosses := enemies.filter(func(e): return e.kind == 3)
+        boss_bar.visible = not bosses.is_empty()
+        boss_label.visible = boss_bar.visible
+        if not bosses.is_empty(): boss_bar.value = maxf(0.0,bosses[0].hp)
     if hp <= 0 or won or elapsed >= 600:
         show_end(won or hp > 0)
     queue_redraw()
@@ -355,6 +477,7 @@ func choose_upgrade(force_show := false) -> void:
             status.position = Vector2(30, 24)
             status.add_theme_font_size_override("font_size", 24)
             panel.add_child(status)
+            make_boss_bar()
         )
         box.add_child(b)
         if box.get_child_count() == 3: b.grab_focus()
@@ -366,6 +489,7 @@ func resume_game() -> void:
     status.position = Vector2(30,24)
     status.add_theme_font_size_override("font_size",24)
     panel.add_child(status)
+    make_boss_bar()
 
 
 func show_end(victory: bool) -> void:

@@ -6,9 +6,9 @@ func _ready() -> void:
     env.background_color = Color("10151d")
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     env.ambient_light_color = Color("a4b7cb")
-    env.ambient_light_energy = 0.8
+    env.ambient_light_energy = 1.0
     env.tonemap_mode = Environment.TONE_MAPPER_ACES
-    env.tonemap_exposure = 0.8
+    env.tonemap_exposure = 1.0
     env.glow_enabled = true
     var w := WorldEnvironment.new()
     w.environment = env

@@ -8,6 +8,10 @@ var entities: Node3D
 var enemy_nodes: Array[Node3D] = []
 var projectile_nodes: Array[Node3D] = []
 var crystal_nodes: Array[Node3D] = []
+var enemy_projectile_nodes: Array[Node3D] = []
+var swarm: EnemySwarm3D
+var effects_3d: CombatEffects3D
+var boss_warning: MeshInstance3D
 var collection_ring: MeshInstance3D
 var metal := StandardMaterial3D.new()
 var red := StandardMaterial3D.new()
@@ -36,9 +40,9 @@ func _ready() -> void:
     env.background_color = Color("10131b")
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     env.ambient_light_color = Color("798a9c")
-    env.ambient_light_energy = 0.6
+    env.ambient_light_energy = 0.85
     env.tonemap_mode = Environment.TONE_MAPPER_ACES
-    env.tonemap_exposure = 0.8
+    env.tonemap_exposure = 1.0
     env.glow_enabled = true
     env.fog_enabled = true
     env.fog_light_color = Color("202b39")
@@ -152,6 +156,18 @@ func _ready() -> void:
     add_child(collection_ring)
     entities = Node3D.new()
     add_child(entities)
+    swarm = EnemySwarm3D.new()
+    add_child(swarm)
+    effects_3d = CombatEffects3D.new()
+    add_child(effects_3d)
+    boss_warning = MeshInstance3D.new()
+    var warning_ring := TorusMesh.new()
+    warning_ring.inner_radius = 1.3
+    warning_ring.outer_radius = 1.34
+    boss_warning.mesh = warning_ring
+    boss_warning.material_override = red
+    add_child(boss_warning)
+    boss_warning.visible = false
 
 func emissive(color: Color) -> StandardMaterial3D:
     var material := StandardMaterial3D.new()
@@ -196,9 +212,50 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
         else:
             node = Node3D.new()
             entities.add_child(node)
-            box(node, Vector3(0.15, 0.15, 0.3) if kind == "bullet" else Vector3(0.2, 0.4, 0.2), Vector3(0, 0.3, 0), orange if kind == "bullet" else cyan)
+            if kind == "crystal":
+                var gem := MeshInstance3D.new()
+                var mesh := PrismMesh.new()
+                mesh.size = Vector3(0.24,0.5,0.24)
+                gem.mesh = mesh
+                gem.material_override = cyan
+                gem.position.y = 0.3
+                node.add_child(gem)
+            else:
+                box(node, Vector3(0.16,0.16,0.36), Vector3(0,0.3,0), red if kind == "enemy_bullet" else orange)
+                box(node, Vector3(0.06,0.06,0.5), Vector3(0,0.3,0.42), orange)
+                if kind == "bullet": add_smoke(node)
         nodes.append(node)
     for i in range(nodes.size()): nodes[i].visible = i < count
+
+func add_smoke(node: Node3D) -> void:
+    var smoke: Variant = CPUParticles3D.new() if OS.has_feature("mobile") else GPUParticles3D.new()
+    smoke.name = "Smoke"
+    var mesh := SphereMesh.new()
+    mesh.radius = 0.08
+    mesh.height = 0.16
+    var soot := StandardMaterial3D.new()
+    soot.albedo_color = Color("7d7c78")
+    mesh.material = soot
+    if smoke is GPUParticles3D:
+        var process := ParticleProcessMaterial.new()
+        process.direction = Vector3(0,0,1)
+        process.spread = 15
+        process.initial_velocity_min = 0.3
+        process.initial_velocity_max = 0.7
+        process.gravity = Vector3(0,0.4,0)
+        smoke.process_material = process
+        smoke.draw_pass_1 = mesh
+    else:
+        smoke.mesh = mesh
+        smoke.direction = Vector3(0,0,1)
+        smoke.spread = 15
+        smoke.initial_velocity_min = 0.3
+        smoke.initial_velocity_max = 0.7
+        smoke.gravity = Vector3(0,0.4,0)
+    smoke.amount = 8
+    smoke.lifetime = 0.6
+    smoke.emitting = false
+    node.add_child(smoke)
 
 func update_view() -> void:
     if not game: return
@@ -211,17 +268,28 @@ func update_view() -> void:
     collection_ring.scale = Vector3.ONE * (1.0 + game.state.level("magnet") * 0.2)
     camera.position = center + Vector3(6, 15.5, 10.3)
     camera.look_at(center + Vector3(0, 0.7, 0))
-    sync_nodes(enemy_nodes, game.enemies.size(), "enemy")
+    if game.shake_enabled and game.shake > 0.0:
+        camera.position += Vector3(randf_range(-1,1),randf_range(-1,1),0) * game.shake * 0.015
+    swarm.update_swarm(game.enemies, game.player, get_process_delta_time())
     sync_nodes(projectile_nodes, game.bullets.size(), "bullet")
     sync_nodes(crystal_nodes, game.crystals.size(), "crystal")
-    for i in range(game.enemies.size()):
-        var e: Dictionary = game.enemies[i]
-        enemy_nodes[i].position = Vector3(e.pos.x / 50.0, 0, e.pos.y / 50.0)
-        enemy_nodes[i].scale = Vector3.ONE * ([1.0, 1.5, 1.1, 3.0][e.kind])
-        enemy_nodes[i].look_at(center + Vector3(0, 0.01, 0))
+    sync_nodes(enemy_projectile_nodes, game.enemy_shots.size(), "enemy_bullet")
+    boss_warning.visible = false
+    for e in game.enemies:
+        if e.kind == 3 and e.get("jump_warning",0.0) > 0:
+            boss_warning.position = Vector3(e.jump_target.x/50.0,0.02,e.jump_target.y/50.0)
+            boss_warning.visible = true
     for i in range(game.bullets.size()):
         var p: Vector2 = game.bullets[i].pos
         projectile_nodes[i].position = Vector3(p.x / 50.0, 0.5, p.y / 50.0)
+        var velocity: Vector2 = game.bullets[i].vel
+        projectile_nodes[i].rotation.y = atan2(velocity.x,velocity.y)
+        projectile_nodes[i].get_node("Smoke").emitting = game.bullets[i].get("rocket",false)
+    for i in range(game.enemy_shots.size()):
+        var p: Vector2 = game.enemy_shots[i].pos
+        enemy_projectile_nodes[i].position = Vector3(p.x/50.0,0.4,p.y/50.0)
+        var velocity: Vector2 = game.enemy_shots[i].vel
+        enemy_projectile_nodes[i].rotation.y = atan2(velocity.x,velocity.y)
     for i in range(game.crystals.size()):
         var p: Vector2 = game.crystals[i]
         crystal_nodes[i].position = Vector3(p.x / 50.0, 0, p.y / 50.0)

@@ -15,7 +15,7 @@ var clock := 0.0
 var visor: MeshInstance3D
 
 func _ready() -> void:
-    metal.albedo_color = Color("686868")
+    metal.albedo_color = Color("bfc1c2")
     metal.metallic = 0.35
     metal.roughness = 0.85
     metal.albedo_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Color.jpg")
@@ -34,7 +34,7 @@ func _ready() -> void:
     var skeleton := model.get_node("RobotArmature/Skeleton3D") as Skeleton3D
     var body := skeleton.get_node("George") as MeshInstance3D
     var material := body.get_active_material(0).duplicate() as StandardMaterial3D
-    material.albedo_color = Color("a1a6ac")
+    material.albedo_color = Color("e1e3e5")
     material.metallic = 0.35
     material.roughness = 0.88
     body.material_override = material

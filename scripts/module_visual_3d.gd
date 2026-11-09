@@ -69,6 +69,33 @@ func drone(parent: Node3D, metal: Material, dark: Material, cyan: Material) -> N
             animated.append(rotor)
     return body
 
+func exhaust(pos: Vector3, material: Material) -> void:
+    var flame: Variant = CPUParticles3D.new() if OS.has_feature("mobile") else GPUParticles3D.new()
+    var mesh := SphereMesh.new()
+    mesh.radius = 0.045
+    mesh.height = 0.09
+    mesh.material = material
+    if flame is GPUParticles3D:
+        var process := ParticleProcessMaterial.new()
+        process.direction = Vector3.DOWN
+        process.spread = 15
+        process.initial_velocity_min = 0.4
+        process.initial_velocity_max = 1.0
+        process.gravity = Vector3.ZERO
+        flame.process_material = process
+        flame.draw_pass_1 = mesh
+    else:
+        flame.mesh = mesh
+        flame.direction = Vector3.DOWN
+        flame.spread = 15
+        flame.initial_velocity_min = 0.4
+        flame.initial_velocity_max = 1.0
+        flame.gravity = Vector3.ZERO
+    flame.amount = 6
+    flame.lifetime = 0.4
+    flame.position = pos
+    add_child(flame)
+
 func build(id: String, level: int, metal: Material, dark: Material, glow: Material) -> void:
     var cyan := StandardMaterial3D.new()
     cyan.albedo_color = Color("087b83")
@@ -127,6 +154,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
                 plate(self, Vector3(0.25+level*0.02,0.42,0.32), Vector3(side*0.3,0,0), metal)
                 cylinder(self, Vector3(side*0.3,-0.25,0),0.2,0.1,dark,Vector3.ZERO)
                 cylinder(self, Vector3(side*0.3,-0.37,0),0.1,0.06,cyan,Vector3.ZERO)
+                exhaust(Vector3(side*0.3,-0.4,0),cyan)
         "saw":
             for i in range(level):
                 var pivot := Node3D.new()
