@@ -32,3 +32,6 @@ Die nachfolgend als CC0 bezeichneten Assets stehen unter [CC0 1.0](https://creat
 - **Mech Spider** von Shima Daisuke (https://sketchfab.com/Dusk_Aims): https://sketchfab.com/3d-models/mech-spider-70bcd7115d8643b6b647a2c8a8a92d5e ? [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); bearbeitet (umgef?rbt und Laufanimation als Vertex-Animationstextur gebacken).
 
 - **SCI FI SPIDER ROBOT** von leoxx300 (https://sketchfab.com/leoxx300): https://sketchfab.com/3d-models/sci-fi-spider-robot-b562b06a357d4588a9135eb6e82d3f78 ? [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); bearbeitet (umgef?rbt, skaliert und Beine f?r Animation gruppiert).
+
+- **- Spider Mech -** von MichaelIbrahim (https://sketchfab.com/mikey.a.ibrahim): https://sketchfab.com/3d-models/spider-mech-c4bca3a398344fa998eb404cc1d3d7a2 ? [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); bearbeitet (reduziert, umgef?rbt und f?r Laufanimation markiert).
+- **Spider drone** von Nooxy (https://sketchfab.com/Nooxy): https://sketchfab.com/3d-models/spider-drone-62d7805038744326baaaca74c6e99c2f ? [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); bearbeitet (umgef?rbt und f?r Schwebebewegung angepasst).

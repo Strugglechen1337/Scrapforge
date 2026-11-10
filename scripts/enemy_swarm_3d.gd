@@ -4,7 +4,11 @@ class_name EnemySwarm3D
 const CAPACITY := 600
 const SIZES := [0.45, 0.80, 0.60, 2.50]
 
+var spider_kind_cache: Array[int] = []
 var spider: MultiMeshInstance3D
+var brute: MultiMeshInstance3D
+var ranged: MultiMeshInstance3D
+var ranged_sensor: MultiMeshInstance3D
 var bodies: MultiMeshInstance3D
 var heads: MultiMeshInstance3D
 var armor: MultiMeshInstance3D
@@ -140,6 +144,15 @@ void fragment() {
 	spider_material.set_shader_parameter("albedo_texture", load("res://assets/third_party/sketchfab/mech_spider/gunmetal.png"))
 	spider_material.set_shader_parameter("walk_vat", load("res://assets/third_party/sketchfab/mech_spider/walk_vat.png"))
 	spider = batch(spider_mesh, spider_material, CAPACITY, true)
+	brute = variant_batch("res://assets/third_party/sketchfab/brute_spider/brute_spider.glb", false)
+	ranged = variant_batch("res://assets/third_party/sketchfab/ranged_spider/ranged_spider.glb", true)
+	var sensor_mat := StandardMaterial3D.new()
+	sensor_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	sensor_mat.albedo_color = Color(0.1, 0.95, 1.0)
+	sensor_mat.emission_enabled = true
+	sensor_mat.emission = Color(0.05, 0.8, 1.0)
+	sensor_mat.emission_energy_multiplier = 1.1
+	ranged_sensor = batch(eye_sphere, sensor_mat, CAPACITY, false)
 	bodies = batch(dome, shell, CAPACITY, true)
 	heads = batch(block, shell, CAPACITY, true)
 	armor = batch(dome, shell, CAPACITY, true)
@@ -159,6 +172,22 @@ func find_mesh(node: Node) -> Mesh:
 		if found:
 			return found
 	return null
+
+func variant_batch(path: String, hovering: bool) -> MultiMeshInstance3D:
+	var scene := load(path) as PackedScene
+	var root := scene.instantiate()
+	var mesh := find_mesh(root).duplicate() as Mesh
+	root.free()
+	var shader := load("res://assets/third_party/sketchfab/enemy_variants.gdshader") as Shader
+	for i in range(mesh.get_surface_count()):
+		var source := mesh.surface_get_material(i) as StandardMaterial3D
+		var material := ShaderMaterial.new()
+		material.shader = shader
+		material.set_shader_parameter("hover", hovering)
+		if source:
+			material.set_shader_parameter("albedo_texture", source.albedo_texture)
+		mesh.surface_set_material(i, material)
+	return batch(mesh, null, CAPACITY, true)
 
 func batch(mesh: Mesh, material: Material, count: int, colors: bool) -> MultiMeshInstance3D:
 	var mm := MultiMesh.new()
@@ -229,7 +258,12 @@ func update_swarm(enemies: Array, player: Vector2, delta: float) -> void:
 	time += delta
 	leg_phase = 1 - leg_phase
 	var count := mini(enemies.size(), CAPACITY)
+	while spider_kind_cache.size() < count:
+		spider_kind_cache.append(-1)
 	spider.multimesh.visible_instance_count = count
+	brute.multimesh.visible_instance_count = count
+	ranged.multimesh.visible_instance_count = count
+	ranged_sensor.multimesh.visible_instance_count = count
 	for node in [bodies, heads, armor]:
 		node.multimesh.visible_instance_count = count
 	seams.multimesh.visible_instance_count = count * 3
@@ -258,26 +292,33 @@ func update_swarm(enemies: Array, player: Vector2, delta: float) -> void:
 			previous_kinds.append(-1)
 		var kind_changed := previous_kinds[i] != kind
 		previous_kinds[i] = kind
-		var spider_hidden := Transform3D(Basis.from_scale(Vector3.ONE * 0.001), pos)
-		if kind == 0:
-			spider.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3.ZERO, Vector3.ONE * size))
-			spider.multimesh.set_instance_color(i, Color.WHITE if flash else Color.BLACK)
-			if kind_changed:
-				for node in [bodies, heads, armor]:
-					node.multimesh.set_instance_transform(i, spider_hidden)
-				for k in range(3):
-					seams.multimesh.set_instance_transform(i * 3 + k, spider_hidden)
-				for k in range(4):
-					eyes.multimesh.set_instance_transform(i * 4 + k, spider_hidden)
-				for k in range(2):
-					accents.multimesh.set_instance_transform(i * 2 + k, spider_hidden)
-					guns.multimesh.set_instance_transform(i * 2 + k, spider_hidden)
-				for k in range(16):
-					legs.multimesh.set_instance_transform(i * 16 + k, spider_hidden)
-					legs.multimesh.set_instance_color(i * 16 + k, Color(0, 0, 0, 0))
-			continue
+		var hidden_variant := Transform3D(Basis.from_scale(Vector3.ONE * 0.001), Vector3.ZERO)
+		spider_kind_cache[i] = kind
 		if kind_changed:
-			spider.multimesh.set_instance_transform(i, spider_hidden)
+			for node in [spider, brute, ranged, ranged_sensor, bodies, heads, armor]:
+				node.multimesh.set_instance_transform(i, hidden_variant)
+			for k in range(3):
+				seams.multimesh.set_instance_transform(i * 3 + k, hidden_variant)
+			for k in range(4):
+				eyes.multimesh.set_instance_transform(i * 4 + k, hidden_variant)
+			for k in range(2):
+				accents.multimesh.set_instance_transform(i * 2 + k, hidden_variant)
+				guns.multimesh.set_instance_transform(i * 2 + k, hidden_variant)
+			for k in range(16):
+				legs.multimesh.set_instance_transform(i * 16 + k, hidden_variant)
+				legs.multimesh.set_instance_color(i * 16 + k, Color(0, 0, 0, 0))
+		if kind < 3:
+			var chosen: MultiMeshInstance3D = [spider, brute, ranged][kind]
+			chosen.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3.ZERO, Vector3.ONE * size))
+			chosen.multimesh.set_instance_color(i, Color.WHITE if flash else Color.BLACK)
+			if kind == 0 or kind == 1:
+				for eye in range(2):
+					var eye_x := (-0.12 if eye == 0 else 0.12) * size
+					eyes.multimesh.set_instance_transform(i * 4 + eye, transform_at(pos, rotation, Vector3(eye_x, 0.48 * size, 0.32 * size), Vector3.ONE * 0.10 * size))
+			if kind == 2:
+				var bob := 0.14 + sin(time * 4.0 + float(i) * 0.77) * 0.045
+				ranged_sensor.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3(0, 0.55 + bob, 0.46) * size, Vector3.ONE * 0.16 * size))
+			continue
 
 		if kind == 3:
 			boss_rig.visible = true

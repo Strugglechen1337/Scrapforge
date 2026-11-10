@@ -93,7 +93,7 @@ colors = np.empty(w*h*4, dtype=np.float32)
 source.pixels.foreach_get(colors)
 colors = colors.reshape((h,w,4))
 rgb = colors[:,:,:3].copy()
-red = (rgb[:,:,0] > rgb[:,:,1] * 1.5) & (rgb[:,:,0] > rgb[:,:,2] * 1.25) & (rgb[:,:,0] > 0.08)
+red = (rgb[:,:,0] > rgb[:,:,1] * 1.5) & (rgb[:,:,0] > 0.4) & (rgb[:,:,1] > 0.10) & (rgb[:,:,2] > 0.08)
 # The large red atlas patch is armor, not an optic.
 red[int(h*0.24):int(h*0.56), int(w*0.74):] = False
 luma = rgb[:,:,0]*0.2126 + rgb[:,:,1]*0.7152 + rgb[:,:,2]*0.0722
@@ -103,11 +103,13 @@ source.pixels.foreach_set(colors.ravel())
 source.filepath_raw = str(OUT / 'gunmetal.png')
 source.file_format = 'PNG'
 source.save()
+# Use a fresh image datablock so the exporter cannot reuse the source's packed bytes.
+processed = bpy.data.images.load(str(OUT / 'gunmetal.png'), check_existing=False)
 mat = bpy.data.materials.new('Gunmetal and red optics')
 mat.use_nodes = True
 bsdf = mat.node_tree.nodes.get('Principled BSDF')
 tex = mat.node_tree.nodes.new('ShaderNodeTexImage')
-tex.image = source
+tex.image = processed
 mat.node_tree.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
 bsdf.inputs['Metallic'].default_value = 0.6
 bsdf.inputs['Roughness'].default_value = 0.55
