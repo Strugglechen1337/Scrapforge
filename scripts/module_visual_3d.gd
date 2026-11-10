@@ -104,7 +104,7 @@ func exhaust(pos: Vector3, material: Material) -> void:
         flame.initial_velocity_min = 0.4
         flame.initial_velocity_max = 1.0
         flame.gravity = Vector3.ZERO
-    flame.amount = 6
+    flame.amount = 3 if OS.has_feature("mobile") else 6
     flame.lifetime = 0.4
     flame.position = pos
     add_child(flame)
@@ -145,7 +145,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
             var count := mini(level + 1, 6) if id == "rocket" else 6
             var tube_glow: Material = glow if id == "rocket" else cyan
             var trim: Material = accent if id == "rocket" else cyan
-            plate(self, Vector3(0.50, 0.035, 0.30), Vector3(0, 0.22, -0.20), trim)
+            plate(self, Vector3(0.50, 0.035, 0.035), Vector3(0, 0.22, -0.34), trim)
             if id == "swarm":
                 for side in [-1, 1]:
                     plate(self, Vector3(0.035, 0.035, 0.55), Vector3(side * 0.20, 0.22, -0.45), cyan)
@@ -163,7 +163,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
             if id == "flamethrower": exhaust(Vector3(0,0,-0.8), glow)
         "turret":
             add_sketchfab("turret", 0.85)
-            plate(self, Vector3(0.42,0.035,0.24), Vector3(0,0.22,0), accent)
+            plate(self, Vector3(0.42,0.035,0.035), Vector3(0,0.22,-0.10), accent)
             for i in range(level): plate(self, Vector3(0.04,0.04,0.04), Vector3(-0.1+i*0.05,0.25,0), glow)
         "sensor":
             plate(self, Vector3(0.35,0.22,0.24), Vector3(0,0.17,0), metal)

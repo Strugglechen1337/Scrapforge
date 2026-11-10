@@ -13,6 +13,7 @@ func damage(game: Node, amount: float) -> void:
 
 func show_beam(game: Node, direction: Vector2, length: float, color: Color) -> void:
     var beam := MeshInstance3D.new()
+    if OS.has_feature("mobile"): beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     var mesh := CylinderMesh.new()
     mesh.top_radius = 0.035
     mesh.bottom_radius = 0.035
@@ -31,6 +32,7 @@ func show_beam(game: Node, direction: Vector2, length: float, color: Color) -> v
 
 func show_flames(game: Node, direction: Vector2) -> void:
     var particles := CPUParticles3D.new()
+    if OS.has_feature("mobile"): particles.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     var mesh := SphereMesh.new()
     mesh.radius = 0.09
     mesh.height = 0.18
@@ -40,7 +42,7 @@ func show_flames(game: Node, direction: Vector2) -> void:
     material.emission = Color("ff5700")
     mesh.material = material
     particles.mesh = mesh
-    particles.amount = 20
+    particles.amount = 10 if OS.has_feature("mobile") else 20
     particles.lifetime = 0.35
     particles.one_shot = true
     particles.direction = Vector3(direction.x, 0, direction.y)

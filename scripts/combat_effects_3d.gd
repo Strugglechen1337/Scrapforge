@@ -53,6 +53,7 @@ func _ready() -> void:
 		var holder := Node3D.new()
 		add_child(holder)
 		var spark: Variant = CPUParticles3D.new() if OS.has_feature("mobile") else GPUParticles3D.new()
+		if OS.has_feature("mobile"): spark.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		holder.add_child(spark)
 		if spark is GPUParticles3D:
 			spark.process_material = process
@@ -64,7 +65,7 @@ func _ready() -> void:
 			spark.initial_velocity_min = 1.4
 			spark.initial_velocity_max = 4.6
 			spark.gravity = Vector3(0, -5.0, 0)
-		spark.amount = 18
+		spark.amount = 9 if OS.has_feature("mobile") else 18
 		spark.lifetime = 0.45
 		spark.one_shot = true
 		spark.explosiveness = 0.95

@@ -1,8 +1,10 @@
-# Scrapforge
+# Scrapforge v0.2
 
 Ein modularer Roguelike-Survivor: Der Mech bewegt sich durch eine Arena, feuert automatisch und sammelt Schrott für Aufstiege. Wähle Bauteile und entwickle Raketenwerfer und Radar zum Schwarm-Werfer. Nach fünf Minuten erscheint der Boss; sein Abschuss oder zehn Minuten Überleben bedeuten den Sieg.
 
 Im Hangar stehen fünf Skins zur Auswahl. Das Ergebnis zeigt Statistiken und den fertigen Mech; ein Screenshot lässt sich im Godot-Benutzerordner speichern. Im Einstellungsmenü werden Lautstärke für Master, Musik und Effekte, Bildschirmwackeln und Vollbild gespeichert. Musik und Soundeffekte können getrennt geregelt werden.
+
+Die Arena zeigt den Colossus Walker 2 mit modularen Sketchfab-Waffen, neue Spinnengegner und einen Spinnenboss. Die Blender-Aufbereitung ist unter [tools/blender/](tools/blender/README.md) beschrieben. Angaben zu den verwendeten Modellen und ihrer CC-BY-4.0-Lizenz stehen in [CREDITS.md](CREDITS.md).
 
 ## Steuerung
 

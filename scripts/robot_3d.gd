@@ -169,7 +169,7 @@ func update_parts() -> void:
             part.scale *= 1.4 * (1.0 + 0.075 * (int(part.get_meta("level")) - 1))
         if part.get_meta("socket") in ["left_shoulder", "right_shoulder"]:
             var side := 1.0 if part.get_meta("socket") == "left_shoulder" else -1.0
-            part.position += part.basis.orthonormalized() * Vector3(side * 0.22, 0.13, 0)
+            part.position += part.basis.orthonormalized() * Vector3(side * 0.36, 0.13, 0)
 
 func follow_bone(part: Node3D, marker: Marker3D, weapon: bool) -> void:
     var local_transform := global_transform.affine_inverse() * marker.global_transform

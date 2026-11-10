@@ -12,7 +12,7 @@ jobs:
           curl -fL https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o godot.zip
           unzip -q godot.zip
       - name: Import
-        run: ./Godot_v4.7.2-stable_linux.x86_64 --headless --editor --path . --quit
+        run: ./Godot_v4.7.2-stable_linux.x86_64 --headless --editor --path . --quit || ./Godot_v4.7.2-stable_linux.x86_64 --headless --editor --path . --quit
       - name: Tests
         run: |
           set -e

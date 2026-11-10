@@ -8,7 +8,6 @@ Die nachfolgend als CC0 bezeichneten Assets stehen unter [CC0 1.0](https://creat
 - **ambientCG – Metal Plates 001**: https://ambientcg.com/view?id=MetalPlates001 – 1K Farb-, Normal-, und Rauheitskarten für Arenaboden und Roboterpanzerung.
 
 
-- **Quaternius – Animated Mech Pack, George**: https://quaternius.com/packs/animatedmech.html – CC0 1.0; animiertes Basismodell, Bezug über https://github.com/agentkaerf/FreeModels, eingebettete Textur auf 1K verkleinert und entsättigt.
 
 
 - **Kenney – Sci-Fi Sounds**: https://kenney.nl/assets/sci-fi-sounds – CC0 1.0; Soundeffekte, bezogen über https://github.com/GeorgeQLe/assets-sfx-combat/tree/main/assets/kenney/sci-fi-sounds/Audio. UI- und Raketensamples wurden gekürzt und mit Fade versehen.

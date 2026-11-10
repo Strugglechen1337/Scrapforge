@@ -239,6 +239,16 @@ func _ready() -> void:
 		for n in range(3 if id != "armor" else 2):
 			menu_state.upgrade(id)
 	build_hangar_stage()
+	if OS.has_feature("mobile"):
+		disable_environment_shadows(self)
+
+func disable_environment_shadows(node: Node) -> void:
+	if node is Robot3D:
+		return
+	if node is GeometryInstance3D:
+		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for child in node.get_children():
+		disable_environment_shadows(child)
 
 func build_hangar_stage() -> void:
 	hangar_stage = Node3D.new()
@@ -457,6 +467,7 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
 
 func add_smoke(node: Node3D) -> void:
 	var smoke: Variant = CPUParticles3D.new() if OS.has_feature("mobile") else GPUParticles3D.new()
+	if OS.has_feature("mobile"): smoke.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	smoke.name = "Smoke"
 	if smoke is GPUParticles3D:
 		smoke.process_material = smoke_process
@@ -468,7 +479,7 @@ func add_smoke(node: Node3D) -> void:
 		smoke.initial_velocity_min = 0.3
 		smoke.initial_velocity_max = 0.7
 		smoke.gravity = Vector3(0, 0.4, 0)
-	smoke.amount = 8
+	smoke.amount = 4 if OS.has_feature("mobile") else 8
 	smoke.lifetime = 0.5
 	smoke.emitting = false
 	node.add_child(smoke)
