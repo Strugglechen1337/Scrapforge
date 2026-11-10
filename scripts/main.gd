@@ -76,6 +76,8 @@ var fps_min := INF
 var fps_peak_enemies := 0
 var previous_frame_usec := 0
 var fps_worst_at := 0.0
+## Per-frame samples (demo time, frame seconds) for the 1 % low and the list of worst frames.
+var fps_frames: Array[Vector2] = []
 var screenshot_stats: Array[String] = []
 var screenshot_tasks: Array[int] = []
 var menu_buttons: Array[Button] = []
@@ -825,6 +827,18 @@ func write_fps_report() -> void:
 		var result := "FPS min %.1f average %.1f samples %d peak_enemies %d (only frames with >=150 enemies)" % [fps_min, fps_samples / fps_seconds, fps_samples, fps_peak_enemies]
 		file.store_line(result)
 		file.store_line("worst_frame_at %.3fs" % fps_worst_at)
+		# The single worst frame is a hitch metric; the 1 % low shows sustained smoothness.
+		var sorted_frames := fps_frames.duplicate()
+		sorted_frames.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.y > b.y)
+		var low_count := maxi(1, sorted_frames.size() / 100)
+		var low_seconds := 0.0
+		for i in range(low_count):
+			low_seconds += sorted_frames[i].y
+		file.store_line("FPS 1%% low %.1f (slowest %d frames averaged)" % [low_count / low_seconds, low_count])
+		var worst: PackedStringArray = []
+		for i in range(mini(8, sorted_frames.size())):
+			worst.append("%.1fms@%.2fs" % [sorted_frames[i].y * 1000.0, sorted_frames[i].x])
+		file.store_line("worst_frames " + ", ".join(worst))
 		for stat in screenshot_stats:
 			file.store_line(stat)
 		print(result)
@@ -838,6 +852,7 @@ func _process(delta: float) -> void:
 			if frame_time > 0:
 				fps_samples += 1
 				fps_seconds += frame_time
+				fps_frames.append(Vector2(demo_time, frame_time))
 				if 1.0 / frame_time < fps_min:
 					fps_min = 1.0 / frame_time
 					fps_worst_at = demo_time
