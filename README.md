@@ -6,6 +6,14 @@ Im Hangar stehen fünf Skins zur Auswahl. Das Ergebnis zeigt Statistiken und den
 
 Die Arena zeigt den Colossus Walker 2 mit modularen Sketchfab-Waffen, neue Spinnengegner und einen Spinnenboss. Die Blender-Aufbereitung ist unter [tools/blender/](tools/blender/README.md) beschrieben. Angaben zu den verwendeten Modellen und ihrer CC-BY-4.0-Lizenz stehen in [CREDITS.md](CREDITS.md).
 
+## Screenshots
+
+| Schwarm | Boss: Spinnen-Mech |
+|---|---|
+| ![Der Mech im Spinnenschwarm](docs/screenshots/schwarm.jpg) | ![Kampf gegen den Spinnen-Mech](docs/screenshots/boss.jpg) |
+| **Skins im Hangar** | **Einsatzbericht** |
+| ![Die fünf Mech-Skins](docs/screenshots/skins.jpg) | ![Ergebnis mit Endkonfiguration des Roboters](docs/screenshots/ergebnis.jpg) |
+
 ## Steuerung
 
 - Tastatur: WASD oder Pfeiltasten bewegen den Mech, Escape pausiert oder geht zurück; Pfeiltasten und Enter bedienen Menüs.
