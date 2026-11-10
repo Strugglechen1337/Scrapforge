@@ -70,8 +70,8 @@ func _ready() -> void:
     add_child(animation)
     animation.play("Walk")
     for entry in [
-        ["left_arm", "forearm_l", Vector3(-0.02, -0.29, 0.14)],
-        ["right_arm", "forearm_r", Vector3(0.30, 0.0, 0.14)],
+        ["left_arm", "forearm_l", Vector3(-0.12, -0.12, 0.08)],
+        ["right_arm", "forearm_r", Vector3(0.18, 0.02, 0.08)],
         ["left_shoulder", "shoulder_l", Vector3(-0.10, 0.13, 0.0)],
         ["right_shoulder", "shoulder_r", Vector3(0.10, 0.13, 0.0)],
         ["head", "head", Vector3(0, 0.12, 0.25)],
@@ -148,14 +148,25 @@ func refresh() -> void:
         var socket_name: String = state.arm_socket(id) if id in state.ARM_WEAPONS else definition.socket
         module.set_meta("socket", socket_name)
         module.set_meta("module_id", id)
+        module.set_meta("level", level)
         module.build(id, level, metal, dark, glow, accent)
         set_robot_layer(module)
+        if id == "swarm":
+            var other: Node3D = definition.visual_script.new()
+            parts.add_child(other)
+            other.set_meta("socket", "left_shoulder")
+            other.set_meta("module_id", id)
+            other.set_meta("level", level)
+            other.build(id, level, metal, dark, glow, accent)
+            set_robot_layer(other)
     update_parts()
 
 func update_parts() -> void:
     for part in parts.get_children():
         var socket: Marker3D = sockets[part.get_meta("socket")]
         follow_bone(part, socket, true)
+        if part.get_meta("module_id") in ["minigun", "laser", "rocket", "turret", "swarm"]:
+            part.scale *= 1.4 * (1.0 + 0.075 * (int(part.get_meta("level")) - 1))
         if part.get_meta("socket") in ["left_shoulder", "right_shoulder"]:
             var side := 1.0 if part.get_meta("socket") == "left_shoulder" else -1.0
             part.position += part.basis.orthonormalized() * Vector3(side * 0.22, 0.13, 0)

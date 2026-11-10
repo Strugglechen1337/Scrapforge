@@ -27,6 +27,14 @@ func run_tests() -> void:
     assert(robot.sockets["right_arm"].get_parent() == robot.chassis["forearm_r"])
     assert(robot.sockets["left_arm"].get_parent() == robot.chassis["forearm_l"])
     assert(robot.sockets["back"].get_parent() == robot.chassis["torso"])
+    robot.state = UpgradeState.new()
+    robot.definitions = {"swarm": load("res://data/swarm.tres")}
+    robot.state.upgrade("swarm")
+    robot.refresh()
+    assert(robot.parts.get_child_count() == 2)
+    var swarm_sockets := []
+    for module in robot.parts.get_children(): swarm_sockets.append(module.get_meta("socket"))
+    assert("left_shoulder" in swarm_sockets and "right_shoulder" in swarm_sockets)
     robot.free()
     print("Module assets and sockets passed")
     quit()

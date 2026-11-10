@@ -83,6 +83,7 @@ func _ready() -> void:
     add_child(display)
     title.text = "SCRAPFORGE  |  BAUTEILE STUFE 5"
     var module_ids := ["minigun", "laser", "rocket", "turret", "drone", "shield", "swarm", "radar", "plasma", "flamethrower", "sensor", "thruster", "saw", "armor", "magnet", "cooldown"]
+    var module_names := ["Minigun", "Laserkanone", "Raketenwerfer", "Schulterturm", "Drohne", "Schildgenerator", "Schwarm-Werfer", "Radar", "Plasmakanone", "Flammenwerfer", "Sensor", "Schubdüsen", "Sägeblatt", "Panzerung", "Magnet", "Kühlung"]
     camera.size = 8.4
     var metal := StandardMaterial3D.new()
     metal.albedo_color = Color("56524d")
@@ -100,7 +101,7 @@ func _ready() -> void:
         module.rotation_degrees.y = 155
         module.build(module_ids[i], 5, metal, dark, glow)
         var label := Label.new()
-        label.text = module_ids[i].to_upper()
+        label.text = module_names[i]
         label.size = Vector2(125, 30)
         var screen := camera.unproject_position(module.position + Vector3(0, -0.65, 0))
         label.position = Vector2(screen.x - 62.5, screen.y)

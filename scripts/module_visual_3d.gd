@@ -128,25 +128,32 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
     violet.emission_energy_multiplier = 2.0
     match id:
         "laser":
-            add_sketchfab("laser", 0.9 + 0.045 * level)
+            add_sketchfab("laser", 1.0)
             cylinder(self, Vector3(0, 0, -0.48), 0.09, 0.055, violet)
             for i in range(level): plate(self, Vector3(0.04,0.025,0.03), Vector3(-0.1+i*0.05,0.12,-0.05), violet)
         "minigun":
-            add_sketchfab("minigun", 0.95 + 0.05 * level)
+            add_sketchfab("minigun", 1.05)
             if level >= 4: add_sketchfab("minigun", 0.60, Vector3(0.16, -0.18, 0))
             cylinder(self, Vector3(0, 0, -0.60), 0.04, 0.055, glow)
-            for i in range(level): plate(self, Vector3(0.035,0.025,0.035), Vector3(-0.1+i*0.05,0.17,0), glow)
+            plate(self, Vector3(0.22,0.03,0.32), Vector3(0,0.18,0), accent)
+            for i in range(level): plate(self, Vector3(0.035,0.025,0.035), Vector3(-0.1+i*0.05,0.21,0), glow)
         "rocket", "swarm":
-            add_sketchfab("rocket", 0.62 + 0.025 * level)
+            add_sketchfab("rocket", 0.8)
             # Armored launcher casing around the derived turret and its tubes.
             plate(self, Vector3(0.50, 0.34, 0.35), Vector3(0, 0, -0.25), dark)
             plate(self, Vector3(0.52, 0.04, 0.32), Vector3(0, 0.18, -0.25), metal)
             var count := mini(level + 1, 6) if id == "rocket" else 6
+            var tube_glow: Material = glow if id == "rocket" else cyan
+            var trim: Material = accent if id == "rocket" else cyan
+            plate(self, Vector3(0.50, 0.035, 0.30), Vector3(0, 0.22, -0.20), trim)
+            if id == "swarm":
+                for side in [-1, 1]:
+                    plate(self, Vector3(0.035, 0.035, 0.55), Vector3(side * 0.20, 0.22, -0.45), cyan)
             for i in range(count):
                 var x := (float(i % 3) - 1.0) * 0.14
                 var y := (float(int(i / 3)) - 0.5) * 0.14
                 cylinder(self, Vector3(x,y,-0.54), 0.06, 0.06, dark)
-                cylinder(self, Vector3(x,y,-0.59), 0.025, 0.04, glow)
+                cylinder(self, Vector3(x,y,-0.59), 0.025, 0.04, tube_glow)
         "flamethrower", "plasma":
             plate(self, Vector3(0.42,0.34,0.55), Vector3.ZERO, metal)
             cylinder(self, Vector3(0,0,-0.45), 0.55, 0.13, dark)
@@ -155,8 +162,9 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
                 plate(self, Vector3(0.25,0.035,0.035), Vector3(0,0.2,-0.2+i*0.09), glow if id == "flamethrower" else cyan)
             if id == "flamethrower": exhaust(Vector3(0,0,-0.8), glow)
         "turret":
-            add_sketchfab("turret", 0.65 + 0.025 * level)
-            for i in range(level): plate(self, Vector3(0.04,0.04,0.04), Vector3(-0.1+i*0.05,0.19,0), glow)
+            add_sketchfab("turret", 0.85)
+            plate(self, Vector3(0.42,0.035,0.24), Vector3(0,0.22,0), accent)
+            for i in range(level): plate(self, Vector3(0.04,0.04,0.04), Vector3(-0.1+i*0.05,0.25,0), glow)
         "sensor":
             plate(self, Vector3(0.35,0.22,0.24), Vector3(0,0.17,0), metal)
             cylinder(self, Vector3(0,0.45,0), 0.4, 0.025, dark, Vector3.ZERO)
@@ -165,7 +173,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
             for i in range(level): plate(self, Vector3(0.04,0.03,0.03), Vector3(-0.12+i*0.06,0.3,0), cyan)
         "drone":
             for i in range(1 + int(level / 2)):
-                var d := add_sketchfab("drone", 0.30 + level * 0.025)
+                var d := add_sketchfab("drone", 0.42 + level * 0.03)
                 d.position = Vector3((i*2-1)*0.7,0.5,0)
                 orbiters.append(d)
             for i in range(level): plate(self, Vector3(0.04,0.04,0.04), Vector3(-0.1+i*0.05,0,0), cyan)
@@ -224,4 +232,4 @@ func _process(delta: float) -> void:
     for n in blades: n.rotate_z(delta * 9)
     for i in range(orbiters.size()):
         var angle := time * 1.1 + TAU * i / orbiters.size()
-        orbiters[i].position = Vector3(cos(angle)*0.75,0.45,sin(angle)*0.55)
+        orbiters[i].position = Vector3(cos(angle)*0.55,0.45,sin(angle)*0.40)
