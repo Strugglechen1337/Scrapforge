@@ -6,6 +6,8 @@ func _initialize() -> void:
 func run_tests() -> void:
     var game = load("res://scenes/main.tscn").instantiate()
     root.add_child(game)
+    game.show_settings()
+    assert(game.panel.find_children("*", "HSlider", true, false).size() == 3)
     game.start_game()
     assert(game.state.level("minigun") == 1 and game.state.level("laser") == 0)
 

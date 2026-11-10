@@ -12,6 +12,10 @@ func run() -> void:
     assert(audio.play(&"laser"))
     audio.voices[0].stop()
     assert(audio.play(&"minigun"))
+    audio.play_music("menu")
+    assert(audio.current_music == "menu" and audio.music[audio.music_index].stream.loop)
+    audio.play_music("combat")
+    assert(audio.current_music == "combat" and audio.music[audio.music_index].stream.loop)
     var original := {}
     for bus in audio.BUS_NAMES: original[bus] = audio.get_volume(bus)
     audio.set_volume("Master", 0.65, false)
@@ -34,7 +38,7 @@ func run() -> void:
     assert(audio.get_volume("Effekte") == 0)
     for bus in audio.BUS_NAMES: audio.set_volume(bus, original[bus], false)
     DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
-    for voice in audio.voices: voice.stop()
-    await create_timer(0.2).timeout
+    audio.stop_all()
+    await create_timer(1.0).timeout
     print("Audio-Tests bestanden")
     quit()
