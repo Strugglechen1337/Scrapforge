@@ -54,20 +54,33 @@ func saw_blade(parent: Node3D, material: Material, dark: Material) -> void:
         instance.rotation.z = angle - PI/2
         parent.add_child(instance)
 
-func drone(parent: Node3D, metal: Material, dark: Material, cyan: Material) -> Node3D:
-    var body := Node3D.new()
-    parent.add_child(body)
-    plate(body, Vector3(0.3,0.14,0.3), Vector3.ZERO, metal)
-    cylinder(body, Vector3(0,0,-0.17), 0.035, 0.06, cyan)
-    for x in [-1,1]:
-        for z in [-1,1]:
-            var rotor := Node3D.new()
-            rotor.position = Vector3(x*0.22,0.08,z*0.22)
-            body.add_child(rotor)
-            cylinder(rotor, Vector3.ZERO, 0.04, 0.045, dark, Vector3.ZERO)
-            plate(rotor, Vector3(0.21,0.018,0.025), Vector3.ZERO, metal)
-            animated.append(rotor)
+func drone(parent: Node3D, _metal: Material, _dark: Material, _cyan: Material) -> Node3D:
+    var body := add_sketchfab("drone", 0.34)
+    if parent != self: body.reparent(parent)
     return body
+
+func add_sketchfab(id: String, size: float, offset := Vector3.ZERO) -> Node3D:
+    var packed := load("res://assets/third_party/sketchfab/modules/" + id + ".glb") as PackedScene
+    var model := packed.instantiate() as Node3D
+    model.name = "asset_" + id
+    model.position = offset
+    model.scale = Vector3.ONE * size
+    add_child(model)
+    tint_asset(model)
+    return model
+
+func tint_asset(node: Node) -> void:
+    if node is MeshInstance3D:
+        var mesh_node := node as MeshInstance3D
+        for surface in range(mesh_node.mesh.get_surface_count()):
+            var original := mesh_node.get_active_material(surface) as StandardMaterial3D
+            if original:
+                var material := original.duplicate() as StandardMaterial3D
+                material.albedo_color *= Color(0.82, 0.79, 0.74)
+                material.roughness = maxf(material.roughness, 0.58)
+                mesh_node.set_surface_override_material(surface, material)
+        mesh_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    for child in node.get_children(): tint_asset(child)
 
 func exhaust(pos: Vector3, material: Material) -> void:
     var flame: Variant = CPUParticles3D.new() if OS.has_feature("mobile") else GPUParticles3D.new()
@@ -114,74 +127,33 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
     violet.emission = Color("bc51ff")
     violet.emission_energy_multiplier = 2.0
     match id:
-        "chassis_core":
-            plate(self, Vector3(0.92,0.48,0.19), Vector3(0,0.05,0.25), metal)
-            plate(self, Vector3(0.56,0.21,0.08), Vector3(0,-0.14,0.36), dark)
-            plate(self, Vector3(0.44,0.12,0.07), Vector3(0,0.08,0.37), accent)
-            plate(self, Vector3(0.31,0.055,0.045), Vector3(0,0.08,0.42), glow)
-            for side in [-1,1]:
-                plate(self, Vector3(0.18,0.25,0.08), Vector3(side*0.35,0.02,0.34), metal)
-                cylinder(self, Vector3(side*0.33,-0.12,0.40), 0.03, 0.025, dark)
-                plate(self, Vector3(0.12,0.035,0.03), Vector3(side*0.34,0.13,0.40), glow)
-        "chassis_shoulder":
-            plate(self, Vector3(0.48,0.23,0.42), Vector3(0,0.08,0), metal)
-            plate(self, Vector3(0.39,0.12,0.45), Vector3(0,-0.04,-0.04), dark)
-            plate(self, Vector3(0.25,0.04,0.29), Vector3(0,0.22,0), accent)
-            for side in [-1,1]: cylinder(self, Vector3(side*0.16,0.04,0.24),0.025,0.025,dark)
-        "chassis_thigh":
-            plate(self, Vector3(0.34,0.42,0.16), Vector3(0,-0.10,0.15), accent)
-            plate(self, Vector3(0.24,0.22,0.06), Vector3(0,-0.11,0.25), dark)
-            plate(self, Vector3(0.17,0.045,0.03), Vector3(0,-0.13,0.30), glow)
-            for side in [-1,1]: cylinder(self,Vector3(side*0.12,-0.2,0.25),0.03,0.025,dark)
-        "chassis_shin":
-            plate(self, Vector3(0.38,0.50,0.22), Vector3(0,-0.12,0.11), metal)
-            plate(self, Vector3(0.27,0.25,0.06), Vector3(0,-0.1,0.25), accent)
-            plate(self, Vector3(0.18,0.04,0.03), Vector3(0,-0.26,0.29), dark)
-        "chassis_foot":
-            plate(self, Vector3(0.38,0.18,0.4), Vector3(0,0,0.08), metal)
-            plate(self, Vector3(0.29,0.06,0.18), Vector3(0,0.10,0.12), accent)
-        "chassis_upper_arm":
-            plate(self, Vector3(0.37,0.36,0.29), Vector3(0,-0.05,0), metal)
-            plate(self, Vector3(0.27,0.18,0.06), Vector3(0,-0.02,0.17), accent)
         "laser":
-            plate(self, Vector3(0.42,0.34,0.55), Vector3.ZERO, metal)
-            plate(self, Vector3(0.29,0.18,0.60), Vector3(0,0,-0.14), dark)
-            cylinder(self, Vector3(0,0,-0.57), 0.48, 0.13, dark)
-            cylinder(self, Vector3(0,0,-0.82), 0.10, 0.15, metal)
-            cylinder(self, Vector3(0,0,-0.88), 0.035, 0.09, violet)
-            for i in range(level):
-                plate(self, Vector3(0.24,0.035,0.035), Vector3(0,0.20,-0.20+i*0.09), violet)
+            add_sketchfab("laser", 1.0)
+            cylinder(self, Vector3(0, 0, -0.48), 0.09, 0.055, violet)
+            for i in range(level): plate(self, Vector3(0.04,0.025,0.03), Vector3(-0.1+i*0.05,0.12,-0.05), violet)
         "minigun":
-            plate(self, Vector3(0.4,0.32,0.5), Vector3.ZERO, metal)
-            cylinder(self, Vector3(0,0,-0.32), 0.28, 0.22, dark)
-            cylinder(self, Vector3(0,0,-0.38), 0.12, 0.18, metal)
-            var n := 6
-            var length := 0.45 + level * 0.07
-            for i in range(n):
-                var angle := TAU * i / n
-                var p := Vector3(cos(angle)*0.12,sin(angle)*0.12,-0.53)
-                cylinder(self, p, length, 0.045, dark)
-                cylinder(self, Vector3(p.x,p.y,p.z-length/2), 0.035, 0.027, glow)
-            cylinder(self, Vector3(0,0,-0.53), 0.045, 0.14, dark)
-            for i in range(level): plate(self, Vector3(0.035,0.025,0.035), Vector3(-0.1+i*0.05,0.18,0), glow)
+            add_sketchfab("minigun", 1.05)
+            if level >= 4: add_sketchfab("minigun", 0.60, Vector3(0.16, -0.18, 0))
+            cylinder(self, Vector3(0, 0, -0.60), 0.04, 0.055, glow)
+            plate(self, Vector3(0.22,0.03,0.32), Vector3(0,0.18,0), accent)
+            for i in range(level): plate(self, Vector3(0.035,0.025,0.035), Vector3(-0.1+i*0.05,0.21,0), glow)
         "rocket", "swarm":
-            var count := mini(level + 1, 4) if id == "rocket" else 6
-            var width := 0.53 if id == "rocket" else 0.72
-            plate(self, Vector3(width,0.42,0.52), Vector3.ZERO, dark)
-            plate(self, Vector3(width+0.08,0.12,0.55), Vector3(0,0.2,0), metal)
-            plate(self, Vector3(width*0.5,0.025,0.35), Vector3(0,0.275,0), glow)
-            for side in [-1,1]:
-                plate(self, Vector3(0.06,0.27,0.38), Vector3(side*(width/2+0.02),0,0), metal)
-            for i in range(count):
-                var columns := 2 if id == "rocket" else 3
-                var x := (float(i % columns) - (columns - 1)*0.5)*0.20
-                var y := (float(int(i / columns))-0.5)*0.19
-                cylinder(self, Vector3(x,y,-0.29), 0.08, 0.09, metal)
-                cylinder(self, Vector3(x,y,-0.34), 0.025, 0.063, dark)
-                cylinder(self, Vector3(x,y,-0.36), 0.018, 0.038, glow)
+            add_sketchfab("rocket", 0.8)
+            # Armored launcher casing around the derived turret and its tubes.
+            plate(self, Vector3(0.50, 0.34, 0.35), Vector3(0, 0, -0.25), dark)
+            plate(self, Vector3(0.52, 0.04, 0.32), Vector3(0, 0.18, -0.25), metal)
+            var count := mini(level + 1, 6) if id == "rocket" else 6
+            var tube_glow: Material = glow if id == "rocket" else cyan
+            var trim: Material = accent if id == "rocket" else cyan
+            plate(self, Vector3(0.50, 0.035, 0.30), Vector3(0, 0.22, -0.20), trim)
             if id == "swarm":
-                plate(self, Vector3(0.72,0.42,0.52), Vector3(-0.65,0,0), metal)
-                for i in range(4): cylinder(self, Vector3(-0.8+(i%2)*0.22,(int(i/2)-0.5)*0.2,-0.29),0.05,0.065,glow)
+                for side in [-1, 1]:
+                    plate(self, Vector3(0.035, 0.035, 0.55), Vector3(side * 0.20, 0.22, -0.45), cyan)
+            for i in range(count):
+                var x := (float(i % 3) - 1.0) * 0.14
+                var y := (float(int(i / 3)) - 0.5) * 0.14
+                cylinder(self, Vector3(x,y,-0.54), 0.06, 0.06, dark)
+                cylinder(self, Vector3(x,y,-0.59), 0.025, 0.04, tube_glow)
         "flamethrower", "plasma":
             plate(self, Vector3(0.42,0.34,0.55), Vector3.ZERO, metal)
             cylinder(self, Vector3(0,0,-0.45), 0.55, 0.13, dark)
@@ -190,11 +162,9 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
                 plate(self, Vector3(0.25,0.035,0.035), Vector3(0,0.2,-0.2+i*0.09), glow if id == "flamethrower" else cyan)
             if id == "flamethrower": exhaust(Vector3(0,0,-0.8), glow)
         "turret":
-            plate(self, Vector3(0.5,0.3,0.48), Vector3.ZERO, metal)
-            for side in [-1,1]:
-                cylinder(self, Vector3(side*0.13,0,-0.45), 0.5, 0.06, dark)
-                cylinder(self, Vector3(side*0.13,0,-0.72), 0.035, 0.065, glow)
-            for i in range(level): plate(self, Vector3(0.04,0.04,0.04), Vector3(-0.2+i*0.1,0.18,0), glow)
+            add_sketchfab("turret", 0.85)
+            plate(self, Vector3(0.42,0.035,0.24), Vector3(0,0.22,0), accent)
+            for i in range(level): plate(self, Vector3(0.04,0.04,0.04), Vector3(-0.1+i*0.05,0.25,0), glow)
         "sensor":
             plate(self, Vector3(0.35,0.22,0.24), Vector3(0,0.17,0), metal)
             cylinder(self, Vector3(0,0.45,0), 0.4, 0.025, dark, Vector3.ZERO)
@@ -202,11 +172,11 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
             plate(self, Vector3(0.08,0.06,0.03), Vector3(0.08,0.18,-0.14), sensor_red)
             for i in range(level): plate(self, Vector3(0.04,0.03,0.03), Vector3(-0.12+i*0.06,0.3,0), cyan)
         "drone":
-            for i in range(2):
-                var d := drone(self, metal, dark, cyan)
+            for i in range(1 + int(level / 2)):
+                var d := add_sketchfab("drone", 0.42 + level * 0.03)
                 d.position = Vector3((i*2-1)*0.7,0.5,0)
                 orbiters.append(d)
-            for i in range(level): plate(self, Vector3(0.06,0.04,0.04), Vector3(-0.12+i*0.06,0,0), cyan)
+            for i in range(level): plate(self, Vector3(0.04,0.04,0.04), Vector3(-0.1+i*0.05,0,0), cyan)
         "armor":
             for i in range(level): plate(self, Vector3(0.5+i*0.04,0.08,0.18), Vector3(0,-0.17+i*0.09,-0.08), metal)
         "radar":
@@ -231,6 +201,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
                 saw_blade(pivot,metal,dark)
                 blades.append(pivot)
         "shield":
+            add_sketchfab("shield", 0.42 + 0.025 * level, Vector3(0, 0, 0.1))
             # A perimeter and seven smaller hexagons form an open honeycomb.
             var panel := Node3D.new()
             panel.position.z = -0.32
@@ -261,4 +232,4 @@ func _process(delta: float) -> void:
     for n in blades: n.rotate_z(delta * 9)
     for i in range(orbiters.size()):
         var angle := time * 1.1 + TAU * i / orbiters.size()
-        orbiters[i].position = Vector3(cos(angle)*0.75,0.45,sin(angle)*0.55)
+        orbiters[i].position = Vector3(cos(angle)*0.55,0.45,sin(angle)*0.40)

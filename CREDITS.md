@@ -1,6 +1,8 @@
 # Quellen verwendeter Fremdassets
 
-Alle unten genannten Assets stehen unter [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+Die nachfolgenden Assets stehen, sofern nicht anders angegeben, unter [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+
+- **Colossus Walker 2** von Vavtrudner (https://sketchfab.com/Vavtrudner): https://sketchfab.com/3d-models/colossus-walker-2-810e57d8fbff4d5dab1e5683ec8bc65a – [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), bearbeitet (Geometrie vereinfacht und in animierbare Teile zerlegt, Texturen verkleinert; als Spieler-Chassis integriert).
 
 - **ambientCG – Metal Plates 001**: https://ambientcg.com/view?id=MetalPlates001 – 1K Farb-, Normal-, und Rauheitskarten für Arenaboden und Roboterpanzerung.
 
@@ -20,3 +22,9 @@ Alle unten genannten Assets stehen unter [CC0 1.0](https://creativecommons.org/p
 - **{LEGACY} Sci-fi Crate V2** von Crytra (https://sketchfab.com/Crytra), https://sketchfab.com/3d-models/legacy-sci-fi-crate-v2-c50d7a37b9ec483f8abfdbecd162aa35, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (zusammengeführt, skaliert, Texturen verkleinert) – Arena-Kulisse.
 - **Sci-fi barrel** von Igor_K. (https://sketchfab.com/Igor_K.), https://sketchfab.com/3d-models/sci-fi-barrel-481f7499eaf64b8792bffc59a8b4e05a, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (zusammengeführt, skaliert, Texturen verkleinert) – Arena-Kulisse.
 - **Sci-fi container** von Muffin_one (https://sketchfab.com/Muffin_one), https://sketchfab.com/3d-models/sci-fi-container-8a19b0e0e22c4b9ba057eab497742f61, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (zusammengeführt, skaliert, Texturen verkleinert) – Arena-Kulisse.
+- **Sci-Fi Camera Drone** von 3dsofsan (https://sketchfab.com/3dsofsan), https://sketchfab.com/3d-models/sci-fi-camera-drone-3dbf07385d1b471a96dce6de6cba97d6, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (vereinfacht, umgefärbt; nur falls tatsächlich bearbeitet).
+- **Heavy Sci-Fi Laser Cannon | Weapon** von SUrusso613 (https://sketchfab.com/SUrquh613), https://sketchfab.com/3d-models/heavy-sci-fi-laser-cannon-weapon-4826a9e0a04c492baffd54bed340ad4c, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (vereinfacht, umgefärbt; nur falls tatsächlich bearbeitet).
+- **Shield Generator** von anthwolf (https://sketchfab.com/anthmurphy), https://sketchfab.com/3d-models/shield-generator-69bde44d6abe41f58240687a5f25a441, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (vereinfacht, umgefärbt; nur falls tatsächlich bearbeitet).
+- **Sci-Fi Turret/Cannon** von Goob (https://sketchfab.com/GoobNoob), https://sketchfab.com/3d-models/sci-fi-turretcannon-b5d4095b0f824fbf99eb3b060ed9372c, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (vereinfacht, umgefärbt; nur falls tatsächlich bearbeitet).
+- **Gatling Gun** von MagicBean _神奇豆豆 (https://sketchfab.com/magic_bean), https://sketchfab.com/3d-models/gatling-gun-cca7f67173ee4cd9b0ce3d3329ea19a8, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (vereinfacht, umgefärbt; nur falls tatsächlich bearbeitet).
+- **Sci-Fi Turret** von JonasDelnaye (https://sketchfab.com/JonasDelnaye), https://sketchfab.com/3d-models/sci-fi-turret-fe59a306020d4492b50eea6ec47226a3, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (vereinfacht, umgefärbt; nur falls tatsächlich bearbeitet).

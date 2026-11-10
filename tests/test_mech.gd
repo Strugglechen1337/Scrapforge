@@ -28,7 +28,7 @@ func run() -> void:
         var skin: SkinDefinition = load("res://data/skins/" + id + ".tres")
         assert(skin)
         robot.set_skin(skin)
-        assert(robot.metal.albedo_color == skin.armor_color)
+        assert(robot.metal.albedo_color == skin.armor_color * Color(0.55, 0.55, 0.55))
         assert(robot.metal.albedo_texture != null)
         assert(robot.metal.roughness >= 0.6 and robot.metal.metallic <= 0.15)
     robot.queue_free()
