@@ -15,6 +15,8 @@ void fragment() {
     // Preserve the original texture's scratches and seams as paint modulation.
     vec3 painted = paint * clamp(value * 2.4 + 0.22, 0.22, 1.0);
     ALBEDO = mix(tex * 0.8, painted, armor);
+    // The front vent stays luminous independently of the selected paint skin.
+    EMISSION = vec3(1.0, 0.18, 0.015) * chest * 1.3;
     NORMAL_MAP = texture(normal_texture, UV).rgb;
     METALLIC = 0.15;
     ROUGHNESS = 0.75;
