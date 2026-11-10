@@ -13,6 +13,17 @@ func run_tests() -> void:
     assert(imported_mesh != null)
     assert(swarm.spider.multimesh.mesh == imported_mesh)
     assert(imported_mesh.surface_get_arrays(0)[Mesh.ARRAY_TEX_UV2].size() > 0)
+    var vat := load("res://assets/third_party/sketchfab/mech_spider/walk_vat.png") as Texture2D
+    assert(vat != null and vat.get_width() == 1024 and vat.get_height() == 224)
+    var vat_image := vat.get_image()
+    var initial := vat_image.get_pixel(0, 0)
+    assert(absf(initial.r - 0.5) < 0.01 and absf(initial.g - 0.5) < 0.01)
+    var movement := false
+    for vertex in range(100):
+        if absf(vat_image.get_pixel(vertex, 0).g - vat_image.get_pixel(vertex, 7).g) > 0.01:
+            movement = true
+            break
+    assert(movement)
     spider_instance.free()
     assert(is_equal_approx(swarm.enemy_scale(0), 0.45))
     assert(is_equal_approx(swarm.enemy_scale(1), 0.80))
@@ -43,6 +54,11 @@ func run_tests() -> void:
     ]
     swarm.update_swarm(enemies, Vector2.ZERO, 0.016)
     assert(swarm.spider.multimesh.visible_instance_count == 4)
+    assert(swarm.brute.multimesh.mesh != null)
+    assert(swarm.ranged.multimesh.mesh != null)
+    assert(swarm.brute.multimesh.mesh.surface_get_arrays(0)[Mesh.ARRAY_TEX_UV2].size() > 0)
+    assert(load("res://assets/third_party/sketchfab/brute_spider/brute_spider.glb") is PackedScene)
+    assert(load("res://assets/third_party/sketchfab/ranged_spider/ranged_spider.glb") is PackedScene)
     enemies[0].flash = 1.0
     swarm.update_swarm(enemies, Vector2.ZERO, 0.016)
     enemies[0].kind = 1
