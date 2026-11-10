@@ -38,7 +38,7 @@ func run_tests() -> void:
     assert(boss_attack.jump_warning > 0)
     assert(game.boss_bar.visible)
     assert(game.world_3d.swarm.boss_rig.visible)
-    assert(game.world_3d.swarm.boss_lights.multimesh.visible_instance_count == 8)
+    assert(game.world_3d.swarm.boss_leg_pivots.size() == 4)
     assert(game.world_3d.swarm.legs.multimesh.visible_instance_count >= 16)
     var target: Vector2 = boss_attack.jump_target
     game._process(1.2)

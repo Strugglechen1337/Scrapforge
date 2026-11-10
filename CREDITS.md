@@ -3,6 +3,7 @@
 Die nachfolgenden Assets stehen, sofern nicht anders angegeben, unter [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 
 - **Colossus Walker 2** von Vavtrudner (https://sketchfab.com/Vavtrudner): https://sketchfab.com/3d-models/colossus-walker-2-810e57d8fbff4d5dab1e5683ec8bc65a – [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), bearbeitet (Geometrie vereinfacht und in animierbare Teile zerlegt, Texturen verkleinert; als Spieler-Chassis integriert).
+Die nachfolgend als CC0 bezeichneten Assets stehen unter [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 
 - **ambientCG – Metal Plates 001**: https://ambientcg.com/view?id=MetalPlates001 – 1K Farb-, Normal-, und Rauheitskarten für Arenaboden und Roboterpanzerung.
 
@@ -28,3 +29,6 @@ Die nachfolgenden Assets stehen, sofern nicht anders angegeben, unter [CC0 1.0](
 - **Sci-Fi Turret/Cannon** von Goob (https://sketchfab.com/GoobNoob), https://sketchfab.com/3d-models/sci-fi-turretcannon-b5d4095b0f824fbf99eb3b060ed9372c, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (vereinfacht, umgefärbt; nur falls tatsächlich bearbeitet).
 - **Gatling Gun** von MagicBean _神奇豆豆 (https://sketchfab.com/magic_bean), https://sketchfab.com/3d-models/gatling-gun-cca7f67173ee4cd9b0ce3d3329ea19a8, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (vereinfacht, umgefärbt; nur falls tatsächlich bearbeitet).
 - **Sci-Fi Turret** von JonasDelnaye (https://sketchfab.com/JonasDelnaye), https://sketchfab.com/3d-models/sci-fi-turret-fe59a306020d4492b50eea6ec47226a3, Lizenz CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/), bearbeitet (vereinfacht, umgefärbt; nur falls tatsächlich bearbeitet).
+- **Mech Spider** von Shima Daisuke (https://sketchfab.com/Dusk_Aims): https://sketchfab.com/3d-models/mech-spider-70bcd7115d8643b6b647a2c8a8a92d5e ? [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); bearbeitet (umgef?rbt und Laufanimation als Vertex-Animationstextur gebacken).
+
+- **SCI FI SPIDER ROBOT** von leoxx300 (https://sketchfab.com/leoxx300): https://sketchfab.com/3d-models/sci-fi-spider-robot-b562b06a357d4588a9135eb6e82d3f78 ? [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); bearbeitet (umgef?rbt, skaliert und Beine f?r Animation gruppiert).
