@@ -149,6 +149,8 @@ func _ready() -> void:
 	shot_menu = "--shot-menu" in OS.get_cmdline_user_args()
 	if "--arena-overview" in OS.get_cmdline_user_args():
 		call_deferred("run_arena_overview_shots")
+	elif "--edge-shot" in OS.get_cmdline_user_args():
+		call_deferred("run_edge_shot")
 	elif autoplay:
 		start_game()
 	else:
@@ -1424,6 +1426,18 @@ func show_end(victory: bool) -> void:
 	box.add_child(btn_menu)
 	wire_vertical_focus([btn_save, btn_retry, btn_menu])
 	btn_save.grab_focus()
+
+
+func run_edge_shot() -> void:
+	start_game()
+	player = Vector2(-750, -1000)
+	world_3d.update_view()
+	await get_tree().create_timer(2.0).timeout
+	capture_demo("rand-spielkamera")
+	await get_tree().create_timer(0.5).timeout
+	for task in screenshot_tasks:
+		WorkerThreadPool.wait_for_task_completion(task)
+	get_tree().quit()
 
 
 func run_arena_overview_shots() -> void:

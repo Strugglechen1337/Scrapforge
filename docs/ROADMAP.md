@@ -54,7 +54,7 @@ Diese beiden Punkte gehen in keiner Phase verloren:
 | Phase | Inhalt | Status |
 |---|---|---|
 | 1 | Licht und Rendering | fertig |
-| 2 | Arena und Boden | offen |
+| 2 | Arena und Boden | umgesetzt, Abnahme offen |
 | 3 | Effekte und Trefferfeedback | offen |
 | 4 | Module und Säge: Primitive ersetzen | offen |
 | 5 | Gegner und Boss vereinheitlichen | offen |

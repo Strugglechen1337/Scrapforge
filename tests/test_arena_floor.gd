@@ -21,6 +21,8 @@ func run_tests() -> void:
 		assert(a != null and a.transform == b.transform and a.size == b.size)
 		assert(absf(a.position.x) <= 36 and absf(a.position.z) <= 24)
 		assert(a.texture_albedo != null)
+		if a.name.begins_with("Oil") or a.name.begins_with("Soot") or a.name.begins_with("Puddle"):
+			assert(a.size.x <= 2.5 and a.size.z <= 2.5)
 		assert(a.cull_mask == floor_node.layers and a.distance_fade_enabled)
 	var old := mobile.get_node("Floor") as MeshInstance3D
 	assert(old.material_override is StandardMaterial3D)

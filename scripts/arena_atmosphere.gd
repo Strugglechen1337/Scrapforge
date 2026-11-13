@@ -21,21 +21,30 @@ static func build(parent: Node3D, mobile: bool) -> Node3D:
 	ground.material_override = ground_mat
 	ground.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(ground)
+	# Repeated structural bays behind the arena: open gaps, two depths, crane rails.
 	var walls: Array[Transform3D] = []
 	for x in range(-60, 61, 3):
-		walls.append(Transform3D(Basis.IDENTITY, Vector3(x, 0, -48)))
+		if abs(x) % 18 >= 6:
+			walls.append(Transform3D(Basis.IDENTITY, Vector3(x, 0, -52)))
 	ArenaProps.create_multimesh(root, "DistantHall", ArenaBoundary.scene("wall_panel"), walls)
 	var piers: Array[Transform3D] = []
-	for x in range(-60, 61, 9):
-		piers.append(Transform3D(Basis.IDENTITY.scaled(Vector3(1, 2.3, 1)), Vector3(x, 0, -48)))
+	for z in [-34.0, -49.0]:
+		for x in range(-54, 55, 9):
+			piers.append(Transform3D(Basis.IDENTITY.scaled(Vector3(1, 2.0 if z == -34.0 else 2.7, 1)), Vector3(x, 0, z)))
 	ArenaProps.create_multimesh(root, "DistantPiers", ArenaBoundary.scene("wall_pier"), piers)
+	var rails: Array[Transform3D] = []
+	for z in [-34.0, -49.0]:
+		for x in range(-54, 55, 3):
+			rails.append(Transform3D(Basis.from_euler(Vector3(0, PI * 0.5, 0)), Vector3(x, 5.5 if z == -34.0 else 7.0, z)))
+	ArenaProps.create_multimesh(root, "CraneRails", ArenaBoundary.scene("wall_pipe"), rails)
+	_add_distant_markers(root)
 	for item in [
-		["Hall", Vector3(-17, 3.3, -23.9), Color("c7d9ed")],
-		["Hall", Vector3(17, 3.3, -23.9), Color("c7d9ed")],
-		["Warning", Vector3(-32, 2.8, -23), Color("ff7a1a")],
-		["Warning", Vector3(32, 2.8, -23), Color("ff7a1a")],
-		["Fire", Vector3(-30, 0, 17), Color("ff9b48")],
-		["Fire", Vector3(30, 0, 17), Color("ff9b48")]]:
+		["Hall", Vector3(-18, 3.3, -23.8), Color("c7d9ed")],
+		["Hall", Vector3(19, 3.3, -23.8), Color("c7d9ed")],
+		["Warning", Vector3(-10, 3.0, -23.6), Color("ff7a1a")],
+		["Warning", Vector3(24, 2.8, -23.6), Color("ff7a1a")],
+		["Fire", Vector3(-12, 0, -21.3), Color("ff9b48")],
+		["Fire", Vector3(28, 0, 19), Color("ff9b48")]]:
 		_add_source(root, item[0], item[1], item[2])
 	return root
 
@@ -52,39 +61,7 @@ static func _add_source(root: Node3D, kind: String, pos: Vector3, color: Color) 
 		_add_particles(source, Color("34312e"), true)
 		_add_sparks(source)
 	else:
-		# A small faceted reflector with a recessed emissive lens.
-		var housing := MeshInstance3D.new()
-		var st := SurfaceTool.new()
-		st.begin(Mesh.PRIMITIVE_TRIANGLES)
-		var top := Vector3(0, 0.18, 0)
-		var ring := [Vector3(-0.34, 0, -0.22), Vector3(0.34, 0, -0.22), Vector3(0.34, 0, 0.22), Vector3(-0.34, 0, 0.22)]
-		for i in range(4):
-			st.add_vertex(top)
-			st.add_vertex(ring[i])
-			st.add_vertex(ring[(i + 1) % 4])
-		st.generate_normals()
-		housing.mesh = st.commit()
-		var metal := StandardMaterial3D.new()
-		metal.albedo_color = Color("55595b")
-		metal.metallic = 0.7
-		metal.roughness = 0.8
-		housing.material_override = metal
-		source.add_child(housing)
-		var lens := MeshInstance3D.new()
-		var quad := QuadMesh.new()
-		quad.size = Vector2(0.38, 0.22)
-		lens.mesh = quad
-		lens.rotation.x = PI / 2
-		lens.position.y = -0.01
-		var emission := StandardMaterial3D.new()
-		emission.albedo_color = color
-		emission.emission_enabled = true
-		emission.emission = color
-		emission.emission_energy_multiplier = 1.5
-		emission.cull_mode = BaseMaterial3D.CULL_DISABLED
-		lens.material_override = emission
-		lens.name = "Lens"
-		source.add_child(lens)
+		_add_fixture(source, kind, color)
 	if kind == "Hall":
 		_add_beam(source, color)
 	var light := OmniLight3D.new()
@@ -95,10 +72,10 @@ static func _add_source(root: Node3D, kind: String, pos: Vector3, color: Color) 
 	light.omni_range = 4.0 if kind != "Hall" else 6.0
 	light.shadow_enabled = false
 	source.add_child(light)
-	if kind == "Fire":
+	if kind == "Fire" or kind == "Warning":
 		var tween := source.create_tween().set_loops()
-		tween.tween_property(light, "light_energy", 0.3, 0.45)
-		tween.tween_property(light, "light_energy", 0.5, 0.6)
+		tween.tween_property(light, "light_energy", 0.20 if kind == "Warning" else 0.3, 1.6 if kind == "Warning" else 0.45)
+		tween.tween_property(light, "light_energy", 0.38 if kind == "Warning" else 0.5, 1.8 if kind == "Warning" else 0.6)
 
 static func _add_particles(source: Node3D, color: Color, smoke: bool) -> void:
 	var particles := GPUParticles3D.new()
@@ -179,3 +156,69 @@ static func _add_beam(source: Node3D, color: Color) -> void:
 	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	source.add_child(beam)
 
+
+# Faceted metal luminaire with a camera-facing recessed emissive diffuser.
+static func _add_fixture(source: Node3D, kind: String, color: Color) -> void:
+	var housing := MeshInstance3D.new()
+	housing.name = "Housing"
+	var w := 0.85 if kind == "Hall" else 0.38
+	var h := 0.46 if kind == "Hall" else 0.38
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var front := [Vector3(-w, -h, 0.30), Vector3(w, -h, 0.30), Vector3(w, h, 0.30), Vector3(-w, h, 0.30)]
+	var rear := [Vector3(-w * 0.7, -h * 0.7, -0.16), Vector3(w * 0.7, -h * 0.7, -0.16), Vector3(w * 0.7, h * 0.7, -0.16), Vector3(-w * 0.7, h * 0.7, -0.16)]
+	for i in range(4):
+		var j := (i + 1) % 4
+		for v in [front[i], rear[i], rear[j], front[i], rear[j], front[j]]:
+			st.add_vertex(v)
+	st.generate_normals()
+	housing.mesh = st.commit()
+	var metal := StandardMaterial3D.new()
+	metal.albedo_color = Color("555758")
+	metal.albedo_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Color.jpg")
+	metal.metallic = 0.7
+	metal.roughness = 0.8
+	metal.cull_mode = BaseMaterial3D.CULL_DISABLED
+	housing.material_override = metal
+	source.add_child(housing)
+	var lens := MeshInstance3D.new()
+	lens.name = "Lens"
+	var quad := QuadMesh.new()
+	quad.size = Vector2(w * 1.5, h * 1.35)
+	lens.mesh = quad
+	lens.position = Vector3(0, 0, 0.31)
+	var emission := StandardMaterial3D.new()
+	emission.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	emission.albedo_color = color
+	emission.emission_enabled = true
+	emission.emission = color
+	emission.emission_energy_multiplier = 2.0 if kind == "Hall" else 1.4
+	emission.cull_mode = BaseMaterial3D.CULL_DISABLED
+	lens.material_override = emission
+	source.add_child(lens)
+	if kind == "Warning":
+		var pulse := source.create_tween().set_loops()
+		pulse.tween_property(emission, "emission_energy_multiplier", 0.7, 1.6)
+		pulse.tween_property(emission, "emission_energy_multiplier", 1.6, 1.8)
+
+static func _add_distant_markers(root: Node3D) -> void:
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.28, 0.15)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color("835026")
+	mat.emission_enabled = true
+	mat.emission = Color("835026")
+	mat.emission_energy_multiplier = 0.4
+	quad.material = mat
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = quad
+	mm.instance_count = 7
+	for i in range(7):
+		mm.set_instance_transform(i, Transform3D(Basis.IDENTITY, Vector3(-45 + i * 15, 5.0, -48.8)))
+	var markers := MultiMeshInstance3D.new()
+	markers.name = "DistantMarkers"
+	markers.multimesh = mm
+	markers.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(markers)
