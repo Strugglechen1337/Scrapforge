@@ -21,7 +21,7 @@ func run() -> void:
     game.world_3d.update_view()
     var plasma_node: Node3D = game.world_3d.projectile_nodes[0]
     assert(plasma_node.get_node("PlasmaOrb").visible)
-    assert(plasma_node.get_node("PlasmaOrb").mesh is SphereMesh)
+    assert(plasma_node.get_node("PlasmaOrb").mesh is SphereMesh if OS.has_feature("mobile") else plasma_node.get_node("PlasmaOrb").mesh is ArrayMesh)
     assert(not plasma_node.get_child(0).visible)
     game.fire_clock = 100
     game._process(0.2)

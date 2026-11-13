@@ -30,13 +30,13 @@ var tracer := StandardMaterial3D.new()
 var plasma_glow := StandardMaterial3D.new()
 var soot := StandardMaterial3D.new()
 var crystal_mesh := PrismMesh.new()
-var enemy_orb_mesh := SphereMesh.new()
-var enemy_halo_mesh := SphereMesh.new()
-var bullet_core_mesh := BoxMesh.new()
-var bullet_tail_mesh := BoxMesh.new()
-var rocket_body_mesh := BoxMesh.new()
-var rocket_nose_mesh := BoxMesh.new()
-var plasma_orb_mesh := SphereMesh.new()
+var enemy_orb_mesh = SphereMesh.new()
+var enemy_halo_mesh = SphereMesh.new()
+var bullet_core_mesh = BoxMesh.new()
+var bullet_tail_mesh = BoxMesh.new()
+var rocket_body_mesh = BoxMesh.new()
+var rocket_nose_mesh = BoxMesh.new()
+var plasma_orb_mesh = SphereMesh.new()
 var smoke_mesh := SphereMesh.new()
 var smoke_process := ParticleProcessMaterial.new()
 var elapsed := 0.0
@@ -106,6 +106,35 @@ func _ready() -> void:
 	smoke_process.initial_velocity_min = 0.3
 	smoke_process.initial_velocity_max = 0.7
 	smoke_process.gravity = Vector3(0, 0.4, 0)
+
+	# Keep the legacy mobile meshes and materials intact.  Desktop projectiles
+	# share tapered, vertex-faded strips aligned with their direction of travel.
+	if not OS.has_feature("mobile"):
+		enemy_orb_mesh = tracer_strip(0.14, 0.75)
+		enemy_halo_mesh = tracer_strip(0.28, 1.05)
+		bullet_core_mesh = tracer_strip(0.08, 0.55)
+		bullet_tail_mesh = tracer_strip(0.045, 0.8)
+		rocket_body_mesh = tracer_strip(0.11, 0.6)
+		rocket_nose_mesh = tracer_strip(0.09, 0.25)
+		plasma_orb_mesh = tracer_strip(0.18, 0.85)
+		for mat in [ruby, ruby_halo, tracer, plasma_glow]:
+			mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+			mat.vertex_color_use_as_albedo = true
+			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		ruby.albedo_color = Color("ff2a2a")
+		ruby.emission = Color("ff2a2a")
+		ruby.emission_energy_multiplier = 6.0
+		ruby_halo.albedo_color = Color(1.0, 0.165, 0.165, 0.35)
+		ruby_halo.emission = Color("ff2a2a")
+		ruby_halo.emission_energy_multiplier = 4.0
+		tracer.albedo_color = Color("ff7a1a")
+		tracer.emission = Color("ff7a1a")
+		tracer.emission_energy_multiplier = 3.0
+		plasma_glow.albedo_color = Color("ff7a1a")
+		plasma_glow.emission = Color("ff7a1a")
+		plasma_glow.emission_energy_multiplier = 3.5
 
 	lighting = ScrapEnvironment3D.build(self, OS.has_feature("mobile"), game.graphics_quality)
 	camera = Camera3D.new()
@@ -353,6 +382,17 @@ func create_enemy() -> Node3D:
 			box(leg, Vector3(0.5, 0.07, 0.07), Vector3(side * 0.15, 0, 0), metal)
 	return enemy
 
+# Four triangles form a bright center and a tapered, transparent rear.
+func tracer_strip(width: float, length: float) -> ArrayMesh:
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var points := [Vector3(0, 0, -length * 0.5), Vector3(-width, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, -length * 0.5), Vector3(0, 0, 0), Vector3(width, 0, 0), Vector3(-width, 0, 0), Vector3(0, 0, length * 0.5), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, length * 0.5), Vector3(width, 0, 0)]
+	for point in points:
+		var alpha: float = 1.0 if point == Vector3.ZERO else 0.0
+		surface.set_color(Color(1, 1, 1, alpha))
+		surface.add_vertex(point)
+	return surface.commit()
+
 func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
 	while nodes.size() < count:
 		var node: Node3D
@@ -399,7 +439,7 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
 				var r_body := MeshInstance3D.new()
 				r_body.name = "RocketBody"
 				r_body.mesh = rocket_body_mesh
-				r_body.material_override = dark_rocket
+				r_body.material_override = dark_rocket if OS.has_feature("mobile") else tracer
 				r_body.position = Vector3(0, 0.3, 0)
 				r_body.visible = false
 				r_body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -407,7 +447,7 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
 				var r_nose := MeshInstance3D.new()
 				r_nose.name = "RocketNose"
 				r_nose.mesh = rocket_nose_mesh
-				r_nose.material_override = ruby
+				r_nose.material_override = ruby if OS.has_feature("mobile") else tracer
 				r_nose.position = Vector3(0, 0.3, -0.28)
 				r_nose.visible = false
 				r_nose.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
