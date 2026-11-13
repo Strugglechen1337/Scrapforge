@@ -38,4 +38,4 @@ Die nachfolgend als CC0 bezeichneten Assets stehen unter [CC0 1.0](https://creat
 - **Industrial Pipe & Valve 01** — Philip Modin, [Poly Haven](https://polyhaven.com/a/industrial_pipe_and_valve_01), CC0; 2K HDR unverändert als Umgebungskarte verwendet.
 
 - **Metal Plates 001** von ambientCG (Lennart Demes): https://ambientcg.com/view?id=MetalPlates001 – CC0 1.0; 2K-Farb-, Normal- und Rauheitskarten für den Desktop-Boden, im Shader gemischt.
-- **Concrete 034** von ambientCG (Lennart Demes): https://ambientcg.com/view?id=Concrete034 – CC0 1.0; 2K-Farb-, Normal- und Rauheitskarten für den Desktop-Boden, im Shader gemischt.
+- **Concrete 034** von ambientCG (Lennart Demes): https://ambientcg.com/view?id=Concrete034 – CC0 1.0; 2K-Farbkarte für den Desktop-Boden, im Shader gemischt.

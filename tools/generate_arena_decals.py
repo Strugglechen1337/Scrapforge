@@ -49,9 +49,9 @@ def crisp_stain(kind, seed, count, spread, rad, aspect, level, core, rim, alpha_
 
 # Oil: dark glossy film with a clear edge. Puddle: small, sharp, black core that
 # mirrors the sky through low roughness (ORM). Soot: dark, ragged, uneven.
-crisp_stain('oil', 11, 34, (30, 22), (8, 24), 0.7, 120, (5, 5, 6), (12, 12, 13), 235)
-crisp_stain('puddle', 12, 14, (16, 12), (10, 24), 0.62, 130, (3, 4, 5), (10, 11, 12), 245)
-crisp_stain('soot', 13, 70, (34, 28), (5, 18), 0.8, 90, (6, 6, 6), (16, 15, 14), 215, grain=0.45)
+crisp_stain('oil', 11, 34, (30, 22), (8, 24), 0.7, 120, (28, 30, 34), (42, 44, 48), 225)
+crisp_stain('puddle', 12, 14, (16, 12), (10, 24), 0.62, 130, (28, 34, 42), (42, 48, 56), 235)
+crisp_stain('soot', 13, 70, (34, 28), (5, 18), 0.8, 90, (30, 28, 27), (44, 42, 40), 210, grain=0.45)
 # scratches: worn bright metal lines
 r = random.Random(4)
 im = Image.new('RGBA', (SIZE, SIZE), (0, 0, 0, 0))
@@ -81,9 +81,9 @@ for y in range(SIZE):
 im.putalpha(a)
 im.save(out / 'warning.png')
 
-# ORM: R occlusion, G roughness, B metallic. Puddle is a near-mirror, oil a glossy film.
-Image.new('RGB', (16, 16), (255, 8, 0)).save(out / 'puddle_orm.png')
-Image.new('RGB', (16, 16), (255, 60, 0)).save(out / 'oil_orm.png')
+# ORM: R occlusion, G roughness, B metallic. Puddle catches sky reflection, oil is a glossy film.
+Image.new('RGB', (16, 16), (255, 18, 120)).save(out / 'puddle_orm.png')
+Image.new('RGB', (16, 16), (255, 45, 60)).save(out / 'oil_orm.png')
 
 # One reproducible low-frequency mask; channels decorrelate wear, tone and rust.
 r = random.Random(8125)

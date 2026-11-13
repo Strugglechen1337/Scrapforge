@@ -8,7 +8,7 @@ uniform sampler2D metal_normal : hint_normal, filter_linear_mipmap_anisotropic, 
 uniform sampler2D metal_rough : filter_linear_mipmap, repeat_enable;
 uniform sampler2D concrete_color : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D floor_mask : filter_linear_mipmap, repeat_enable;
-uniform float brightness = 0.07;
+uniform float brightness = 0.056;
 uniform float normal_depth = 0.3;
 
 void fragment() {
@@ -25,7 +25,7 @@ void fragment() {
 	vec3 base = mix(metal, vec3(0.05, 0.03, 0.02) * (0.6 + grunge.g), rust * 0.45);
 	base = mix(base, concrete, wear * 0.6);
 	base = mix(base, base * 0.7, oil * 0.6);
-	ALBEDO = max(base, vec3(0.025));
+	ALBEDO = max(base, vec3(0.020));
 
 	float rough = texture(metal_rough, uv).r;
 	METALLIC = mix(0.4, 0.1, max(rust * 0.7, wear));
