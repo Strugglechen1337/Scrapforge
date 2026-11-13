@@ -1,6 +1,9 @@
 extends Node3D
 class_name ScrapWorld3D
 
+const MAX_PLAYER_PROJECTILES := 128
+const MAX_ENEMY_PROJECTILES := 32
+
 var game: Node
 var lighting: Dictionary
 var robot: Robot3D
@@ -112,8 +115,8 @@ func _ready() -> void:
 	if not OS.has_feature("mobile"):
 		enemy_orb_mesh = tracer_strip(0.14, 0.75)
 		enemy_halo_mesh = tracer_strip(0.28, 1.05)
-		bullet_core_mesh = tracer_strip(0.08, 0.55)
-		bullet_tail_mesh = tracer_strip(0.045, 0.8)
+		bullet_core_mesh = tracer_strip(0.10, 0.65)
+		bullet_tail_mesh = tracer_strip(0.055, 0.9)
 		rocket_body_mesh = tracer_strip(0.11, 0.6)
 		rocket_nose_mesh = tracer_strip(0.09, 0.25)
 		plasma_orb_mesh = tracer_strip(0.18, 0.85)
@@ -216,8 +219,8 @@ func _ready() -> void:
 	boss_warning.visible = true
 
 	# Pre-allocate object pools for projectiles and crystals so combat never stalls on allocations.
-	sync_nodes(projectile_nodes, 48, "bullet")
-	sync_nodes(enemy_projectile_nodes, 36, "enemy_bullet")
+	sync_nodes(projectile_nodes, 48 if OS.has_feature("mobile") else MAX_PLAYER_PROJECTILES, "bullet")
+	sync_nodes(enemy_projectile_nodes, 36 if OS.has_feature("mobile") else MAX_ENEMY_PROJECTILES, "enemy_bullet")
 	sync_nodes(crystal_nodes, 128, "crystal")
 	if not projectile_nodes.is_empty():
 		projectile_nodes[0].visible = true
@@ -386,7 +389,7 @@ func create_enemy() -> Node3D:
 func tracer_strip(width: float, length: float) -> ArrayMesh:
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var points := [Vector3(0, 0, -length * 0.5), Vector3(-width, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, -length * 0.5), Vector3(0, 0, 0), Vector3(width, 0, 0), Vector3(-width, 0, 0), Vector3(0, 0, length * 0.5), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, length * 0.5), Vector3(width, 0, 0)]
+	var points := [Vector3(0, 0, -length * 0.25), Vector3(-width, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, -length * 0.25), Vector3(0, 0, 0), Vector3(width, 0, 0), Vector3(-width, 0, 0), Vector3(0, 0, length * 0.75), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, length * 0.75), Vector3(width, 0, 0)]
 	for point in points:
 		var alpha: float = 1.0 if point == Vector3.ZERO else 0.0
 		surface.set_color(Color(1, 1, 1, alpha))
@@ -555,33 +558,37 @@ func update_view() -> void:
 		if game.shake_enabled and game.shake > 0.0:
 			camera.position += Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * game.shake * 0.015
 	swarm.update_swarm(game.enemies, game.player, get_process_delta_time())
-	sync_nodes(projectile_nodes, game.bullets.size(), "bullet")
+	sync_nodes(projectile_nodes, game.bullets.size() if OS.has_feature("mobile") else mini(game.bullets.size(), MAX_PLAYER_PROJECTILES), "bullet")
 	sync_nodes(crystal_nodes, game.crystals.size(), "crystal")
-	sync_nodes(enemy_projectile_nodes, game.enemy_shots.size(), "enemy_bullet")
+	sync_nodes(enemy_projectile_nodes, game.enemy_shots.size() if OS.has_feature("mobile") else mini(game.enemy_shots.size(), MAX_ENEMY_PROJECTILES), "enemy_bullet")
 	if prewarm_frames == 0:
 		boss_warning.visible = false
 	for e in game.enemies:
 		if e.kind == 3 and e.get("jump_warning", 0.0) > 0:
 			boss_warning.position = Vector3(e.jump_target.x / 50.0, 0.02, e.jump_target.y / 50.0)
 			boss_warning.visible = true
-	for i in range(game.bullets.size()):
+	for i in range(mini(game.bullets.size(), projectile_nodes.size())):
 		var p: Vector2 = game.bullets[i].pos
 		projectile_nodes[i].position = Vector3(p.x / 50.0, 0.5, p.y / 50.0)
 		var is_plasma: bool = game.bullets[i].get("plasma", false)
 		var is_rocket: bool = game.bullets[i].get("rocket", false) and not is_plasma
+		var is_swarm: bool = not OS.has_feature("mobile") and game.bullets[i].get("visual", "") == "swarm"
+		var is_turret: bool = not OS.has_feature("mobile") and game.bullets[i].get("visual", "") == "turret"
 		projectile_nodes[i].get_child(0).visible = not is_plasma
 		projectile_nodes[i].get_child(1).visible = not is_plasma
 		projectile_nodes[i].get_node("PlasmaOrb").visible = is_plasma
-		projectile_nodes[i].get_node("RocketBody").visible = is_rocket
-		projectile_nodes[i].get_node("RocketNose").visible = is_rocket
+		projectile_nodes[i].get_node("RocketBody").visible = is_rocket or is_swarm
+		projectile_nodes[i].get_node("RocketNose").visible = is_rocket or is_swarm
 		var velocity: Vector2 = game.bullets[i].vel
-		projectile_nodes[i].rotation.y = atan2(velocity.x, velocity.y)
+		projectile_nodes[i].rotation.y = atan2(velocity.x, velocity.y) + (0.0 if OS.has_feature("mobile") else PI)
+		if not OS.has_feature("mobile"):
+			projectile_nodes[i].scale = Vector3(0.8, 1.0, 0.8) if is_swarm else (Vector3(0.8, 1.0, 1.3) if is_turret else Vector3.ONE)
 		projectile_nodes[i].get_node("Smoke").emitting = is_rocket
-	for i in range(game.enemy_shots.size()):
+	for i in range(mini(game.enemy_shots.size(), enemy_projectile_nodes.size())):
 		var p: Vector2 = game.enemy_shots[i].pos
 		enemy_projectile_nodes[i].position = Vector3(p.x / 50.0, 0.4, p.y / 50.0)
 		var velocity: Vector2 = game.enemy_shots[i].vel
-		enemy_projectile_nodes[i].rotation.y = atan2(velocity.x, velocity.y)
+		enemy_projectile_nodes[i].rotation.y = atan2(velocity.x, velocity.y) + (0.0 if OS.has_feature("mobile") else PI)
 	for i in range(game.crystals.size()):
 		var p: Vector2 = game.crystals[i]
 		crystal_nodes[i].position = Vector3(p.x / 50.0, 0, p.y / 50.0)

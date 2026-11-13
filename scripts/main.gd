@@ -151,6 +151,12 @@ func _ready() -> void:
 		call_deferred("run_arena_overview_shots")
 	elif "--edge-shot" in OS.get_cmdline_user_args():
 		call_deferred("run_edge_shot")
+	elif "--vfx-demo" in OS.get_cmdline_user_args():
+		start_game()
+		var demo = preload("res://scripts/vfx_demo.gd").new()
+		demo.game = self
+		add_child(demo)
+		set_process(false)
 	elif autoplay:
 		start_game()
 	else:
@@ -1008,7 +1014,7 @@ func _process(delta: float) -> void:
 		world_3d.effects_3d.burst(player + dir * 28, "muzzle")
 		if state.level("swarm"):
 			for angle in [-0.25, -0.12, 0.12, 0.25]:
-				bullets.append({"pos": player, "vel": dir.rotated(angle) * 460, "life": 2.0, "damage": 36})
+				bullets.append({"pos": player, "vel": dir.rotated(angle) * 460, "life": 2.0, "damage": 36, "visual": "swarm"})
 	for enemy in enemies:
 		var diff: Vector2 = player - enemy.pos
 		enemy.flash = maxf(0.0, enemy.get("flash", 0.0) - delta)

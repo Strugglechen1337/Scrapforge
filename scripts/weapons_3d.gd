@@ -72,7 +72,7 @@ func update(game: Node, delta: float) -> void:
         var damage: float = game.definitions[id].values[level - 1]
         if id == "laser":
             AudioManager.play(&"laser", game.player)
-            show_beam(game, direction, 650, Color("b749ff"))
+            show_beam(game, direction, 650, Color("b749ff") if OS.has_feature("mobile") else Color("ff7a1a"))
             for enemy in game.enemies:
                 var offset: Vector2 = enemy.pos - game.player
                 if offset.dot(direction) > 0 and offset.dot(direction) < 650 and absf(offset.cross(direction)) < 23:
@@ -93,4 +93,4 @@ func update(game: Node, delta: float) -> void:
             game.bullets.append({"pos": game.player, "vel": direction * 420, "life": 2.0, "damage": damage, "plasma": true})
         else:
             AudioManager.play(&"minigun", game.player)
-            game.bullets.append({"pos": game.player, "vel": direction * 560, "life": 2.0, "damage": damage})
+            game.bullets.append({"pos": game.player, "vel": direction * 560, "life": 2.0, "damage": damage, "visual": "turret" if id == "turret" else "drone"})
