@@ -3,6 +3,7 @@
 # A deterministic, quiet stage using the same camera and projectile pools as play.
 var game: Node
 const WEAPONS := ["minigun", "rakete", "laser", "plasma", "flammenwerfer", "schulterturm", "schwarm-werfer", "gegnerschuss"]
+const EFFECTS := ["treffer", "tod-schwarm", "tod-brute", "tod-boss", "schadenszahlen"]
 const TIMES := [0.005, 0.2, 0.5]
 
 func _ready() -> void:
@@ -15,7 +16,7 @@ func run() -> void:
     await get_tree().process_frame
     game.world_3d.update_view()
     while true:
-        for weapon in WEAPONS:
+        for weapon in WEAPONS + EFFECTS:
             game.bullets.clear()
             game.enemy_shots.clear()
             game.enemies.clear()
@@ -28,10 +29,32 @@ func run() -> void:
             game.enemies.append(game.make_enemy(2, Vector2(390, -120)))
             var origin := Vector2(48, -16)
             var direction := Vector2(1, -0.3).normalized()
-            if weapon != "gegnerschuss" and not OS.has_feature("mobile"):
+            if weapon in WEAPONS and weapon != "gegnerschuss" and not OS.has_feature("mobile"):
                 var kind: String = {"rakete": "rocket", "schulterturm": "turret", "schwarm-werfer": "swarm", "flammenwerfer": "flamethrower"}.get(weapon, weapon)
                 game.world_3d.effects_3d.muzzle(game.player + direction * 60, direction, kind)
             match weapon:
+                "treffer":
+                    game.enemies[0].pos = Vector2(200, -60)
+                    game.enemies[0].flash = 0.15
+                    for k in range(3):
+                        game.world_3d.effects_3d.hit(Vector2(190, -57) + Vector2(0, k * 6), direction)
+                    game.world_3d.effects_3d.damage(Vector2(200, -60), 24)
+                "tod-schwarm":
+                    game.enemies.clear()
+                    for k in range(6):
+                        game.world_3d.effects_3d.enemy_death(Vector2(170 + k * 28, -50 - (k % 3) * 22), 0)
+                "tod-brute":
+                    game.enemies.clear()
+                    game.world_3d.effects_3d.enemy_death(Vector2(200, -60), 1)
+                "tod-boss":
+                    game.enemies.clear()
+                    game.world_3d.effects_3d.enemy_death(Vector2(200, -60), 3)
+                "schadenszahlen":
+                    game.enemies[0].pos = Vector2(200, -60)
+                    for k in range(5):
+                        game.world_3d.effects_3d.damage(Vector2(120 + k * 70, 20 - (k % 2) * 90), 12 + k * 6)
+                    game.world_3d.effects_3d.damage(Vector2(170, -140), 54, true)
+                    game.world_3d.effects_3d.damage(Vector2(300, -10), 66, true)
                 "minigun":
                     game.bullets.append({"pos": origin, "vel": direction * 560, "life": 2.0})
                 "rakete":

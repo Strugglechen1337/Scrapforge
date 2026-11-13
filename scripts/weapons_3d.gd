@@ -91,6 +91,7 @@ func update(game: Node, delta: float) -> void:
                 var offset: Vector2 = enemy.pos - game.player
                 if offset.dot(direction) > 0 and offset.dot(direction) < 650 and absf(offset.cross(direction)) < 23:
                     enemy.hp -= damage
+                    game.world_3d.effects_3d.hit(enemy.pos, direction)
                     AudioManager.play(&"enemy_hit", enemy.pos)
                     enemy.flash = 0.15
         elif id == "flamethrower":

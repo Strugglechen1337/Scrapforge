@@ -107,3 +107,22 @@ static func build_decals(root: Node3D) -> void:
 		decal.position = Vector3(entry[1], -0.05, entry[2])
 		decal.rotation.y = deg_to_rad(entry[3])
 		root.add_child(decal)
+
+# Reserved, initially hidden scorch decals for death marks (PC only, pooled by CombatEffects3D).
+static func build_scorch_decals(root: Node3D) -> Array[Decal]:
+	var out: Array[Decal] = []
+	var tex: Texture2D = load(DECAL_DIR + "soot.png")
+	for i in range(RESERVED_SCORCH_DECALS):
+		var decal := Decal.new()
+		decal.name = "Scorch" + str(i)
+		decal.texture_albedo = tex
+		decal.cull_mask = FLOOR_LAYER
+		decal.distance_fade_enabled = true
+		decal.distance_fade_begin = 28.0
+		decal.distance_fade_length = 10.0
+		decal.upper_fade = 0.2
+		decal.lower_fade = 0.2
+		decal.visible = false
+		root.add_child(decal)
+		out.append(decal)
+	return out

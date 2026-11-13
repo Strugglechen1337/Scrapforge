@@ -918,7 +918,7 @@ func _process(delta: float) -> void:
 			previous_frame_usec = Time.get_ticks_usec()
 			demo_stage = 2
 		elif demo_stage == 2 and demo_time >= 8:
-			var has_explosion := world_3d.effects_3d.effects.any(func(e): return e.get("kind", "") == "explosion")
+			var has_explosion := world_3d.effects_3d.effects.any(func(e): return e.get("kind", "") == "explosion") or world_3d.effects_3d.active_blasts() > 0
 			var has_damage := world_3d.effects_3d.effects.any(func(e): return e.get("label", false))
 			if (has_explosion and has_damage) or demo_time >= 11:
 				capture_demo("spiel-spaet")
@@ -1088,7 +1088,8 @@ func _process(delta: float) -> void:
 				shake = 3.0
 				spark(bullet.pos, CYAN, 5)
 				damage_texts.append({"pos": enemy.pos, "value": bullet.damage, "life": 0.7})
-				world_3d.effects_3d.damage(enemy.pos, bullet.damage)
+				world_3d.effects_3d.damage(enemy.pos, bullet.damage, bullet.get("rocket", false) or bullet.get("plasma", false))
+				world_3d.effects_3d.hit(bullet.pos, bullet.vel.normalized(), bullet.get("rocket", false) or bullet.get("plasma", false))
 				bullet.life = 0
 				break
 	bullets = bullets.filter(func(b): return b.life > 0)
@@ -1105,7 +1106,7 @@ func _process(delta: float) -> void:
 			crystals.append(enemy.pos)
 			kills += 1
 			spark(enemy.pos, PINK, 16)
-			world_3d.effects_3d.burst(enemy.pos, "explosion")
+			world_3d.effects_3d.enemy_death(enemy.pos, enemy.kind)
 			AudioManager.play(&"explosion", enemy.pos)
 			if enemy.kind == 3:
 				won = true

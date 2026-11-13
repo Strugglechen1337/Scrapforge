@@ -14,6 +14,13 @@ const BEAM_TIME := 0.16
 const MAX_RINGS := 4
 const RING_TIME := 0.4
 const FLAME_HOLD := 0.3
+const MAX_BLASTS := 10
+const MAX_HIT_SPARKS := 12
+const MAX_HIT_SPARKS_PER_FRAME := 3
+const SCORCH_TIME := 6.0
+const PC_LABELS := 16
+const LABEL_TIME := 0.55
+const LABEL_MERGE_RADIUS := 1.1
 var orange := StandardMaterial3D.new()
 var hot_core := StandardMaterial3D.new()
 var cyan := StandardMaterial3D.new()
@@ -33,6 +40,13 @@ var ring_pool: Array[Dictionary] = []
 var flame_systems: Array[GPUParticles3D] = []
 var flame_holder: Node3D
 var flame_time := 0.0
+var blast_sets: Array = []
+var blast_pool: Array[Dictionary] = []
+var hit_pool: Array[Dictionary] = []
+var scorch_pool: Array[Dictionary] = []
+var boss_queue: Array[Dictionary] = []
+var hit_sparks_frame := 0
+var scorch_cooldown := 0.0
 var flash_meshes := {}
 var orange_particles: SphereMesh
 var cyan_particles: SphereMesh
@@ -117,15 +131,18 @@ func _ready() -> void:
 			debris.append({"node": piece, "velocity": Vector3.ZERO})
 		holder.visible = false
 		burst_pool.append({"node": holder, "spark": spark, "lamp": lamp, "orb": orb, "debris": debris, "active": false, "light_on": false})
-	for i in range(MAX_LABELS):
+	for i in range(MAX_LABELS if OS.has_feature("mobile") else PC_LABELS):
 		var label := Label3D.new()
-		label.font_size = 38
-		label.outline_size = 7
+		label.font_size = 38 if OS.has_feature("mobile") else 72
+		if not OS.has_feature("mobile"):
+			label.pixel_size = 0.0095
+			label.outline_modulate = Color(0.05, 0.03, 0.02, 1.0)
+		label.outline_size = 7 if OS.has_feature("mobile") else 18
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		label.no_depth_test = true
 		label.visible = false
 		add_child(label)
-		label_pool.append({"node": label, "active": false})
+		label_pool.append({"node": label, "active": false, "total": 0.75, "value": 0})
 	call_deferred("prewarm")
 
 # PC-only pools; existing explosion lights share the same eight slots.
@@ -293,6 +310,7 @@ func setup_weapon_pools() -> void:
 		add_child(smoke)
 		smoke_pool.append({"node": smoke, "life": 0.0})
 	setup_beam_flame_pools()
+	setup_3b_pools()
 
 static func grow_curve() -> CurveTexture:
 	var c := Curve.new()
@@ -600,7 +618,205 @@ func update_beams_flames_rings(delta: float) -> void:
 			if slot.life <= 0.0:
 				slot.node.visible = false
 
+# ---- 3b: hit sparks, death blasts, scorch decals (PC only, all pooled) ----
+func shard_mesh(mat: Material) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# Irregular scrap splinter (tetrahedron-like shard).
+	var a := Vector3(0.0, 0.0, -0.09)
+	var b := Vector3(0.05, 0.015, 0.06)
+	var c := Vector3(-0.045, 0.02, 0.05)
+	var d := Vector3(0.01, 0.045, 0.0)
+	for tri in [[a, b, c], [a, d, b], [b, d, c], [c, d, a]]:
+		for v in tri:
+			st.add_vertex(v)
+	st.generate_normals()
+	var mesh := st.commit()
+	mesh.surface_set_material(0, mat)
+	return mesh
+
+func gradient_ramp(offsets: Array, colors: Array) -> GradientTexture1D:
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array(offsets)
+	g.colors = PackedColorArray(colors)
+	var t := GradientTexture1D.new()
+	t.gradient = g
+	return t
+
+func blast_materials(s: float) -> Dictionary:
+	var fire_ramp := gradient_ramp([0.0, 0.12, 0.4, 0.75, 1.0], [Color(1, 1, 0.9, 0.75), Color(1, 0.8, 0.25, 0.65), Color(1, 0.4, 0.06, 0.55), Color(0.45, 0.06, 0.03, 0.45), Color(0.2, 0.03, 0.02, 0.0)])
+	var fire := proc_material(Vector3.UP, 180, 0.8 * s, 2.4 * s, Vector3(0, 0.6, 0), 1.3 * s, 2.2 * s, fire_ramp)
+	var sparks := proc_material(Vector3.UP, 180, 2.5 * s, 6.5 * s, Vector3(0, -7, 0), 0.07, 0.12, fade_ramp(Color(1, 0.95, 0.6, 1), Color(1, 0.5, 0.1, 0.9)), false)
+	var debris := ParticleProcessMaterial.new()
+	debris.direction = Vector3.UP
+	debris.spread = 80.0
+	debris.initial_velocity_min = 2.0 * s
+	debris.initial_velocity_max = 5.0 * s
+	debris.gravity = Vector3(0, -10, 0)
+	debris.angular_velocity_min = 200.0
+	debris.angular_velocity_max = 700.0
+	debris.scale_min = 0.8 * s
+	debris.scale_max = 1.5 * s
+	var smoke := proc_material(Vector3.UP, 70, 0.3, 1.0 * s, Vector3(0, 0.7, 0), 0.7 * s, 1.0 * s, fade_ramp(Color(0.12, 0.11, 0.1, 0.6), Color(0.08, 0.08, 0.08, 0.4)))
+	return {"fire": fire, "sparks": sparks, "debris": debris, "smoke": smoke}
+
+func setup_3b_pools() -> void:
+	blast_sets = [blast_materials(0.6), blast_materials(1.0), blast_materials(1.8)]
+	var metal := StandardMaterial3D.new()
+	metal.albedo_color = Color("3a3f48")
+	metal.metallic = 0.8
+	metal.roughness = 0.45
+	var shard := shard_mesh(metal)
+	for i in range(MAX_BLASTS):
+		var holder := Node3D.new()
+		add_child(holder)
+		var fire := soft_system(12, 0.5, true, true, blast_sets[1].fire)
+		var sparks := soft_system(12, 0.5, true, true, blast_sets[1].sparks)
+		var debris := GPUParticles3D.new()
+		debris.process_material = blast_sets[1].debris
+		debris.draw_pass_1 = shard
+		debris.amount = 6
+		debris.lifetime = 0.7
+		debris.one_shot = true
+		debris.explosiveness = 1.0
+		debris.emitting = false
+		debris.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var smoke := soft_system(5, 0.9, true, false, blast_sets[1].smoke)
+		for ps in [fire, sparks, debris, smoke]:
+			holder.add_child(ps)
+		blast_pool.append({"node": holder, "fire": fire, "sparks": sparks, "debris": debris, "smoke": smoke, "life": 0.0, "lamp": null, "lamp_t": 0.0})
+	var hit_proc := proc_material(Vector3(1, 0, 0), 35, 3.0, 7.0, Vector3(0, -6, 0), 0.05, 0.09, fade_ramp(Color(1, 0.95, 0.6, 1), Color(1, 0.5, 0.1, 0.9)), false)
+	for i in range(MAX_HIT_SPARKS):
+		var holder := Node3D.new()
+		add_child(holder)
+		var ps := soft_system(6, 0.25, true, true, hit_proc)
+		holder.add_child(ps)
+		hit_pool.append({"node": holder, "ps": ps, "life": 0.0})
+	for decal in ArenaFloor.build_scorch_decals(self):
+		scorch_pool.append({"node": decal, "life": 0.0})
+
+# Hit: sparks at the impact point flying along the shot direction. Rate limited.
+func hit(p: Vector2, direction: Vector2, strong := false) -> void:
+	if OS.has_feature("mobile") or hit_sparks_frame >= MAX_HIT_SPARKS_PER_FRAME:
+		return
+	for slot in hit_pool:
+		if slot.life <= 0.0:
+			hit_sparks_frame += 1
+			slot.life = 0.3
+			slot.node.position = point(p, 0.6)
+			slot.node.rotation.y = -direction.angle()
+			slot.node.scale = Vector3.ONE * (1.5 if strong else 1.0)
+			slot.ps.restart()
+			slot.ps.emitting = true
+			return
+
+# Class 0 = swarm (cheap), 1 = brute / ranged / rocket / plasma, 2 = boss stage.
+func explode(p: Vector2, cls: int) -> void:
+	var slot: Dictionary = {}
+	for candidate in blast_pool:
+		if candidate.life <= 0.0:
+			slot = candidate
+			break
+	if slot.is_empty():
+		if cls == 0:
+			return
+		slot = blast_pool[0]
+		for candidate in blast_pool:
+			if candidate.life < slot.life:
+				slot = candidate
+		release_light(slot.lamp)
+		slot.lamp = null
+	var mats: Dictionary = blast_sets[cls]
+	slot.life = 1.0
+	slot.node.position = point(p, 0.5)
+	slot.fire.process_material = mats.fire
+	slot.sparks.process_material = mats.sparks
+	slot.debris.process_material = mats.debris
+	slot.smoke.process_material = mats.smoke
+	var systems := ["fire", "sparks", "debris"] if cls == 0 else ["fire", "sparks", "debris", "smoke"]
+	for key in systems:
+		slot[key].restart()
+		slot[key].emitting = true
+	slot.lamp = acquire_light(point(p, 0.7), [1.6, 2.6, 4.0][cls], [2.4, 3.6, 5.5][cls])
+	if slot.lamp != null:
+		slot.lamp.light_color = Color("ff8a2a")
+		slot.lamp_t = [0.12, 0.2, 0.3][cls]
+
+func enemy_death(p: Vector2, kind: int) -> void:
+	if OS.has_feature("mobile"):
+		burst(p, "explosion")
+		return
+	if kind == 3:
+		boss_death(p)
+		return
+	explode(p, 0 if kind == 0 else 1)
+	if kind != 0 or scorch_cooldown <= 0.0:
+		scorch(p, 1.0 if kind == 0 else 1.7)
+		scorch_cooldown = 0.35
+
+# Boss: three blasts within 0.5 s.
+func boss_death(p: Vector2) -> void:
+	var offsets := [Vector2(0, 0), Vector2(-35, 22), Vector2(30, -26)]
+	for i in range(3):
+		boss_queue.append({"t": 0.22 * i, "pos": p + offsets[i]})
+	scorch(p, 3.0)
+
+func scorch(p: Vector2, size: float) -> void:
+	var slot: Dictionary = scorch_pool[0]
+	for candidate in scorch_pool:
+		if candidate.life <= 0.0:
+			slot = candidate
+			break
+		if candidate.life < slot.life:
+			slot = candidate
+	slot.life = SCORCH_TIME
+	slot.node.position = Vector3(p.x / 50.0, -0.05, p.y / 50.0)
+	slot.node.rotation.y = randf() * TAU
+	slot.node.size = Vector3(size * 1.6, 0.5, size * 1.6)
+	slot.node.modulate = Color(0.55, 0.5, 0.46, 1.0)
+	slot.node.visible = true
+
+func active_blasts() -> int:
+	var n := 0
+	for slot in blast_pool:
+		if slot.life > 0.0:
+			n += 1
+	return n
+
+func update_3b(delta: float) -> void:
+	hit_sparks_frame = 0
+	scorch_cooldown = maxf(0.0, scorch_cooldown - delta)
+	for item in boss_queue:
+		item.t -= delta
+		if item.t <= 0.0:
+			explode(item.pos, 2)
+	boss_queue = boss_queue.filter(func(item): return item.t > 0.0)
+	for slot in blast_pool:
+		if slot.life > 0.0:
+			slot.life -= delta
+			if slot.lamp != null:
+				slot.lamp_t -= delta
+				if slot.lamp_t <= 0.0:
+					release_light(slot.lamp)
+					slot.lamp = null
+			if slot.life <= 0.0:
+				for key in ["fire", "sparks", "debris", "smoke"]:
+					slot[key].emitting = false
+	for slot in hit_pool:
+		if slot.life > 0.0:
+			slot.life -= delta
+			if slot.life <= 0.0:
+				slot.ps.emitting = false
+	for slot in scorch_pool:
+		if slot.life > 0.0:
+			slot.life -= delta
+			var a := clampf(slot.life / (SCORCH_TIME * 0.6), 0.0, 1.0)
+			slot.node.modulate.a = a
+			if slot.life <= 0.0:
+				slot.node.visible = false
+
 func update_weapon_pools(delta: float) -> void:
+	update_3b(delta)
 	update_beams_flames_rings(delta)
 	minigun_light_cooldown = maxf(0.0, minigun_light_cooldown - delta)
 	for slot in muzzle_pool:
@@ -636,6 +852,9 @@ func point(p: Vector2, height := 0.42) -> Vector3:
 	return Vector3(p.x / 50.0, height, p.y / 50.0)
 
 func burst(p: Vector2, kind: String) -> void:
+	if kind == "explosion" and not OS.has_feature("mobile"):
+		explode(p, 1)
+		return
 	var slot: Dictionary = {}
 	for candidate in burst_pool:
 		if not candidate.active:
@@ -670,18 +889,52 @@ func burst(p: Vector2, kind: String) -> void:
 		piece.velocity = Vector3(randf_range(-2.4, 2.4), randf_range(1.2, 3.2), randf_range(-2.4, 2.4))
 	effects.append(slot)
 
-func damage(p: Vector2, value: int) -> void:
+const NORMAL_COLOR := Color("ff7a1a")
+const STRONG_COLOR := Color("fff2a0")
+
+# PC: bigger outlined numbers, orange normal / white-yellow strong (rocket, plasma).
+# Hits on the same spot within a short time are merged into one label.
+func damage(p: Vector2, value: int, strong := false) -> void:
+	if OS.has_feature("mobile"):
+		for slot in label_pool:
+			if not slot.active:
+				slot.active = true
+				slot.label = true
+				slot.total = 0.75
+				slot.life = 0.75
+				slot.node.text = str(value)
+				slot.node.modulate = Color.WHITE
+				slot.node.position = point(p, 0.95)
+				slot.node.visible = true
+				effects.append(slot)
+				return
+		return
+	var pos := point(p, 0.95)
+	for slot in label_pool:
+		if slot.active and slot.life > 0.2 and Vector2(slot.node.position.x - pos.x, slot.node.position.z - pos.z).length() < LABEL_MERGE_RADIUS:
+			slot.value += value
+			slot.life = LABEL_TIME
+			slot.node.text = str(slot.value)
+			slot.node.position.y = pos.y
+			if strong:
+				slot.node.modulate = Color(STRONG_COLOR.r, STRONG_COLOR.g, STRONG_COLOR.b, 1.0)
+				slot.node.scale = Vector3.ONE * 1.3
+			return
 	for slot in label_pool:
 		if not slot.active:
 			slot.active = true
 			slot.label = true
-			slot.life = 0.75
+			slot.total = LABEL_TIME
+			slot.life = LABEL_TIME
+			slot.value = value
 			slot.node.text = str(value)
-			slot.node.modulate = Color.WHITE
-			slot.node.position = point(p, 0.95)
+			slot.node.modulate = STRONG_COLOR if strong else NORMAL_COLOR
+			slot.node.scale = Vector3.ONE * (1.3 if strong else 1.0)
+			slot.node.position = pos
 			slot.node.visible = true
 			effects.append(slot)
 			return
+
 
 func _process(delta: float) -> void:
 	if not OS.has_feature("mobile"):
@@ -689,8 +942,8 @@ func _process(delta: float) -> void:
 	for e in effects:
 		e.life -= delta
 		if e.get("label", false):
-			e.node.position.y += delta * 1.15
-			e.node.modulate.a = clampf(e.life / 0.75, 0.0, 1.0)
+			e.node.position.y += delta * (1.15 if OS.has_feature("mobile") else 1.5)
+			e.node.modulate.a = clampf(e.life / e.total, 0.0, 1.0)
 		else:
 			if e.orb.visible:
 				var ratio := clampf(e.life / 0.55, 0.0, 1.0)
