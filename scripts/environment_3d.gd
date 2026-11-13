@@ -9,7 +9,7 @@ static func build(parent: Node3D, mobile: bool, quality: String) -> Dictionary:
 		env.background_color = Color("10131b")
 		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 		env.ambient_light_color = Color("798a9c")
-		env.ambient_light_energy = 2.05
+		env.ambient_light_energy = 0.85
 		env.tonemap_mode = Environment.TONE_MAPPER_ACES
 		env.tonemap_exposure = 1.0
 		env.glow_enabled = true
