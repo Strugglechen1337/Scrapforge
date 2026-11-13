@@ -115,7 +115,7 @@ func _ready() -> void:
 	add_child(camera)
 	camera.look_at(Vector3(0, 0.7, 0))
 	var floor_material := StandardMaterial3D.new()
-	floor_material.albedo_color = Color("42464e") if OS.has_feature("mobile") else Color("69717e")
+	floor_material.albedo_color = Color("42464e") if OS.has_feature("mobile") else Color("70706c")
 	floor_material.metallic = 0.4
 	floor_material.roughness = 0.85
 	floor_material.albedo_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Color.jpg")
@@ -179,8 +179,8 @@ func _ready() -> void:
 	add_child(robot)
 	var player_light := OmniLight3D.new()
 	player_light.position = Vector3(-0.8, 2.2, 1.2)
-	player_light.light_color = Color("dae6ff")
-	player_light.light_energy = 2.8
+	player_light.light_color = Color("dae6ff") if OS.has_feature("mobile") else Color("fff2df")
+	player_light.light_energy = 2.8 if OS.has_feature("mobile") else 5.0
 	player_light.omni_range = 4.5
 	player_light.light_cull_mask = 2
 	robot.add_child(player_light)
@@ -237,7 +237,7 @@ func build_hangar_stage() -> void:
 	hangar_stage.position = Vector3(0, -40, 0)
 	add_child(hangar_stage)
 	var hall_dark := StandardMaterial3D.new()
-	hall_dark.albedo_color = Color("141922") if OS.has_feature("mobile") else Color("394451")
+	hall_dark.albedo_color = Color("141922") if OS.has_feature("mobile") else Color("30302d")
 	hall_dark.metallic = 0.55
 	hall_dark.roughness = 0.68
 	var hall_trim := StandardMaterial3D.new()
@@ -312,8 +312,8 @@ func build_hangar_stage() -> void:
 	for lx in [-3.4, 0.0, 3.4]:
 		var wall_light := OmniLight3D.new()
 		wall_light.position = Vector3(lx, 1.6, -3.5)
-		wall_light.light_color = Color("ff7a1a")
-		wall_light.light_energy = 1.15
+		wall_light.light_color = Color("ff7a1a") if OS.has_feature("mobile") else Color("c2ac91")
+		wall_light.light_energy = 1.15 if OS.has_feature("mobile") else 0.85
 		wall_light.omni_range = 6.5
 		hangar_stage.add_child(wall_light)
 	hangar_robot = Robot3D.new()
@@ -324,7 +324,7 @@ func build_hangar_stage() -> void:
 	var key_light := OmniLight3D.new()
 	key_light.position = Vector3(-1.4, 2.5, 2.4)
 	key_light.light_color = Color("fff0e0")
-	key_light.light_energy = 1.75
+	key_light.light_energy = 1.75 if OS.has_feature("mobile") else 2.4
 	key_light.omni_range = 6.5
 	key_light.light_cull_mask = 2 if OS.has_feature("mobile") else 3
 	hangar_stage.add_child(key_light)

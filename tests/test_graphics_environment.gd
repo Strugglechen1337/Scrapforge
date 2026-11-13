@@ -8,8 +8,10 @@ func _initialize() -> void:
 	var sun: DirectionalLight3D = built.sun
 	assert(env.sky != null and env.reflected_light_source == Environment.REFLECTION_SOURCE_SKY)
 	assert(env.glow_hdr_threshold > 1.0)
+	assert(env.ambient_light_source == Environment.AMBIENT_SOURCE_SKY)
+	assert(is_equal_approx(env.ambient_light_energy, 1.1) and is_equal_approx(env.tonemap_exposure, 0.95))
 	assert(env.ssao_enabled and env.ssil_enabled and env.volumetric_fog_enabled)
-	assert(sun.directional_shadow_mode == DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS)
+	assert(sun.directional_shadow_mode == DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS)
 	ScrapEnvironment3D.apply_quality(env, sun, "mittel")
 	assert(env.ssao_enabled and not env.ssil_enabled and not env.volumetric_fog_enabled)
 	assert(sun.directional_shadow_mode == DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS)
@@ -21,6 +23,9 @@ func _initialize() -> void:
 	assert(mobile_env.sky == null and not mobile_env.ssao_enabled and not mobile_env.ssil_enabled and not mobile_env.volumetric_fog_enabled)
 	# Android stays exactly as before Phase 1: flat color ambient at the old energy.
 	assert(is_equal_approx(mobile_env.ambient_light_energy, 0.85) and mobile_env.background_mode == Environment.BG_COLOR)
+	assert(mobile_env.background_color == Color("10131b"))
+	assert(mobile_env.ambient_light_source == Environment.AMBIENT_SOURCE_COLOR and mobile_env.ambient_light_color == Color("798a9c"))
+	assert(mobile_env.glow_enabled and mobile_env.fog_enabled and is_equal_approx(mobile_env.fog_density, 0.008))
 	parent.queue_free()
 	print("graphics environment OK")
 	quit()
