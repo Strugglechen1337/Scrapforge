@@ -37,7 +37,7 @@ func run() -> void:
                 "rakete":
                     game.bullets.append({"pos": origin, "vel": direction * 560, "life": 2.0, "rocket": true})
                 "laser":
-                    game.weapons.show_beam(game, direction, 650, Color("b749ff") if OS.has_feature("mobile") else Color("ff7a1a"))
+                    game.weapons.show_beam(game, direction, 650 if OS.has_feature("mobile") else 400.0, Color("b749ff") if OS.has_feature("mobile") else Color("ff7a1a"), true)
                 "plasma":
                     game.bullets.append({"pos": origin, "vel": direction * 420, "life": 2.0, "plasma": true})
                 "flammenwerfer":
@@ -58,10 +58,25 @@ func run() -> void:
                     bullet.pos += bullet.vel * dt
                 for bullet in game.enemy_shots:
                     bullet.pos += bullet.vel * dt
+                if weapon == "laser" and fmod(elapsed, 0.1) < dt:
+                    game.weapons.show_beam(game, direction, 650 if OS.has_feature("mobile") else 400.0, Color("ff7a1a"), true)
+                if weapon == "flammenwerfer" and fmod(elapsed, 0.15) < dt:
+                    game.weapons.show_flames(game, direction)
                 game.world_3d.update_view()
                 if elapsed >= TIMES[sample]:
                     game.capture_demo("vfx-%s-%d" % [weapon, sample + 1])
                     sample += 1
+                await get_tree().process_frame
+            if weapon == "plasma" and not OS.has_feature("mobile"):
+                game.world_3d.effects_3d.plasma_impact(Vector2(390, -120), 100.0)
+                game.bullets.clear()
+                game.world_3d.update_view()
+                var t := 0.0
+                while t < 0.14:
+                    t += get_process_delta_time()
+                    game.world_3d.update_view()
+                    await get_tree().process_frame
+                game.capture_demo("vfx-plasma-treffer")
                 await get_tree().process_frame
         game.bullets.clear()
         game.enemies.clear()
@@ -74,6 +89,16 @@ func run() -> void:
             game.enemy_shots.append({"pos": Vector2.from_angle(angle) * (140.0 + 15.0 * (i % 5)), "vel": -Vector2.from_angle(angle) * 240, "life": 4.0})
         game.world_3d.update_view()
         game.capture_demo("gegnerfeuer-dicht")
+        if not OS.has_feature("mobile"):
+            game.enemy_shots.clear()
+            var t2 := 0.0
+            while t2 < 0.4:
+                t2 += get_process_delta_time()
+                game.weapons.show_beam(game, Vector2(1, 0.1).normalized(), 400.0, Color("ff7a1a"), true)
+                game.weapons.show_flames(game, Vector2(-0.8, 0.6).normalized())
+                game.world_3d.update_view()
+                await get_tree().process_frame
+            game.capture_demo("laser-flammen-schwarm")
         await RenderingServer.frame_post_draw
         await get_tree().process_frame
         if not game.shot_dir.is_empty():

@@ -43,6 +43,10 @@ var bullet_tail_mesh = BoxMesh.new()
 var rocket_body_mesh = BoxMesh.new()
 var rocket_nose_mesh = BoxMesh.new()
 var plasma_orb_mesh = SphereMesh.new()
+var plasma_core_mesh: ArrayMesh
+var plasma_aura_mesh: QuadMesh
+var plasma_core_mat := StandardMaterial3D.new()
+var tracer_hot := StandardMaterial3D.new()
 var smoke_mesh := SphereMesh.new()
 var smoke_process := ParticleProcessMaterial.new()
 var rocket_trails: Array[Node3D] = []
@@ -126,7 +130,19 @@ func _ready() -> void:
 		bullet_tail_mesh = tracer_strip(0.09, 2.4)
 		rocket_body_mesh = tracer_strip(0.11, 0.6)
 		rocket_nose_mesh = tracer_strip(0.09, 0.25)
-		plasma_orb_mesh = tracer_strip(0.18, 0.85)
+		plasma_orb_mesh = tracer_strip(0.3, 1.2)
+		plasma_core_mesh = tracer_strip(0.17, 0.9)
+		plasma_core_mat = emissive(Color("fff0d0"))
+		plasma_core_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		plasma_core_mat.emission_energy_multiplier = 3.0
+		tracer_hot = emissive(Color("ffd27a"))
+		tracer_hot.emission_energy_multiplier = 4.6
+		var aura_mat := CombatEffects3D.soft_material(true)
+		aura_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		aura_mat.albedo_color = Color(1.4, 0.5, 0.1, 0.45)
+		plasma_aura_mesh = QuadMesh.new()
+		plasma_aura_mesh.size = Vector2.ONE * 0.8
+		plasma_aura_mesh.material = aura_mat
 		for mat in [ruby, ruby_halo, tracer, plasma_glow]:
 			mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -475,6 +491,22 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
 				plasma_orb.visible = false
 				plasma_orb.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 				node.add_child(plasma_orb)
+				if not OS.has_feature("mobile"):
+					var p_core := MeshInstance3D.new()
+					p_core.name = "PlasmaCore"
+					p_core.mesh = plasma_core_mesh
+					p_core.material_override = plasma_core_mat
+					p_core.position = Vector3(0, 0.32, 0)
+					p_core.visible = false
+					p_core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+					node.add_child(p_core)
+					var p_aura := MeshInstance3D.new()
+					p_aura.name = "PlasmaAura"
+					p_aura.mesh = plasma_aura_mesh
+					p_aura.position = Vector3(0, 0.3, 0)
+					p_aura.visible = false
+					p_aura.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+					node.add_child(p_aura)
 		nodes.append(node)
 	for i in range(nodes.size()):
 		nodes[i].visible = i < count
@@ -590,12 +622,19 @@ func update_view() -> void:
 		projectile_nodes[i].get_child(0).visible = not is_plasma
 		projectile_nodes[i].get_child(1).visible = not is_plasma
 		projectile_nodes[i].get_node("PlasmaOrb").visible = is_plasma
+		if projectile_nodes[i].has_node("PlasmaAura"):
+			projectile_nodes[i].get_node("PlasmaCore").visible = is_plasma
+			projectile_nodes[i].get_node("PlasmaAura").visible = is_plasma
 		projectile_nodes[i].get_node("RocketBody").visible = is_rocket or is_swarm
 		projectile_nodes[i].get_node("RocketNose").visible = is_rocket or is_swarm
 		var velocity: Vector2 = game.bullets[i].vel
 		projectile_nodes[i].rotation.y = atan2(velocity.x, velocity.y) + (0.0 if OS.has_feature("mobile") else PI)
 		if not OS.has_feature("mobile"):
 			projectile_nodes[i].scale = Vector3(0.8, 1.0, 0.8) if is_swarm else (Vector3(0.8, 1.0, 1.3) if is_turret else Vector3.ONE)
+			var want_mat: Material = tracer_hot if is_turret else tracer
+			if projectile_nodes[i].get_child(0).material_override != want_mat:
+				projectile_nodes[i].get_child(0).material_override = want_mat
+				projectile_nodes[i].get_child(1).material_override = want_mat
 		if projectile_nodes[i].has_node("Smoke"):
 			projectile_nodes[i].get_node("Smoke").emitting = is_rocket or is_swarm
 		elif (is_rocket or is_swarm) and trail_used < rocket_trails.size():

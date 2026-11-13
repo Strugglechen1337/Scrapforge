@@ -9,6 +9,11 @@ const MAX_SHELLS := 32
 const MAX_MUZZLE_SMOKE := 12
 const SMOKE_PARTICLES := 8
 const MUZZLE_TIME := 0.075
+const MAX_BEAMS := 4
+const BEAM_TIME := 0.16
+const MAX_RINGS := 4
+const RING_TIME := 0.4
+const FLAME_HOLD := 0.3
 var orange := StandardMaterial3D.new()
 var hot_core := StandardMaterial3D.new()
 var cyan := StandardMaterial3D.new()
@@ -23,6 +28,11 @@ var shell_pool: Array[Dictionary] = []
 var smoke_pool: Array[Dictionary] = []
 var minigun_light_cooldown := 0.0
 var flash_materials := {}
+var beam_pool: Array[Dictionary] = []
+var ring_pool: Array[Dictionary] = []
+var flame_systems: Array[GPUParticles3D] = []
+var flame_holder: Node3D
+var flame_time := 0.0
 var flash_meshes := {}
 var orange_particles: SphereMesh
 var cyan_particles: SphereMesh
@@ -282,6 +292,7 @@ func setup_weapon_pools() -> void:
 		smoke.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(smoke)
 		smoke_pool.append({"node": smoke, "life": 0.0})
+	setup_beam_flame_pools()
 
 static func grow_curve() -> CurveTexture:
 	var c := Curve.new()
@@ -344,6 +355,7 @@ func muzzle(p: Vector2, direction: Vector2, kind: String) -> void:
 			size = 1.3
 			energy = 2.0
 		"turret":
+			mat = "hot"
 			size = 0.7
 			energy = 1.2
 			radius = 2.0
@@ -388,7 +400,208 @@ func muzzle(p: Vector2, direction: Vector2, kind: String) -> void:
 				slot.velocity = Vector3(side.x, 2.4 + randf(), side.y)
 				break
 
+# ---- 3a-3: laser beam, flame cone, plasma ring (PC only, all pooled) ----
+func ribbon_mesh() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for side in [-0.5, 0.5]:
+		var quad := [Vector3(0, 0, 0), Vector3(1, 0, 0), Vector3(1, 0, side), Vector3(0, 0, 0), Vector3(1, 0, side), Vector3(0, 0, side)]
+		for v in quad:
+			st.set_color(Color(1, 1, 1, 1.0 if v.z == 0.0 else 0.0))
+			st.add_vertex(v)
+	return st.commit()
+
+func ring_mesh() -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n := 32
+	for i in range(n):
+		var a := TAU * i / n
+		var b := TAU * (i + 1) / n
+		var radii := [0.8, 0.94, 1.0]
+		var alphas := [0.0, 1.0, 0.0]
+		for k in range(2):
+			var r0: float = radii[k]
+			var r1: float = radii[k + 1]
+			var a0: float = alphas[k]
+			var a1: float = alphas[k + 1]
+			var corners := [[a, r0, a0], [a, r1, a1], [b, r1, a1], [a, r0, a0], [b, r1, a1], [b, r0, a0]]
+			for c in corners:
+				st.set_color(Color(1, 1, 1, c[2]))
+				st.add_vertex(Vector3(cos(c[0]) * c[1], 0, sin(c[0]) * c[1]))
+	return st.commit()
+
+func additive_material(color: Color, energy: float) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.vertex_color_use_as_albedo = true
+	m.albedo_color = Color(color.r * energy, color.g * energy, color.b * energy, 1.0)
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return m
+
+func soft_system(amount: int, life: float, one_shot: bool, additive: bool, proc: ParticleProcessMaterial, size := 1.0) -> GPUParticles3D:
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE * size
+	quad.material = soft_material(additive)
+	var ps := GPUParticles3D.new()
+	ps.process_material = proc
+	ps.draw_pass_1 = quad
+	ps.amount = amount
+	ps.lifetime = life
+	ps.one_shot = one_shot
+	ps.explosiveness = 1.0 if one_shot else 0.0
+	ps.emitting = false
+	ps.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return ps
+
+func proc_material(dir: Vector3, spread: float, vmin: float, vmax: float, gravity: Vector3, smin: float, smax: float, ramp: GradientTexture1D, grow := true) -> ParticleProcessMaterial:
+	var pm := ParticleProcessMaterial.new()
+	pm.direction = dir
+	pm.spread = spread
+	pm.initial_velocity_min = vmin
+	pm.initial_velocity_max = vmax
+	pm.gravity = gravity
+	pm.scale_min = smin
+	pm.scale_max = smax
+	if grow:
+		pm.scale_curve = grow_curve()
+	pm.color_ramp = ramp
+	return pm
+
+func setup_beam_flame_pools() -> void:
+	var ribbon := ribbon_mesh()
+	var glow_mat := additive_material(Color("ff7a1a"), 1.6)
+	var core_mat := additive_material(Color("ffe0b0"), 2.4)
+	var up := Vector3.UP
+	var glow_proc := proc_material(up, 0, 0, 0, Vector3.ZERO, 0.9, 1.1, fade_ramp(Color(1, 0.8, 0.45, 1), Color(1, 0.4, 0.08, 0.7)))
+	var spark_proc := proc_material(up, 180, 2.0, 4.5, Vector3(0, -4, 0), 0.08, 0.14, fade_ramp(Color(1, 0.9, 0.6, 1), Color(1, 0.5, 0.1, 0.9)), false)
+	for i in range(MAX_BEAMS):
+		var glow := MeshInstance3D.new()
+		glow.mesh = ribbon
+		glow.material_override = glow_mat
+		glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		glow.visible = false
+		add_child(glow)
+		var core := MeshInstance3D.new()
+		core.mesh = ribbon
+		core.material_override = core_mat
+		core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		core.visible = false
+		add_child(core)
+		var impact_glow := soft_system(3, 0.3, true, true, glow_proc)
+		add_child(impact_glow)
+		var impact_sparks := soft_system(8, 0.4, true, true, spark_proc)
+		add_child(impact_sparks)
+		beam_pool.append({"glow": glow, "core": core, "impact_glow": impact_glow, "impact_sparks": impact_sparks, "life": 0.0, "impact": 0.0, "length": 1.0})
+	flame_holder = Node3D.new()
+	add_child(flame_holder)
+	var fwd := Vector3(1, 0, 0)
+	var fire := soft_system(64, 0.45, false, true, proc_material(fwd, 12, 6.0, 9.0, Vector3(0, 0.6, 0), 0.6, 0.95, fade_ramp(Color(1, 0.85, 0.4, 0.55), Color(1, 0.3, 0.04, 0.4))))
+	fire.process_material.damping_min = 0.8
+	fire.process_material.damping_max = 1.2
+	var soot := soft_system(14, 0.75, false, false, proc_material(fwd, 16, 3.0, 5.0, Vector3(0, 0.5, 0), 0.3, 0.5, fade_ramp(Color(0.08, 0.07, 0.06, 0.55), Color(0.05, 0.05, 0.05, 0.4))))
+	var sparks := soft_system(16, 0.5, false, true, proc_material(fwd, 22, 5.0, 10.0, Vector3(0, -3, 0), 0.07, 0.12, fade_ramp(Color(1, 0.95, 0.6, 1), Color(1, 0.5, 0.1, 0.9)), false))
+	var heat := soft_system(6, 0.6, false, true, proc_material(fwd, 22, 3.0, 5.0, Vector3(0, 0.8, 0), 0.9, 1.3, fade_ramp(Color(1, 0.8, 0.6, 0.07), Color(1, 0.7, 0.5, 0.05))))
+	for ps in [fire, soot, sparks, heat]:
+		flame_holder.add_child(ps)
+		flame_systems.append(ps)
+	var rmesh := ring_mesh()
+	var rmat := additive_material(Color("ff7a1a"), 2.2)
+	for i in range(MAX_RINGS):
+		var ring := MeshInstance3D.new()
+		ring.mesh = rmesh
+		ring.material_override = rmat
+		ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		ring.visible = false
+		add_child(ring)
+		ring_pool.append({"node": ring, "life": 0.0, "radius": 1.0})
+
+# Laser: continuous ribbon from muzzle to hit point / end of range.
+func beam(start: Vector2, direction: Vector2, length: float, hit: bool) -> void:
+	if OS.has_feature("mobile"):
+		return
+	for slot in beam_pool:
+		if slot.life <= 0.0:
+			slot.life = BEAM_TIME
+			slot.length = length / 50.0
+			var pos := point(start, 0.8)
+			for key in ["glow", "core"]:
+				slot[key].position = pos + (Vector3(0, 0.01, 0) if key == "core" else Vector3.ZERO)
+				slot[key].rotation.y = -direction.angle()
+				slot[key].visible = true
+			slot.impact = 0.0
+			if hit:
+				slot.impact = 0.35
+				var end := point(start + direction * length, 0.8)
+				for key in ["impact_glow", "impact_sparks"]:
+					slot[key].position = end
+					slot[key].restart()
+					slot[key].emitting = true
+			update_beam(slot)
+			return
+
+func update_beam(slot: Dictionary) -> void:
+	var fade: float = clampf(slot.life / BEAM_TIME, 0.0, 1.0)
+	var flicker := 0.85 + randf() * 0.3
+	slot.glow.scale = Vector3(slot.length, 1, 0.6 * flicker * (0.4 + 0.6 * fade))
+	slot.core.scale = Vector3(slot.length, 1, 0.16 * flicker * (0.4 + 0.6 * fade))
+
+# Flame cone: one emitter set, kept alive while the weapon keeps firing.
+func flame(start: Vector2, direction: Vector2) -> void:
+	if OS.has_feature("mobile"):
+		return
+	flame_holder.position = point(start, 0.8)
+	flame_holder.rotation.y = -direction.angle()
+	flame_time = FLAME_HOLD
+	for ps in flame_systems:
+		ps.emitting = true
+
+func plasma_impact(p: Vector2, radius: float) -> void:
+	burst(p, "explosion")
+	if OS.has_feature("mobile"):
+		return
+	for slot in ring_pool:
+		if slot.life <= 0.0:
+			slot.life = RING_TIME
+			slot.radius = radius / 50.0
+			slot.node.position = point(p, 0.12)
+			slot.node.visible = true
+			slot.node.scale = Vector3.ONE * 0.2
+			slot.node.transparency = 0.0
+			break
+
+func update_beams_flames_rings(delta: float) -> void:
+	for slot in beam_pool:
+		if slot.life > 0.0:
+			slot.life -= delta
+			if slot.life <= 0.0:
+				slot.glow.visible = false
+				slot.core.visible = false
+			else:
+				update_beam(slot)
+		if slot.impact > 0.0:
+			slot.impact -= delta
+			if slot.impact <= 0.0:
+				slot.impact_glow.emitting = false
+				slot.impact_sparks.emitting = false
+	if flame_time > 0.0:
+		flame_time -= delta
+		if flame_time <= 0.0:
+			for ps in flame_systems:
+				ps.emitting = false
+	for slot in ring_pool:
+		if slot.life > 0.0:
+			slot.life -= delta
+			var t := clampf(1.0 - slot.life / RING_TIME, 0.0, 1.0)
+			slot.node.scale = Vector3.ONE * lerpf(0.2, slot.radius, 1.0 - pow(1.0 - t, 2.0))
+			slot.node.transparency = t
+			if slot.life <= 0.0:
+				slot.node.visible = false
+
 func update_weapon_pools(delta: float) -> void:
+	update_beams_flames_rings(delta)
 	minigun_light_cooldown = maxf(0.0, minigun_light_cooldown - delta)
 	for slot in muzzle_pool:
 		if slot.life > 0.0:

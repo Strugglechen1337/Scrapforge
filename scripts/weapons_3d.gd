@@ -11,7 +11,11 @@ func damage(game: Node, amount: float) -> void:
     game.hp -= amount
     AudioManager.play(&"player_hit", game.player)
 
-func show_beam(game: Node, direction: Vector2, length: float, color: Color) -> void:
+func show_beam(game: Node, direction: Vector2, length: float, color: Color, hit := false) -> void:
+    if not OS.has_feature("mobile"):
+        var start: Vector2 = game.player + direction * 60
+        game.world_3d.effects_3d.beam(start, direction, maxf(length - 60.0, 10.0), hit)
+        return
     var beam := MeshInstance3D.new()
     if OS.has_feature("mobile"): beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     var mesh := CylinderMesh.new()
@@ -31,6 +35,9 @@ func show_beam(game: Node, direction: Vector2, length: float, color: Color) -> v
     game.get_tree().create_timer(0.12).timeout.connect(beam.queue_free)
 
 func show_flames(game: Node, direction: Vector2) -> void:
+    if not OS.has_feature("mobile"):
+        game.world_3d.effects_3d.flame(game.player + direction * 60, direction)
+        return
     var particles := CPUParticles3D.new()
     if OS.has_feature("mobile"): particles.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     var mesh := SphereMesh.new()
@@ -74,7 +81,12 @@ func update(game: Node, delta: float) -> void:
             game.world_3d.effects_3d.muzzle(game.player + direction * 60, direction, id)
         if id == "laser":
             AudioManager.play(&"laser", game.player)
-            show_beam(game, direction, 650, Color("b749ff") if OS.has_feature("mobile") else Color("ff7a1a"))
+            var reach := 0.0
+            for enemy in game.enemies:
+                var offset: Vector2 = enemy.pos - game.player
+                if offset.dot(direction) > 0 and offset.dot(direction) < 650 and absf(offset.cross(direction)) < 23:
+                    reach = maxf(reach, offset.dot(direction))
+            show_beam(game, direction, reach if reach > 0.0 and not OS.has_feature("mobile") else 650.0, Color("b749ff") if OS.has_feature("mobile") else Color("ff7a1a"), reach > 0.0)
             for enemy in game.enemies:
                 var offset: Vector2 = enemy.pos - game.player
                 if offset.dot(direction) > 0 and offset.dot(direction) < 650 and absf(offset.cross(direction)) < 23:

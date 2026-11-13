@@ -55,7 +55,7 @@ Diese beiden Punkte gehen in keiner Phase verloren:
 |---|---|---|
 | 1 | Licht und Rendering | fertig |
 | 2 | Arena und Boden | fertig |
-| 3 | Effekte und Trefferfeedback | offen |
+| 3 | Effekte und Trefferfeedback | in Arbeit (3a umgesetzt) |
 | 4 | Module und Säge: Primitive ersetzen | offen |
 | 5 | Gegner und Boss vereinheitlichen | offen |
 | 6 | Skins als Lack | offen |

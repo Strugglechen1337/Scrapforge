@@ -1072,7 +1072,10 @@ func _process(delta: float) -> void:
 					for victim in enemies:
 						if victim.pos.distance_to(enemy.pos) < 100:
 							victim.hp -= bullet.damage
-					world_3d.effects_3d.burst(bullet.pos, "explosion")
+					if OS.has_feature("mobile"):
+						world_3d.effects_3d.burst(bullet.pos, "explosion")
+					else:
+						world_3d.effects_3d.plasma_impact(bullet.pos, 100.0)
 				else:
 					enemy.hp -= bullet.damage
 				enemy.flash = 0.15

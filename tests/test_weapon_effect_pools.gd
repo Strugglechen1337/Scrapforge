@@ -16,7 +16,7 @@ func run() -> void:
     await process_frame
     var fx = game.world_3d.effects_3d
     if OS.has_feature("mobile"):
-        assert(fx.light_pool.is_empty() and fx.muzzle_pool.is_empty() and fx.shell_pool.is_empty() and fx.smoke_pool.is_empty())
+        assert(fx.beam_pool.is_empty() and fx.ring_pool.is_empty() and fx.flame_systems.is_empty() and fx.light_pool.is_empty() and fx.muzzle_pool.is_empty() and fx.shell_pool.is_empty() and fx.smoke_pool.is_empty())
         assert(game.world_3d.projectile_nodes[0].get_node("Smoke") is CPUParticles3D)
     else:
         assert(fx.light_pool.size() == fx.MAX_LIGHTS and fx.MAX_LIGHTS == 8)
@@ -70,6 +70,31 @@ func run() -> void:
         assert(fx.light_count == 1)
         fx._process(1.0)
         assert(fx.light_count == 0)
+        # 3a-3: beam, flame, plasma ring pools
+        assert(fx.beam_pool.size() == fx.MAX_BEAMS and fx.ring_pool.size() == fx.MAX_RINGS)
+        assert(fx.flame_systems.size() == 4)
+        var before3 := count_nodes(fx)
+        for i in range(200):
+            fx.beam(Vector2.ZERO, Vector2.RIGHT, 400.0, i % 2 == 0)
+            fx.flame(Vector2.ZERO, Vector2.RIGHT)
+            fx.plasma_impact(Vector2(i, 0), 100.0)
+            assert(fx.beam_pool.filter(func(s): return s.life > 0).size() <= fx.MAX_BEAMS)
+            assert(fx.ring_pool.filter(func(s): return s.life > 0).size() <= fx.MAX_RINGS)
+            assert(fx.light_count <= fx.MAX_LIGHTS)
+            fx._process(0.01)
+        assert(fx.beam_pool.any(func(s): return s.glow.visible))
+        assert(fx.flame_systems.all(func(ps): return ps.emitting))
+        assert(count_nodes(fx) == before3)
+        fx._process(1.0)
+        fx._process(1.0)
+        for slot in fx.beam_pool:
+            assert(not slot.glow.visible and not slot.core.visible and slot.life <= 0 and slot.impact <= 0)
+            assert(not slot.impact_glow.emitting and not slot.impact_sparks.emitting)
+        for slot in fx.ring_pool:
+            assert(not slot.node.visible and slot.life <= 0)
+        assert(fx.flame_systems.all(func(ps): return not ps.emitting))
+        assert(fx.light_count == 0)
+        assert(count_nodes(fx) == before3)
         assert(count_nodes(fx) == before)
     game.queue_free()
     root.get_node("AudioManager").stop_all()
