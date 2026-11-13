@@ -22,7 +22,7 @@ void fragment() {
 
 	vec3 metal = texture(metal_color, uv).rgb * brightness * tone;
 	vec3 concrete = texture(concrete_color, uv * 0.5 + vec2(0.13, 0.27)).rgb * 0.06;
-	vec3 base = mix(metal, vec3(0.05, 0.03, 0.02) * (0.6 + grunge.g), rust * 0.45);
+	vec3 base = mix(metal, vec3(0.05, 0.03, 0.02) * (0.6 + grunge.g), rust * 0.12);
 	base = mix(base, concrete, wear * 0.6);
 	base = mix(base, base * 0.7, oil * 0.6);
 	ALBEDO = max(base, vec3(0.020));

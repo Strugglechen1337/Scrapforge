@@ -101,7 +101,8 @@ static func build_decals(root: Node3D) -> void:
 		decal.lower_fade = 0.2
 		if orm.has(kind):
 			decal.texture_orm = orm[kind]
-		decal.size = Vector3(entry[4], 0.5, entry[5])
+		var size_factor := 0.72 if kind in ["oil", "soot", "puddle"] else 1.0
+		decal.size = Vector3(entry[4] * size_factor, 0.5, entry[5] * size_factor)
 		decal.position = Vector3(entry[1], -0.05, entry[2])
 		decal.rotation.y = deg_to_rad(entry[3])
 		root.add_child(decal)

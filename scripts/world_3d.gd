@@ -124,6 +124,7 @@ func _ready() -> void:
 			box(self, Vector3(0.6, 2.5, 50), Vector3(x, 1.15, 0), metal)
 	else:
 		ArenaBoundary.build(self)
+		ArenaAtmosphere.build(self, false)
 	ArenaProps.build(self)
 	if OS.has_feature("mobile"):
 		for x in range(-20, 21):
@@ -145,14 +146,15 @@ func _ready() -> void:
 				stripe.position = Vector3(i * 1.2, -0.06, z + 0.22)
 				stripe.rotation.y = 0.6
 				add_child(stripe)
-	for z in [-8.0, 8.0]:
-		for x in [-12.0, 0.0, 12.0]:
-			var lamp := OmniLight3D.new()
-			lamp.position = Vector3(x, 1.0, z)
-			lamp.light_color = Color("ff7a1a") if z < 0 else Color("33f5ff")
-			lamp.light_energy = 0.5
-			lamp.omni_range = 5.0
-			add_child(lamp)
+	if OS.has_feature("mobile"):
+		for z in [-8.0, 8.0]:
+			for x in [-12.0, 0.0, 12.0]:
+				var lamp := OmniLight3D.new()
+				lamp.position = Vector3(x, 1.0, z)
+				lamp.light_color = Color("ff7a1a") if z < 0 else Color("33f5ff")
+				lamp.light_energy = 0.5
+				lamp.omni_range = 5.0
+				add_child(lamp)
 	robot = Robot3D.new()
 	add_child(robot)
 	var player_light := OmniLight3D.new()
