@@ -34,3 +34,5 @@ Die nachfolgend als CC0 bezeichneten Assets stehen unter [CC0 1.0](https://creat
 
 - **- Spider Mech -** von MichaelIbrahim (https://sketchfab.com/mikey.a.ibrahim): https://sketchfab.com/3d-models/spider-mech-c4bca3a398344fa998eb404cc1d3d7a2 ? [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); bearbeitet (reduziert, umgef?rbt und f?r Laufanimation markiert).
 - **Spider drone** von Nooxy (https://sketchfab.com/Nooxy): https://sketchfab.com/3d-models/spider-drone-62d7805038744326baaaca74c6e99c2f ? [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); bearbeitet (umgef?rbt und f?r Schwebebewegung angepasst).
+
+- **Industrial Pipe & Valve 01** — Philip Modin, [Poly Haven](https://polyhaven.com/a/industrial_pipe_and_valve_01), CC0; 2K HDR unverändert als Umgebungskarte verwendet.

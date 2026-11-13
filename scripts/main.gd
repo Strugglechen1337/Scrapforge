@@ -18,6 +18,7 @@ var skins: Dictionary = {}
 var selected_skin := "standard"
 var language := "de"
 var fullscreen_enabled := false
+var graphics_quality := "hoch"
 
 var player := Vector2.ZERO
 var enemies: Array[Dictionary] = []
@@ -115,6 +116,11 @@ func _ready() -> void:
 	world_3d.game = self
 	add_child(world_3d)
 	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--quality=") and not OS.has_feature("mobile"):
+			var quality := arg.trim_prefix("--quality=")
+			if quality in ["hoch", "mittel", "niedrig"]:
+				graphics_quality = quality
+				ScrapEnvironment3D.apply_quality(world_3d.lighting.environment, world_3d.lighting.sun, quality)
 		if arg.begins_with("--shot-dir="):
 			shot_dir = arg.trim_prefix("--shot-dir=")
 		elif arg.begins_with("--shot-suffix="):
@@ -162,6 +168,7 @@ func save_settings(path: String = SETTINGS_PATH) -> void:
 	cfg.set_value("display", "shake_enabled", shake_enabled)
 	cfg.set_value("display", "language", language)
 	cfg.set_value("display", "fullscreen", fullscreen_enabled)
+	cfg.set_value("display", "graphics_quality", graphics_quality)
 	cfg.save(path)
 
 
@@ -174,6 +181,9 @@ func load_settings(path: String = SETTINGS_PATH) -> void:
 		shake_enabled = bool(cfg.get_value("display", "shake_enabled", true))
 		language = str(cfg.get_value("display", "language", "de"))
 		fullscreen_enabled = bool(cfg.get_value("display", "fullscreen", false))
+		var quality := str(cfg.get_value("display", "graphics_quality", "hoch"))
+		if quality in ["hoch", "mittel", "niedrig"]:
+			graphics_quality = quality
 
 
 func select_skin(skin_id: String, path: String = SETTINGS_PATH) -> void:
@@ -493,6 +503,20 @@ func show_settings() -> void:
 	)
 	box.add_child(fullscreen)
 	focus_controls.append(fullscreen)
+
+	if not OS.has_feature("mobile"):
+		var quality_button := OptionButton.new()
+		quality_button.custom_minimum_size = Vector2(480, 48)
+		for label in ["GRAFIK: HOCH", "GRAFIK: MITTEL", "GRAFIK: NIEDRIG"]:
+			quality_button.add_item(label)
+		quality_button.select(["hoch", "mittel", "niedrig"].find(graphics_quality))
+		quality_button.item_selected.connect(func(index: int):
+			graphics_quality = ["hoch", "mittel", "niedrig"][index]
+			ScrapEnvironment3D.apply_quality(world_3d.lighting.environment, world_3d.lighting.sun, graphics_quality)
+			save_settings()
+		)
+		box.add_child(quality_button)
+		focus_controls.append(quality_button)
 
 	var lang_btn := button("SPRACHE: DEUTSCH", func():
 		language = "de"

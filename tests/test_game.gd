@@ -6,6 +6,12 @@ func _initialize() -> void:
 func run_tests() -> void:
     var game = load("res://scenes/main.tscn").instantiate()
     root.add_child(game)
+    game.graphics_quality = "mittel"
+    game.save_settings("user://test_graphics_settings.cfg")
+    game.graphics_quality = "hoch"
+    game.load_settings("user://test_graphics_settings.cfg")
+    assert(game.graphics_quality == "mittel")
+    DirAccess.remove_absolute(ProjectSettings.globalize_path("user://test_graphics_settings.cfg"))
     game.show_settings()
     assert(game.panel.find_children("*", "HSlider", true, false).size() == 3)
     game.start_game()

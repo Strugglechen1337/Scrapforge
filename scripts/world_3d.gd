@@ -2,6 +2,7 @@ extends Node3D
 class_name ScrapWorld3D
 
 var game: Node
+var lighting: Dictionary
 var robot: Robot3D
 var camera: Camera3D
 var entities: Node3D
@@ -106,26 +107,7 @@ func _ready() -> void:
 	smoke_process.initial_velocity_max = 0.7
 	smoke_process.gravity = Vector3(0, 0.4, 0)
 
-	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color("10131b")
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color("798a9c")
-	env.ambient_light_energy = 0.85
-	env.tonemap_mode = Environment.TONE_MAPPER_ACES
-	env.tonemap_exposure = 1.0
-	env.glow_enabled = true
-	env.fog_enabled = true
-	env.fog_light_color = Color("202b39")
-	env.fog_density = 0.008
-	var environment := WorldEnvironment.new()
-	environment.environment = env
-	add_child(environment)
-	var light := DirectionalLight3D.new()
-	light.rotation_degrees = Vector3(-55, -35, 0)
-	light.light_energy = 1.0
-	light.shadow_enabled = true
-	add_child(light)
+	lighting = ScrapEnvironment3D.build(self, OS.has_feature("mobile"), game.graphics_quality)
 	camera = Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
 	camera.fov = 40
@@ -133,7 +115,7 @@ func _ready() -> void:
 	add_child(camera)
 	camera.look_at(Vector3(0, 0.7, 0))
 	var floor_material := StandardMaterial3D.new()
-	floor_material.albedo_color = Color("42464e")
+	floor_material.albedo_color = Color("42464e") if OS.has_feature("mobile") else Color("69717e")
 	floor_material.metallic = 0.4
 	floor_material.roughness = 0.85
 	floor_material.albedo_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Color.jpg")
@@ -255,7 +237,7 @@ func build_hangar_stage() -> void:
 	hangar_stage.position = Vector3(0, -40, 0)
 	add_child(hangar_stage)
 	var hall_dark := StandardMaterial3D.new()
-	hall_dark.albedo_color = Color("141922")
+	hall_dark.albedo_color = Color("141922") if OS.has_feature("mobile") else Color("394451")
 	hall_dark.metallic = 0.55
 	hall_dark.roughness = 0.68
 	var hall_trim := StandardMaterial3D.new()
@@ -344,7 +326,7 @@ func build_hangar_stage() -> void:
 	key_light.light_color = Color("fff0e0")
 	key_light.light_energy = 1.75
 	key_light.omni_range = 6.5
-	key_light.light_cull_mask = 2
+	key_light.light_cull_mask = 2 if OS.has_feature("mobile") else 3
 	hangar_stage.add_child(key_light)
 	var rim_light := OmniLight3D.new()
 	rim_light.position = Vector3(1.6, 2.2, -1.8)
