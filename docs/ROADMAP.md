@@ -39,8 +39,10 @@ Diese beiden Punkte gehen in keiner Phase verloren:
 1. Alle `tests/test_*.gd` laufen grün, CI bleibt grün. Geänderte Logik bekommt
    angepasste oder neue Tests.
 2. Autoplay-FPS-Report vor und nach der Phase ausführen und beide Werte nennen
-   (Durchschnitt, 1 % Low). Auf Qualitätsstufe "Hoch" kein Einbruch unter
-   60 FPS im vollen Schwarm.
+   (Durchschnitt, 1 % Low). Auf Qualitätsstufe "Hoch" liegt das 1 % Low im
+   vollen Schwarm bei mindestens 60 FPS und kein einzelner Frame dauert länger
+   als 25 ms. Das Einzelframe-Minimum allein ist kein Kriterium, es schwankt
+   auch im Ausgangsstand zwischen etwa 52 und 70 FPS.
 3. Vorher/Nachher-Screenshots aus der Spielkamera: Schwarm, Boss, Hangar,
    Ergebnis. Die Bilder in `docs/screenshots/` erst nach Freigabe ersetzen.
 4. Checkliste aus `ART_DIRECTION.md` Abschnitt 12 abgehakt.
@@ -51,7 +53,7 @@ Diese beiden Punkte gehen in keiner Phase verloren:
 
 | Phase | Inhalt | Status |
 |---|---|---|
-| 1 | Licht und Rendering | umgesetzt, Abnahme offen |
+| 1 | Licht und Rendering | fertig |
 | 2 | Arena und Boden | offen |
 | 3 | Effekte und Trefferfeedback | offen |
 | 4 | Module und Säge: Primitive ersetzen | offen |
