@@ -18,13 +18,18 @@ func capture() -> void:
 	world.add_child(camera)
 	camera.fov = 40
 	var second := "--second" in OS.get_cmdline_user_args()
+	var game := "--game" in OS.get_cmdline_user_args()
 	var center := Vector3(9, 0, 5) if second else Vector3(-7, 0, -5)
 	camera.position = center + Vector3(2.0, 7.0, 4.0)
 	camera.look_at(center)
+	if game:
+		# same pose as the gameplay camera in world_3d.gd
+		camera.position = Vector3(6, 15.5, 10.3)
+		camera.look_at(Vector3(0, 0.7, 0))
 	camera.current = true
 	for i in range(50):
 		await process_frame
 	await RenderingServer.frame_post_draw
-	var filename := "boden-nah-2.png" if second else "boden-nah-1.png"
+	var filename := "boden-spielkamera.png" if game else ("boden-nah-2.png" if second else "boden-nah-1.png")
 	var result := root.get_texture().get_image().save_png(directory.path_join(filename))
 	quit(0 if result == OK else 1)

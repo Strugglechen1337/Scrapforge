@@ -10,8 +10,9 @@ func run_tests() -> void:
 	var floor_node := one.get_node("Floor") as MeshInstance3D
 	var mat := floor_node.material_override as ShaderMaterial
 	assert(mat != null and mat.shader != null)
-	for param in ["metal_color", "metal_normal", "metal_rough", "concrete_color", "concrete_normal", "concrete_rough"]:
+	for param in ["metal_color", "metal_normal", "metal_rough", "concrete_color", "floor_mask"]:
 		assert(mat.get_shader_parameter(param) != null, param)
+	assert(ArenaFloor.MAX_DECALS <= 24)
 	assert(ArenaFloor.STATIC_DECALS + ArenaFloor.RESERVED_SCORCH_DECALS <= ArenaFloor.MAX_DECALS)
 	assert(one.get_child_count() == ArenaFloor.STATIC_DECALS + 1)
 	for i in range(1, one.get_child_count()):
@@ -20,6 +21,7 @@ func run_tests() -> void:
 		assert(a != null and a.transform == b.transform and a.size == b.size)
 		assert(absf(a.position.x) <= 36 and absf(a.position.z) <= 24)
 		assert(a.texture_albedo != null)
+		assert(a.cull_mask == floor_node.layers and a.distance_fade_enabled)
 	var old := mobile.get_node("Floor") as MeshInstance3D
 	assert(old.material_override is StandardMaterial3D)
 	assert(mobile.get_child_count() == 76)
