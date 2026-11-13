@@ -36,3 +36,6 @@ Die nachfolgend als CC0 bezeichneten Assets stehen unter [CC0 1.0](https://creat
 - **Spider drone** von Nooxy (https://sketchfab.com/Nooxy): https://sketchfab.com/3d-models/spider-drone-62d7805038744326baaaca74c6e99c2f ? [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); bearbeitet (umgef?rbt und f?r Schwebebewegung angepasst).
 
 - **Industrial Pipe & Valve 01** — Philip Modin, [Poly Haven](https://polyhaven.com/a/industrial_pipe_and_valve_01), CC0; 2K HDR unverändert als Umgebungskarte verwendet.
+
+- **Metal Plates 001** von ambientCG (Lennart Demes): https://ambientcg.com/view?id=MetalPlates001 – CC0 1.0; 2K-Farb-, Normal- und Rauheitskarten für den Desktop-Boden, im Shader gemischt.
+- **Concrete 034** von ambientCG (Lennart Demes): https://ambientcg.com/view?id=Concrete034 – CC0 1.0; 2K-Farb-, Normal- und Rauheitskarten für den Desktop-Boden, im Shader gemischt.

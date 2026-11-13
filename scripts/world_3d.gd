@@ -114,33 +114,7 @@ func _ready() -> void:
 	camera.position = Vector3(6, 15.5, 10.3)
 	add_child(camera)
 	camera.look_at(Vector3(0, 0.7, 0))
-	var floor_material := StandardMaterial3D.new()
-	floor_material.albedo_color = Color("42464e") if OS.has_feature("mobile") else Color("70706c")
-	floor_material.metallic = 0.4
-	floor_material.roughness = 0.85
-	floor_material.albedo_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Color.jpg")
-	floor_material.normal_enabled = true
-	floor_material.normal_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_NormalGL.jpg")
-	floor_material.roughness_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Roughness.jpg")
-	floor_material.uv1_scale = Vector3(20, 14, 1)
-	box(self, Vector3(80, 0.2, 55), Vector3(0, -0.2, 0), floor_material)
-	var dirt := StandardMaterial3D.new()
-	dirt.albedo_color = Color("0b0d10")
-	dirt.roughness = 0.5
-	var random := RandomNumberGenerator.new()
-	random.seed = 8125
-	var stain_mesh := CylinderMesh.new()
-	stain_mesh.top_radius = 1.0
-	stain_mesh.bottom_radius = 1.0
-	stain_mesh.height = 0.012
-	stain_mesh.radial_segments = 12
-	for i in range(75):
-		var stain := MeshInstance3D.new()
-		stain.mesh = stain_mesh
-		stain.material_override = dirt
-		stain.position = Vector3(random.randf_range(-35, 35), -0.078, random.randf_range(-24, 24))
-		stain.scale = Vector3(random.randf_range(0.15, 0.8), 1, random.randf_range(0.12, 0.5))
-		add_child(stain)
+	ArenaFloor.build(self, OS.has_feature("mobile"))
 	for z in [-25.0, 25.0]:
 		box(self, Vector3(76, 2.5, 0.6), Vector3(0, 1.15, z), metal)
 		for x in range(-34, 35, 4):
@@ -149,24 +123,26 @@ func _ready() -> void:
 		box(self, Vector3(0.6, 2.5, 50), Vector3(x, 1.15, 0), metal)
 	# Sketchfab scenery props (crates, canisters, barrels) frame the arena; see scripts/arena_props.gd.
 	ArenaProps.build(self)
-	for x in range(-20, 21):
-		box(self, Vector3(0.035, 0.012, 55), Vector3(x * 2, -0.09, 0), metal)
-	for z in range(-14, 15):
-		box(self, Vector3(80, 0.012, 0.035), Vector3(0, -0.09, z * 2), metal)
+	if OS.has_feature("mobile"):
+		for x in range(-20, 21):
+			box(self, Vector3(0.035, 0.012, 55), Vector3(x * 2, -0.09, 0), metal)
+		for z in range(-14, 15):
+			box(self, Vector3(80, 0.012, 0.035), Vector3(0, -0.09, z * 2), metal)
 	for x in range(-18, 19, 2):
 		box(self, Vector3(0.8, 0.02, 0.08), Vector3(x * 2, -0.08, -25), orange)
 		box(self, Vector3(0.8, 0.02, 0.08), Vector3(x * 2, -0.08, 25), cyan)
-	for z in [-8.0, 8.0]:
-		box(self, Vector3(35, 0.02, 0.05), Vector3(0, -0.07, z), orange if z < 0 else cyan)
-		for i in range(-14, 15):
-			var stripe := MeshInstance3D.new()
-			var mesh := BoxMesh.new()
-			mesh.size = Vector3(0.45, 0.015, 0.07)
-			stripe.mesh = mesh
-			stripe.material_override = orange if z < 0 else cyan
-			stripe.position = Vector3(i * 1.2, -0.06, z + 0.22)
-			stripe.rotation.y = 0.6
-			add_child(stripe)
+	if OS.has_feature("mobile"):
+		for z in [-8.0, 8.0]:
+			box(self, Vector3(35, 0.02, 0.05), Vector3(0, -0.07, z), orange if z < 0 else cyan)
+			for i in range(-14, 15):
+				var stripe := MeshInstance3D.new()
+				var mesh := BoxMesh.new()
+				mesh.size = Vector3(0.45, 0.015, 0.07)
+				stripe.mesh = mesh
+				stripe.material_override = orange if z < 0 else cyan
+				stripe.position = Vector3(i * 1.2, -0.06, z + 0.22)
+				stripe.rotation.y = 0.6
+				add_child(stripe)
 	for z in [-8.0, 8.0]:
 		for x in [-12.0, 0.0, 12.0]:
 			var lamp := OmniLight3D.new()
