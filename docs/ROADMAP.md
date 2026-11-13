@@ -7,6 +7,26 @@ starten und laufen, bekommt aber keine neuen Grafikeffekte.
 Die Art Direction steht in [ART_DIRECTION.md](ART_DIRECTION.md) und ist für
 alle Phasen verbindlich.
 
+## Zielbild
+
+- **Optik:** realistisches PBR, Schrott-Industriehalle bei Nacht, düster und
+  dreckig, Orange und Cyan als Akzente. Stimmungsreferenz für Kamera,
+  Lesbarkeit und Effektdichte: *The Riftbreaker*.
+- **Mechanik:** klassische Survivors-Formel, wie sie aktuell *Warhammer
+  Survivors* umsetzt.
+- Referenz heißt Struktur und Niveau. Keine Namen, Figuren, Waffen, Stages,
+  Texte, Assets oder Optik aus anderen Spielen übernehmen.
+- Hauptplattform ist der PC (Forward+). Android bleibt lauffähig, bekommt aber
+  keine neuen Grafikeffekte.
+
+## Alleinstellungsmerkmale
+
+Diese beiden Punkte gehen in keiner Phase verloren:
+
+1. **Sichtbar modularer Mech.** Jedes Bauteil sitzt am Modell, der Build ist am
+   Mech ablesbar, der Abschluss ist ein Screenshot im Ergebnisbildschirm.
+2. **Realistische 3D-Grafik** statt Pixel-Look.
+
 ## Arbeitsweise
 
 - Immer genau eine Phase bearbeiten, danach stoppen und Screenshots zeigen.
@@ -239,13 +259,33 @@ Abnahme: Tests und CI grün, FPS-Report unverändert, Screenshots identisch.
 ## Phase 9 – Inhalt und Tiefe
 
 Erst angehen, wenn Phase 1 bis 5 abgenommen sind. Hier entscheidet sich der
-Wiederspielwert. Die Punkte sind Vorschläge und brauchen vorher eine
-Entscheidung, was davon gewünscht ist.
+Wiederspielwert. Dieser Abschnitt beschreibt das Mechanik-Zielbild. Er ist
+noch keine Aufgabe: Vor dem Start wird daraus eine Phasenplanung mit
+Abnahmekriterien gemacht.
 
-- Weitere Evolutionen: jede Waffe bekommt eine Kombination mit einem
-  Zusatzmodul (bisher nur Raketenwerfer + Radar = Schwarm-Werfer).
-- Mehr Gegnertypen und ein zweiter Boss.
-- Dauerhafter Fortschritt zwischen Runs (Schrott im Hangar ausgeben).
-- Zweite Arena mit anderem Licht (z. B. Außengelände bei Regen).
-- Zweites Chassis mit anderem Spielstil.
-- Schwierigkeitsstufen und Bestenliste pro Skin/Chassis.
+### Mechanik-Zielbild
+
+- **Evolutionen:** Jede Basiswaffe hat eine Evolution. Sie entsteht aus der
+  Waffe auf Maximalstufe, einem passenden Zusatzmodul und einer Kiste (bisher
+  nur Raketenwerfer + Radar = Schwarm-Werfer).
+- **Elitegegner und Kisten:** Elitegegner lassen Kisten fallen. Die Kiste
+  löst die Evolution aus, wenn die Bedingungen erfüllt sind.
+- **Dauerhafter Fortschritt:** Schrott aus Runs kauft im Hangar Chassis und
+  dauerhafte Werte.
+- **Chassis:** Mehrere Chassis, jedes mit eigener Startwaffe und eigenem
+  Spielstil.
+- **Arenen:** Mehrere Arenen mit eigenen Gegnertypen und eigenem Licht (z. B.
+  Außengelände bei Regen).
+- **Bosse:** Mehrere Bosse. Einzelne haben eine Bedingung, etwa dass eine
+  bestimmte Evolution nötig ist.
+- **Freischalt-Ziele** für Chassis, Arenen, Waffen und Skins.
+
+### Bewusst besser machen als die Vorlage
+
+- Jede Waffenstufe ist spürbar: mehr Schaden, mehr Fläche oder neues
+  Verhalten, nicht nur eine kleine Zahl.
+- Dauerhafter Fortschritt ist Bonus und nie Pflicht zum Weiterkommen. Ein Run
+  ist auch ohne Hangar-Käufe schaffbar.
+- Keine reinen Grind-Ziele bei den Freischaltungen.
+- Evolutionseffekte bleiben lesbar (Art Direction, Regel 1) und
+  verdecken weder Spieler noch Gegner.
