@@ -115,22 +115,24 @@ func _ready() -> void:
 	add_child(camera)
 	camera.look_at(Vector3(0, 0.7, 0))
 	ArenaFloor.build(self, OS.has_feature("mobile"))
-	for z in [-25.0, 25.0]:
-		box(self, Vector3(76, 2.5, 0.6), Vector3(0, 1.15, z), metal)
-		for x in range(-34, 35, 4):
-			box(self, Vector3(0.25, 3.0, 1.0), Vector3(x, 1.4, z), metal)
-	for x in [-37.0, 37.0]:
-		box(self, Vector3(0.6, 2.5, 50), Vector3(x, 1.15, 0), metal)
-	# Sketchfab scenery props (crates, canisters, barrels) frame the arena; see scripts/arena_props.gd.
+	if OS.has_feature("mobile"):
+		for z in [-25.0, 25.0]:
+			box(self, Vector3(76, 2.5, 0.6), Vector3(0, 1.15, z), metal)
+			for x in range(-34, 35, 4):
+				box(self, Vector3(0.25, 3.0, 1.0), Vector3(x, 1.4, z), metal)
+		for x in [-37.0, 37.0]:
+			box(self, Vector3(0.6, 2.5, 50), Vector3(x, 1.15, 0), metal)
+	else:
+		ArenaBoundary.build(self)
 	ArenaProps.build(self)
 	if OS.has_feature("mobile"):
 		for x in range(-20, 21):
 			box(self, Vector3(0.035, 0.012, 55), Vector3(x * 2, -0.09, 0), metal)
 		for z in range(-14, 15):
 			box(self, Vector3(80, 0.012, 0.035), Vector3(0, -0.09, z * 2), metal)
-	for x in range(-18, 19, 2):
-		box(self, Vector3(0.8, 0.02, 0.08), Vector3(x * 2, -0.08, -25), orange)
-		box(self, Vector3(0.8, 0.02, 0.08), Vector3(x * 2, -0.08, 25), cyan)
+		for x in range(-18, 19, 2):
+			box(self, Vector3(0.8, 0.02, 0.08), Vector3(x * 2, -0.08, -25), orange)
+			box(self, Vector3(0.8, 0.02, 0.08), Vector3(x * 2, -0.08, 25), cyan)
 	if OS.has_feature("mobile"):
 		for z in [-8.0, 8.0]:
 			box(self, Vector3(35, 0.02, 0.05), Vector3(0, -0.07, z), orange if z < 0 else cyan)
@@ -494,10 +496,22 @@ func update_view() -> void:
 	robot.position = center
 	collection_ring.position = center + Vector3(0, 0.03, 0)
 	collection_ring.scale = Vector3.ONE * (1.0 + game.state.level("magnet") * 0.2)
-	camera.position = center + Vector3(6, 15.5, 10.3)
-	camera.look_at(center + Vector3(0, 0.7, 0))
-	if game.shake_enabled and game.shake > 0.0:
-		camera.position += Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * game.shake * 0.015
+	var cam_mode: String = game.camera_shot_mode if "camera_shot_mode" in game else ""
+	if cam_mode == "overview":
+		camera.fov = 48
+		camera.position = Vector3(0.0, 48.0, 38.0)
+		camera.look_at(Vector3(0.0, 0.0, -2.0))
+	elif cam_mode == "boundary_north":
+		camera.position = Vector3(-16.0, 9.5, -10.5)
+		camera.look_at(Vector3(-24.0, 1.4, -24.5))
+	elif cam_mode == "boundary_south":
+		camera.position = Vector3(18.0, 9.5, 11.5)
+		camera.look_at(Vector3(24.0, 1.0, 24.2))
+	else:
+		camera.position = center + Vector3(6, 15.5, 10.3)
+		camera.look_at(center + Vector3(0, 0.7, 0))
+		if game.shake_enabled and game.shake > 0.0:
+			camera.position += Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * game.shake * 0.015
 	swarm.update_swarm(game.enemies, game.player, get_process_delta_time())
 	sync_nodes(projectile_nodes, game.bullets.size(), "bullet")
 	sync_nodes(crystal_nodes, game.crystals.size(), "crystal")

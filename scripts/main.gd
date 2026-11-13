@@ -55,6 +55,7 @@ var updater: ReleaseUpdater
 var touch_controls: TouchControls
 var autoplay := false
 var shot_menu := false
+var camera_shot_mode := ""
 var demo_time := 0.0
 var demo_stage := 0
 var robot: RobotVisual
@@ -146,7 +147,9 @@ func _ready() -> void:
 		InputMap.action_add_event(joy_bind[0], jb)
 	autoplay = "--autoplay" in OS.get_cmdline_user_args()
 	shot_menu = "--shot-menu" in OS.get_cmdline_user_args()
-	if autoplay:
+	if "--arena-overview" in OS.get_cmdline_user_args():
+		call_deferred("run_arena_overview_shots")
+	elif autoplay:
 		start_game()
 	else:
 		show_menu()
@@ -1421,6 +1424,29 @@ func show_end(victory: bool) -> void:
 	box.add_child(btn_menu)
 	wire_vertical_focus([btn_save, btn_retry, btn_menu])
 	btn_save.grab_focus()
+
+
+func run_arena_overview_shots() -> void:
+	start_game()
+	clear_ui()
+	camera_shot_mode = "overview"
+	world_3d.update_view()
+	await get_tree().create_timer(0.6).timeout
+	capture_demo("arena-uebersicht")
+	await get_tree().create_timer(0.4).timeout
+	camera_shot_mode = "boundary_north"
+	world_3d.update_view()
+	await get_tree().create_timer(0.4).timeout
+	capture_demo("rand-nord")
+	await get_tree().create_timer(0.4).timeout
+	camera_shot_mode = "boundary_south"
+	world_3d.update_view()
+	await get_tree().create_timer(0.4).timeout
+	capture_demo("rand-sued")
+	await get_tree().create_timer(0.4).timeout
+	for task in screenshot_tasks:
+		WorkerThreadPool.wait_for_task_completion(task)
+	get_tree().quit()
 
 
 func run_menu_shots() -> void:
