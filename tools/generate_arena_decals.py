@@ -11,44 +11,47 @@ out.mkdir(parents=True, exist_ok=True)
 SIZE = 256
 
 
-def blob_alpha(r, count, spread, rad, aspect, peak, blur):
-    """Soft irregular stain as an alpha mask."""
-    mask = Image.new('L', (SIZE, SIZE), 0)
-    d = ImageDraw.Draw(mask)
-    for _ in range(count):
-        x, y = r.gauss(128, spread[0]), r.gauss(128, spread[1])
-        rr = r.randrange(*rad)
-        d.ellipse((x - rr, y - rr * aspect, x + rr, y + rr * aspect), fill=peak)
-    mask = mask.filter(ImageFilter.GaussianBlur(blur))
-    # fade to zero at the borders so the decal box never shows an edge
-    edge = Image.new('L', (SIZE, SIZE), 0)
-    ImageDraw.Draw(edge).ellipse((14, 14, SIZE - 14, SIZE - 14), fill=255)
-    edge = edge.filter(ImageFilter.GaussianBlur(22))
-    return Image.composite(mask, Image.new('L', (SIZE, SIZE), 0), edge).point(lambda v: v)
-
-
-def stain(kind, color, count, spread, rad, aspect, peak, blur, seed):
+def crisp_stain(kind, seed, count, spread, rad, aspect, level, core, rim, alpha_max, grain=0):
+    """Irregular stain with a clear contour: blobs are blurred, then cut at a level.
+    The distance inside the contour darkens the core; grain breaks up soot."""
     r = random.Random(seed)
-    alpha = blob_alpha(r, count, spread, rad, aspect, peak, blur)
-    # multiply with the edge falloff
-    edge = Image.new('L', (SIZE, SIZE), 0)
-    ImageDraw.Draw(edge).ellipse((10, 10, SIZE - 10, SIZE - 10), fill=255)
-    edge = edge.filter(ImageFilter.GaussianBlur(24))
-    alpha = Image.eval(alpha, lambda v: v)
-    px, ex = alpha.load(), edge.load()
+    field = Image.new('L', (SIZE, SIZE), 0)
+    d = ImageDraw.Draw(field)
+    for _ in range(count):
+        x = min(max(r.gauss(128, spread[0]), 50), 206)
+        y = min(max(r.gauss(128, spread[1]), 50), 206)
+        rr = r.randrange(*rad)
+        d.ellipse((x - rr, y - rr * aspect, x + rr, y + rr * aspect), fill=255)
+    field = field.filter(ImageFilter.GaussianBlur(9))
+    noise = Image.new('L', (32, 32))
+    noise.putdata([r.randrange(256) for _ in range(32 * 32)])
+    noise = noise.resize((SIZE, SIZE), Image.Resampling.BICUBIC)
+    fp, npx = field.load(), noise.load()
+    im = Image.new('RGBA', (SIZE, SIZE))
+    ip = im.load()
     for y in range(SIZE):
         for x in range(SIZE):
-            px[x, y] = px[x, y] * ex[x, y] // 255
-    im = Image.new('RGBA', (SIZE, SIZE), color + (0,))
-    im.putalpha(alpha)
+            v = fp[x, y] + (npx[x, y] - 128) * 0.35
+            if v < level:
+                ip[x, y] = rim + (0,)
+                continue
+            depth = min((v - level) / 70.0, 1.0)  # 0 at the contour, 1 in the core
+            col = tuple(int(rim[i] + (core[i] - rim[i]) * depth) for i in range(3))
+            a = alpha_max
+            if grain:
+                a = int(alpha_max * min(1.0, 0.35 + depth) * (1.0 - grain * npx[(x * 3) % SIZE, (y * 3) % SIZE] / 255.0))
+            ip[x, y] = col + (a,)
+    # one pixel of anti-aliasing on the contour only
+    a = im.getchannel('A').filter(ImageFilter.GaussianBlur(0.8))
+    im.putalpha(a)
     im.save(out / (kind + '.png'))
 
 
-# dark, low contrast: oil and soot darken the plates, the puddle mirrors the sky
-stain('oil', (13, 13, 15), 60, (34, 26), (8, 26), 0.7, 215, 4, 1)
-stain('soot', (18, 17, 15), 90, (46, 36), (6, 22), 0.75, 190, 5, 2)
-stain('puddle', (40, 46, 54), 40, (26, 18), (14, 34), 0.62, 245, 3, 3)
-
+# Oil: dark glossy film with a clear edge. Puddle: small, sharp, black core that
+# mirrors the sky through low roughness (ORM). Soot: dark, ragged, uneven.
+crisp_stain('oil', 11, 34, (30, 22), (8, 24), 0.7, 120, (5, 5, 6), (12, 12, 13), 235)
+crisp_stain('puddle', 12, 14, (16, 12), (10, 24), 0.62, 130, (3, 4, 5), (10, 11, 12), 245)
+crisp_stain('soot', 13, 70, (34, 28), (5, 18), 0.8, 90, (6, 6, 6), (16, 15, 14), 215, grain=0.45)
 # scratches: worn bright metal lines
 r = random.Random(4)
 im = Image.new('RGBA', (SIZE, SIZE), (0, 0, 0, 0))
@@ -79,8 +82,8 @@ im.putalpha(a)
 im.save(out / 'warning.png')
 
 # ORM: R occlusion, G roughness, B metallic. Puddle is a near-mirror, oil a glossy film.
-Image.new('RGB', (16, 16), (255, 14, 255)).save(out / 'puddle_orm.png')
-Image.new('RGB', (16, 16), (255, 70, 90)).save(out / 'oil_orm.png')
+Image.new('RGB', (16, 16), (255, 8, 0)).save(out / 'puddle_orm.png')
+Image.new('RGB', (16, 16), (255, 60, 0)).save(out / 'oil_orm.png')
 
 # One reproducible low-frequency mask; channels decorrelate wear, tone and rust.
 r = random.Random(8125)
