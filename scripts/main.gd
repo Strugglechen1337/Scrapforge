@@ -65,6 +65,8 @@ var won := false
 var shake_enabled := true
 var shake := 0.0
 var shake_offset := Vector2.ZERO
+var camera_feedback := CameraFeedback.new()
+var hitstop_until_msec := 0
 var hit_flash := 0.0
 var particles: Array[Dictionary] = []
 var damage_texts: Array[Dictionary] = []
@@ -485,7 +487,7 @@ func show_settings() -> void:
 		focus_controls.append(slider)
 
 	var shake_button := CheckButton.new()
-	shake_button.text = "BILDSCHIRMWACKELN (SCREEN-SHAKE)"
+	shake_button.text = "BILDSCHIRMWACKELN UND TREFFERSTOPP"
 	shake_button.button_pressed = shake_enabled
 	shake_button.custom_minimum_size = Vector2(480, 52)
 	shake_button.toggled.connect(func(v: bool):
@@ -874,6 +876,7 @@ func write_fps_report() -> void:
 
 
 func _process(delta: float) -> void:
+	release_hitstop()
 	if autoplay:
 		var now := Time.get_ticks_usec()
 		if previous_frame_usec > 0 and mode == "playing" and enemies.size() >= 150:
@@ -1041,6 +1044,7 @@ func _process(delta: float) -> void:
 						enemy.pos = enemy.jump_target
 						world_3d.effects_3d.burst(enemy.pos, "explosion")
 						AudioManager.play(&"explosion", enemy.pos)
+						feedback("boss_slam")
 						if enemy.pos.distance_to(player) < 100:
 							weapons.damage(self, 25)
 		var saw := state.level("saw")
@@ -1051,7 +1055,6 @@ func _process(delta: float) -> void:
 		if diff.length() < 36:
 			weapons.damage(self, delta * 8.0 * (1.0 - state.level("armor") * 0.05))
 			hit_flash = 0.4
-			shake = 2.0
 	for bullet in bullets:
 		bullet.pos += bullet.vel * delta
 		bullet.life -= delta
@@ -1071,7 +1074,8 @@ func _process(delta: float) -> void:
 				if bullet.get("rocket", false):
 					world_3d.effects_3d.burst(bullet.pos, "explosion")
 				hit_flash = 0.15
-				shake = 3.0
+				if enemy.kind == CameraFeedback.KIND_BOSS:
+					feedback("boss_hit")
 				spark(bullet.pos, CYAN, 5)
 				damage_texts.append({"pos": enemy.pos, "value": bullet.damage, "life": 0.7})
 				world_3d.effects_3d.damage(enemy.pos, bullet.damage)
@@ -1083,7 +1087,7 @@ func _process(delta: float) -> void:
 		shot.life -= delta
 		if shot.pos.distance_to(player) < 25:
 			weapons.damage(self, 8)
-			shake = 3.0
+			feedback("player_shot")
 			shot.life = 0
 	enemy_shots = enemy_shots.filter(func(b): return b.life > 0)
 	for enemy in enemies:
@@ -1093,8 +1097,11 @@ func _process(delta: float) -> void:
 			spark(enemy.pos, PINK, 16)
 			world_3d.effects_3d.burst(enemy.pos, "explosion")
 			AudioManager.play(&"explosion", enemy.pos)
-			if enemy.kind == 3:
+			if enemy.kind == CameraFeedback.KIND_BOSS:
 				won = true
+				feedback("boss_death")
+			elif enemy.kind == CameraFeedback.KIND_BRUTE:
+				feedback("brute_death")
 	enemies = enemies.filter(func(e): return e.hp > 0)
 	for i in range(crystals.size() - 1, -1, -1):
 		var distance := player.distance_to(crystals[i])
@@ -1307,6 +1314,22 @@ func resume_game() -> void:
 	mode = "playing"
 	build_hud()
 
+
+## Camera shake and hit-stop for heavy events only (see CameraFeedback).
+## Both follow the "screen shake" setting. Hit-stop is skipped on Android.
+func feedback(event_name: String) -> void:
+	var result := camera_feedback.event(event_name, Time.get_ticks_msec() / 1000.0, shake_enabled)
+	shake = maxf(shake, result.shake)
+	if result.hitstop > 0.0 and not OS.has_feature("mobile"):
+		Engine.time_scale = CameraFeedback.HITSTOP_SCALE
+		hitstop_until_msec = Time.get_ticks_msec() + int(result.hitstop * 1000.0)
+
+func release_hitstop() -> void:
+	if Engine.time_scale != 1.0 and Time.get_ticks_msec() >= hitstop_until_msec:
+		Engine.time_scale = 1.0
+
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
 
 func show_end(victory: bool) -> void:
 	AudioManager.play(&"victory" if victory else &"game_over")

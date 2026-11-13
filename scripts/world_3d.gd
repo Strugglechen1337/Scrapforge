@@ -513,7 +513,7 @@ func update_view() -> void:
 		camera.position = center + Vector3(6, 15.5, 10.3)
 		camera.look_at(center + Vector3(0, 0.7, 0))
 		if game.shake_enabled and game.shake > 0.0:
-			camera.position += Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * game.shake * 0.015
+			camera.position += Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * game.shake * 0.05
 	swarm.update_swarm(game.enemies, game.player, get_process_delta_time())
 	sync_nodes(projectile_nodes, game.bullets.size(), "bullet")
 	sync_nodes(crystal_nodes, game.crystals.size(), "crystal")
