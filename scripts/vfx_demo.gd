@@ -3,7 +3,7 @@
 # A deterministic, quiet stage using the same camera and projectile pools as play.
 var game: Node
 const WEAPONS := ["minigun", "rakete", "laser", "plasma", "flammenwerfer", "schulterturm", "schwarm-werfer", "gegnerschuss"]
-const TIMES := [0.05, 0.2, 0.5]
+const TIMES := [0.005, 0.2, 0.5]
 
 func _ready() -> void:
     call_deferred("run")
@@ -28,6 +28,9 @@ func run() -> void:
             game.enemies.append(game.make_enemy(2, Vector2(390, -120)))
             var origin := Vector2(48, -16)
             var direction := Vector2(1, -0.3).normalized()
+            if weapon != "gegnerschuss" and not OS.has_feature("mobile"):
+                var kind: String = {"rakete": "rocket", "schulterturm": "turret", "schwarm-werfer": "swarm", "flammenwerfer": "flamethrower"}.get(weapon, weapon)
+                game.world_3d.effects_3d.muzzle(game.player + direction * 60, direction, kind)
             match weapon:
                 "minigun":
                     game.bullets.append({"pos": origin, "vel": direction * 560, "life": 2.0})
@@ -78,4 +81,5 @@ func run() -> void:
                 WorkerThreadPool.wait_for_task_completion(task)
             get_tree().quit()
             return
+
 

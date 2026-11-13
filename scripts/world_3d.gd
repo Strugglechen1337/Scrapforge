@@ -3,6 +3,8 @@ class_name ScrapWorld3D
 
 const MAX_PLAYER_PROJECTILES := 128
 const MAX_ENEMY_PROJECTILES := 32
+const MAX_ROCKET_SMOKE_SYSTEMS := MAX_PLAYER_PROJECTILES
+const ROCKET_SMOKE_PARTICLES := 8
 
 var game: Node
 var lighting: Dictionary
@@ -83,6 +85,9 @@ func _ready() -> void:
 	plasma_glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	plasma_glow.emission_energy_multiplier = 3.0
 	soot.albedo_color = Color("8c867e")
+	if not OS.has_feature("mobile"):
+		soot.albedo_color = Color(0.32, 0.30, 0.28, 0.35)
+		soot.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 
 	crystal_mesh.size = Vector3(0.24, 0.5, 0.24)
 	enemy_orb_mesh.radius = 0.095
@@ -115,8 +120,8 @@ func _ready() -> void:
 	if not OS.has_feature("mobile"):
 		enemy_orb_mesh = tracer_strip(0.14, 0.75)
 		enemy_halo_mesh = tracer_strip(0.28, 1.05)
-		bullet_core_mesh = tracer_strip(0.10, 0.65)
-		bullet_tail_mesh = tracer_strip(0.055, 0.9)
+		bullet_core_mesh = tracer_strip(0.13, 1.05)
+		bullet_tail_mesh = tracer_strip(0.07, 1.25)
 		rocket_body_mesh = tracer_strip(0.11, 0.6)
 		rocket_nose_mesh = tracer_strip(0.09, 0.25)
 		plasma_orb_mesh = tracer_strip(0.18, 0.85)
@@ -134,10 +139,10 @@ func _ready() -> void:
 		ruby_halo.emission_energy_multiplier = 4.0
 		tracer.albedo_color = Color("ff7a1a")
 		tracer.emission = Color("ff7a1a")
-		tracer.emission_energy_multiplier = 3.0
+		tracer.emission_energy_multiplier = 4.4
 		plasma_glow.albedo_color = Color("ff7a1a")
 		plasma_glow.emission = Color("ff7a1a")
-		plasma_glow.emission_energy_multiplier = 3.5
+		plasma_glow.emission_energy_multiplier = 4.6
 
 	lighting = ScrapEnvironment3D.build(self, OS.has_feature("mobile"), game.graphics_quality)
 	camera = Camera3D.new()
@@ -472,7 +477,7 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
 
 func add_smoke(node: Node3D) -> void:
 	var smoke: Variant = CPUParticles3D.new() if OS.has_feature("mobile") else GPUParticles3D.new()
-	if OS.has_feature("mobile"): smoke.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	smoke.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	smoke.name = "Smoke"
 	if smoke is GPUParticles3D:
 		smoke.process_material = smoke_process
@@ -484,7 +489,7 @@ func add_smoke(node: Node3D) -> void:
 		smoke.initial_velocity_min = 0.3
 		smoke.initial_velocity_max = 0.7
 		smoke.gravity = Vector3(0, 0.4, 0)
-	smoke.amount = 4 if OS.has_feature("mobile") else 8
+	smoke.amount = 4 if OS.has_feature("mobile") else ROCKET_SMOKE_PARTICLES
 	smoke.lifetime = 0.5
 	smoke.emitting = false
 	node.add_child(smoke)
@@ -583,7 +588,7 @@ func update_view() -> void:
 		projectile_nodes[i].rotation.y = atan2(velocity.x, velocity.y) + (0.0 if OS.has_feature("mobile") else PI)
 		if not OS.has_feature("mobile"):
 			projectile_nodes[i].scale = Vector3(0.8, 1.0, 0.8) if is_swarm else (Vector3(0.8, 1.0, 1.3) if is_turret else Vector3.ONE)
-		projectile_nodes[i].get_node("Smoke").emitting = is_rocket
+		projectile_nodes[i].get_node("Smoke").emitting = is_rocket or is_swarm
 	for i in range(mini(game.enemy_shots.size(), enemy_projectile_nodes.size())):
 		var p: Vector2 = game.enemy_shots[i].pos
 		enemy_projectile_nodes[i].position = Vector3(p.x / 50.0, 0.4, p.y / 50.0)

@@ -70,6 +70,8 @@ func update(game: Node, delta: float) -> void:
         var direction: Vector2 = (nearest.pos - game.player).normalized()
         clocks[id] = 0.18 if id == "flamethrower" else (1.4 if id == "plasma" else 0.65)
         var damage: float = game.definitions[id].values[level - 1]
+        if not OS.has_feature("mobile"):
+            game.world_3d.effects_3d.muzzle(game.player + direction * 60, direction, id)
         if id == "laser":
             AudioManager.play(&"laser", game.player)
             show_beam(game, direction, 650, Color("b749ff") if OS.has_feature("mobile") else Color("ff7a1a"))

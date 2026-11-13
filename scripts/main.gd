@@ -1011,7 +1011,12 @@ func _process(delta: float) -> void:
 		AudioManager.play(&"rocket" if rocket_shot else &"minigun", player)
 		bullets.append({"pos": player, "vel": dir * 560, "life": 2.0, "damage": 12 + state.level("minigun") * 6 + state.level("rocket") * 5, "rocket": rocket_shot})
 		spark(player + dir * 35, CYAN, 4)
-		world_3d.effects_3d.burst(player + dir * 28, "muzzle")
+		if OS.has_feature("mobile"):
+			world_3d.effects_3d.burst(player + dir * 28, "muzzle")
+		else:
+			world_3d.effects_3d.muzzle(player + dir * 60, dir, "rocket" if rocket_shot else "minigun")
+			if state.level("swarm"):
+				world_3d.effects_3d.muzzle(player + dir * 60, dir, "swarm")
 		if state.level("swarm"):
 			for angle in [-0.25, -0.12, 0.12, 0.25]:
 				bullets.append({"pos": player, "vel": dir.rotated(angle) * 460, "life": 2.0, "damage": 36, "visual": "swarm"})
