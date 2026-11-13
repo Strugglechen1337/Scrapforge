@@ -27,10 +27,24 @@ func run() -> void:
             assert(not lamp.shadow_enabled)
         for item in fx.smoke_pool:
             assert(item.node is GPUParticles3D and item.node.amount == fx.SMOKE_PARTICLES)
-        assert(game.world_3d.projectile_nodes.size() == game.world_3d.MAX_ROCKET_SMOKE_SYSTEMS)
-        for projectile in game.world_3d.projectile_nodes:
-            assert(projectile.get_node("Smoke") is GPUParticles3D)
-            assert(projectile.get_node("Smoke").amount == game.world_3d.ROCKET_SMOKE_PARTICLES)
+        var w = game.world_3d
+        assert(w.rocket_trails.size() == w.MAX_ROCKET_TRAILS)
+        for trail in w.rocket_trails:
+            assert(trail.get_node("Fire") is GPUParticles3D and trail.get_node("Fire").amount == w.ROCKET_FIRE_PARTICLES)
+            assert(trail.get_node("Smoke") is GPUParticles3D and trail.get_node("Smoke").amount == w.ROCKET_SMOKE_PARTICLES)
+        for projectile in w.projectile_nodes:
+            assert(not projectile.has_node("Smoke"))
+        var world_before := count_nodes(w)
+        game.bullets.clear()
+        for i in range(100):
+            game.bullets.append({"pos": Vector2(i * 3, 0), "vel": Vector2(300, 0), "life": 2.0, "damage": 1, "rocket": true})
+        for i in range(200):
+            w.update_view()
+        assert(w.rocket_trails.filter(func(tr): return tr.get_node("Fire").emitting).size() == w.MAX_ROCKET_TRAILS)
+        assert(count_nodes(w) == world_before)
+        game.bullets.clear()
+        w.update_view()
+        assert(w.rocket_trails.filter(func(tr): return tr.get_node("Fire").emitting or tr.get_node("Smoke").emitting).is_empty())
         fx._process(1.0)
         var before := count_nodes(fx)
         for i in range(200):

@@ -22,6 +22,8 @@ var muzzle_pool: Array[Dictionary] = []
 var shell_pool: Array[Dictionary] = []
 var smoke_pool: Array[Dictionary] = []
 var minigun_light_cooldown := 0.0
+var flash_materials := {}
+var flash_meshes := {}
 var orange_particles: SphereMesh
 var cyan_particles: SphereMesh
 
@@ -117,6 +119,97 @@ func _ready() -> void:
 	call_deferred("prewarm")
 
 # PC-only pools; existing explosion lights share the same eight slots.
+static var soft_tex: Texture2D
+
+static func soft_texture() -> Texture2D:
+	if soft_tex == null:
+		var g := Gradient.new()
+		g.set_color(0, Color(1, 1, 1, 1))
+		g.set_color(1, Color(1, 1, 1, 0))
+		var t := GradientTexture2D.new()
+		t.gradient = g
+		t.fill = GradientTexture2D.FILL_RADIAL
+		t.fill_from = Vector2(0.5, 0.5)
+		t.fill_to = Vector2(1.0, 0.5)
+		t.width = 64
+		t.height = 64
+		soft_tex = t
+	return soft_tex
+
+# Soft billboard particle material (additive for fire, alpha for smoke).
+static func soft_material(additive: bool) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	if additive:
+		m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.albedo_texture = soft_texture()
+	m.vertex_color_use_as_albedo = true
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	m.billboard_keep_scale = true
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return m
+
+# Gradient from start to a fully transparent end colour.
+static func fade_ramp(start: Color, mid: Color) -> GradientTexture1D:
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.35, 1.0])
+	g.colors = PackedColorArray([start, mid, Color(mid.r, mid.g, mid.b, 0.0)])
+	var t := GradientTexture1D.new()
+	t.gradient = g
+	return t
+
+func flash_star(spikes: int, outer: float, inner: float) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n := spikes * 2
+	for i in range(n):
+		var a := TAU * i / n
+		var b := TAU * (i + 1) / n
+		var ra := outer if i % 2 == 0 else inner
+		var rb := outer if (i + 1) % 2 == 0 else inner
+		st.set_color(Color(1, 1, 1, 1))
+		st.add_vertex(Vector3.ZERO)
+		st.set_color(Color(1, 1, 1, 0.35 if ra == outer else 0.8))
+		st.add_vertex(Vector3(cos(a) * ra, 0, sin(a) * ra))
+		st.set_color(Color(1, 1, 1, 0.35 if rb == outer else 0.8))
+		st.add_vertex(Vector3(cos(b) * rb, 0, sin(b) * rb))
+	return st.commit()
+
+# Forward-pointing cone/spike along +X.
+func flash_cone(length: float, width: float) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var pts := [Vector3(-0.15, 0, 0), Vector3(0, 0, -width), Vector3(length, 0, 0), Vector3(-0.15, 0, 0), Vector3(length, 0, 0), Vector3(0, 0, width), Vector3(-0.15, 0, 0), Vector3(0, 0, width), Vector3(-0.3, 0, 0), Vector3(-0.15, 0, 0), Vector3(-0.3, 0, 0), Vector3(0, 0, -width)]
+	for v in pts:
+		st.set_color(Color(1, 1, 1, clampf(1.0 - v.x / length, 0.0, 1.0) * (0.45 if absf(v.z) > 0.0 else 1.0)))
+		st.add_vertex(v)
+	return st.commit()
+
+# Small brass casing: hexagonal prism, not a primitive node.
+func casing_mesh(mat: Material) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var r := 0.035
+	var h := 0.09
+	for i in range(6):
+		var a := TAU * i / 6.0
+		var b := TAU * (i + 1) / 6.0
+		var p0 := Vector3(cos(a) * r, sin(a) * r, -h)
+		var p1 := Vector3(cos(b) * r, sin(b) * r, -h)
+		var p2 := Vector3(cos(b) * r, sin(b) * r, h)
+		var p3 := Vector3(cos(a) * r, sin(a) * r, h)
+		for v in [p0, p1, p2, p0, p2, p3]:
+			st.add_vertex(v)
+		var c0 := Vector3(0, 0, -h)
+		var c1 := Vector3(0, 0, h)
+		for v in [c0, p1, p0, c1, p3, p2]:
+			st.add_vertex(v)
+	st.generate_normals()
+	var mesh := st.commit()
+	mesh.surface_set_material(0, mat)
+	return mesh
+
 func setup_weapon_pools() -> void:
 	for i in range(MAX_LIGHTS):
 		var lamp := OmniLight3D.new()
@@ -125,41 +218,38 @@ func setup_weapon_pools() -> void:
 		lamp.visible = false
 		add_child(lamp)
 		light_pool.append(lamp)
-	var flash_mat := StandardMaterial3D.new()
-	flash_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	flash_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	flash_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	flash_mat.albedo_color = Color("ff7a1a")
-	flash_mat.emission_enabled = true
-	flash_mat.emission = Color("ff7a1a")
-	flash_mat.emission_energy_multiplier = 4.0
-	flash_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for i in range(8):
-		var a := TAU * i / 8.0
-		var b := TAU * (i + 1) / 8.0
-		var ra := 0.48 if i % 2 == 0 else 0.12
-		var rb := 0.48 if (i + 1) % 2 == 0 else 0.12
-		st.add_vertex(Vector3.ZERO)
-		st.add_vertex(Vector3(cos(a) * ra, 0, sin(a) * ra))
-		st.add_vertex(Vector3(cos(b) * rb, 0, sin(b) * rb))
-	var flash_mesh := st.commit()
+	for key in ["orange", "hot"]:
+		var fm := StandardMaterial3D.new()
+		fm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		fm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		fm.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		var col := Color("ff7a1a") if key == "orange" else Color("ffe2b0")
+		fm.albedo_color = col
+		fm.emission_enabled = true
+		fm.emission = col
+		fm.emission_energy_multiplier = 5.0 if key == "orange" else 2.6
+		fm.cull_mode = BaseMaterial3D.CULL_DISABLED
+		fm.vertex_color_use_as_albedo = true
+		flash_materials[key] = fm
+	flash_meshes = {
+		"star": flash_star(8, 0.55, 0.13),
+		"burst": flash_star(12, 0.6, 0.3),
+		"cone": flash_cone(1.1, 0.34),
+		"spike": flash_cone(1.7, 0.12),
+	}
 	for i in range(MAX_MUZZLES):
 		var flash := MeshInstance3D.new()
-		flash.mesh = flash_mesh
-		flash.material_override = flash_mat
+		flash.mesh = flash_meshes["star"]
+		flash.material_override = flash_materials["orange"]
 		flash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		flash.visible = false
 		add_child(flash)
 		muzzle_pool.append({"node": flash, "life": 0.0, "lamp": null})
-	var shell_mesh := BoxMesh.new()
-	shell_mesh.size = Vector3(0.06, 0.06, 0.14)
 	var casing_mat := StandardMaterial3D.new()
-	casing_mat.albedo_color = Color("8c7761")
-	casing_mat.metallic = 0.75
-	casing_mat.roughness = 0.45
-	shell_mesh.material = casing_mat
+	casing_mat.albedo_color = Color("b08a4a")
+	casing_mat.metallic = 0.8
+	casing_mat.roughness = 0.4
+	var shell_mesh := casing_mesh(casing_mat)
 	for i in range(MAX_SHELLS):
 		var shell := MeshInstance3D.new()
 		shell.mesh = shell_mesh
@@ -167,31 +257,39 @@ func setup_weapon_pools() -> void:
 		shell.visible = false
 		add_child(shell)
 		shell_pool.append({"node": shell, "life": 0.0, "velocity": Vector3.ZERO})
-	var smoke_mat := StandardMaterial3D.new()
-	smoke_mat.albedo_color = Color(0.34, 0.33, 0.31, 0.35)
-	smoke_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	var smoke_mesh := SphereMesh.new()
-	smoke_mesh.radius = 0.06
-	smoke_mesh.height = 0.12
-	smoke_mesh.material = smoke_mat
+	var smoke_quad := QuadMesh.new()
+	smoke_quad.size = Vector2.ONE
+	smoke_quad.material = soft_material(false)
 	var process := ParticleProcessMaterial.new()
 	process.direction = Vector3.UP
 	process.spread = 45.0
-	process.initial_velocity_min = 0.2
-	process.initial_velocity_max = 0.6
-	process.gravity = Vector3(0, 0.4, 0)
+	process.initial_velocity_min = 0.3
+	process.initial_velocity_max = 0.9
+	process.gravity = Vector3(0, 0.5, 0)
+	process.scale_min = 0.3
+	process.scale_max = 0.5
+	process.scale_curve = grow_curve()
+	process.color_ramp = fade_ramp(Color(0.6, 0.58, 0.55, 0.5), Color(0.35, 0.34, 0.33, 0.3))
 	for i in range(MAX_MUZZLE_SMOKE):
 		var smoke := GPUParticles3D.new()
 		smoke.process_material = process
-		smoke.draw_pass_1 = smoke_mesh
+		smoke.draw_pass_1 = smoke_quad
 		smoke.amount = SMOKE_PARTICLES
-		smoke.lifetime = 0.5
+		smoke.lifetime = 0.6
 		smoke.one_shot = true
-		smoke.explosiveness = 0.95
+		smoke.explosiveness = 0.6
 		smoke.emitting = false
 		smoke.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(smoke)
 		smoke_pool.append({"node": smoke, "life": 0.0})
+
+static func grow_curve() -> CurveTexture:
+	var c := Curve.new()
+	c.add_point(Vector2(0, 0.4))
+	c.add_point(Vector2(1, 1.6))
+	var t := CurveTexture.new()
+	t.curve = c
+	return t
 
 func acquire_light(pos: Vector3, energy: float, radius: float) -> OmniLight3D:
 	for lamp in light_pool:
@@ -213,34 +311,69 @@ func muzzle(p: Vector2, direction: Vector2, kind: String) -> void:
 	if OS.has_feature("mobile"):
 		return
 	var pos := point(p, 0.8)
-	var size := Vector2(0.65, 0.85)
+	var shape := "star"
+	var mat := "orange"
+	var size := 1.0
+	var energy := 1.6
+	var radius := 2.4
 	match kind:
-		"rocket": size = Vector2(1.4, 1.4)
-		"swarm": size = Vector2(1.45, 0.85)
-		"laser": size = Vector2(0.5, 1.35)
-		"plasma": size = Vector2(1.05, 1.05)
-		"flamethrower": size = Vector2(0.65, 1.35)
-		"turret": size = Vector2(0.5, 0.65)
-		"drone": size = Vector2(0.55, 0.75)
+		"minigun":
+			size = 0.8
+		"rocket":
+			size = 1.9
+			energy = 3.2
+			radius = 4.0
+		"swarm":
+			shape = "burst"
+			size = 1.5
+			energy = 2.6
+			radius = 3.4
+		"laser":
+			shape = "spike"
+			mat = "hot"
+			size = 1.1
+			energy = 2.2
+		"plasma":
+			shape = "burst"
+			mat = "hot"
+			size = 1.1
+			energy = 2.8
+			radius = 3.4
+		"flamethrower":
+			shape = "cone"
+			size = 1.3
+			energy = 2.0
+		"turret":
+			size = 0.7
+			energy = 1.2
+			radius = 2.0
+		"drone":
+			size = 0.6
+			energy = 1.0
+			radius = 1.8
 	for slot in muzzle_pool:
 		if slot.life <= 0.0:
 			slot.life = MUZZLE_TIME
+			slot.node.mesh = flash_meshes[shape]
+			slot.node.material_override = flash_materials[mat]
 			slot.node.position = pos
 			slot.node.rotation.y = -direction.angle()
-			slot.node.scale = Vector3(size.x, 1, size.y)
+			slot.node.scale = Vector3(size, 1, size)
 			slot.node.visible = true
 			slot.lamp = null
 			if kind != "minigun" or minigun_light_cooldown <= 0.0:
-				slot.lamp = acquire_light(pos, 2.4 if kind in ["rocket", "swarm"] else 1.5, 3.0 if kind in ["rocket", "swarm"] else 2.0)
+				slot.lamp = acquire_light(pos, energy, radius)
+				if slot.lamp != null:
+					slot.lamp.light_color = Color("ffcf94") if mat == "hot" else Color("ff7a1a")
 				if kind == "minigun":
 					minigun_light_cooldown = 0.24
 			break
 	if kind in ["minigun", "rocket", "swarm"]:
 		for slot in smoke_pool:
 			if slot.life <= 0.0:
-				slot.life = 0.55
-				slot.node.position = pos
-				slot.node.scale = Vector3.ONE * (1.8 if kind in ["rocket", "swarm"] else 0.65)
+				slot.life = 0.65
+				slot.node.position = pos + Vector3(direction.x, 0, direction.y) * 0.3
+				slot.node.scale = Vector3.ONE * (1.6 if kind != "minigun" else 0.7)
 				slot.node.restart()
 				slot.node.emitting = true
 				break
@@ -250,7 +383,9 @@ func muzzle(p: Vector2, direction: Vector2, kind: String) -> void:
 				slot.life = 0.6
 				slot.node.position = pos
 				slot.node.visible = true
-				slot.velocity = Vector3(-direction.y * 2.5, 2.2, direction.x * 2.5)
+				slot.node.rotation = Vector3(0, -direction.angle(), 0)
+				var side := Vector2(-direction.y, direction.x) * (2.2 + randf() * 0.8)
+				slot.velocity = Vector3(side.x, 2.4 + randf(), side.y)
 				break
 
 func update_weapon_pools(delta: float) -> void:

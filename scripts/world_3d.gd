@@ -3,8 +3,9 @@ class_name ScrapWorld3D
 
 const MAX_PLAYER_PROJECTILES := 128
 const MAX_ENEMY_PROJECTILES := 32
-const MAX_ROCKET_SMOKE_SYSTEMS := MAX_PLAYER_PROJECTILES
-const ROCKET_SMOKE_PARTICLES := 8
+const MAX_ROCKET_TRAILS := 24
+const ROCKET_FIRE_PARTICLES := 10
+const ROCKET_SMOKE_PARTICLES := 10
 
 var game: Node
 var lighting: Dictionary
@@ -44,6 +45,7 @@ var rocket_nose_mesh = BoxMesh.new()
 var plasma_orb_mesh = SphereMesh.new()
 var smoke_mesh := SphereMesh.new()
 var smoke_process := ParticleProcessMaterial.new()
+var rocket_trails: Array[Node3D] = []
 var elapsed := 0.0
 var prewarm_frames := 2
 
@@ -118,10 +120,10 @@ func _ready() -> void:
 	# Keep the legacy mobile meshes and materials intact.  Desktop projectiles
 	# share tapered, vertex-faded strips aligned with their direction of travel.
 	if not OS.has_feature("mobile"):
-		enemy_orb_mesh = tracer_strip(0.14, 0.75)
-		enemy_halo_mesh = tracer_strip(0.28, 1.05)
-		bullet_core_mesh = tracer_strip(0.13, 1.05)
-		bullet_tail_mesh = tracer_strip(0.07, 1.25)
+		enemy_orb_mesh = tracer_strip(0.17, 1.3)
+		enemy_halo_mesh = tracer_strip(0.34, 1.7)
+		bullet_core_mesh = tracer_strip(0.15, 1.5)
+		bullet_tail_mesh = tracer_strip(0.09, 2.4)
 		rocket_body_mesh = tracer_strip(0.11, 0.6)
 		rocket_nose_mesh = tracer_strip(0.09, 0.25)
 		plasma_orb_mesh = tracer_strip(0.18, 0.85)
@@ -144,6 +146,8 @@ func _ready() -> void:
 		plasma_glow.emission = Color("ff7a1a")
 		plasma_glow.emission_energy_multiplier = 4.6
 
+	if not OS.has_feature("mobile"):
+		setup_rocket_trails()
 	lighting = ScrapEnvironment3D.build(self, OS.has_feature("mobile"), game.graphics_quality)
 	camera = Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
@@ -229,7 +233,8 @@ func _ready() -> void:
 	sync_nodes(crystal_nodes, 128, "crystal")
 	if not projectile_nodes.is_empty():
 		projectile_nodes[0].visible = true
-		projectile_nodes[0].get_node("Smoke").emitting = true
+		if projectile_nodes[0].has_node("Smoke"):
+			projectile_nodes[0].get_node("Smoke").emitting = true
 	if not enemy_projectile_nodes.is_empty():
 		enemy_projectile_nodes[0].visible = true
 	if not crystal_nodes.is_empty():
@@ -441,7 +446,7 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
 				tail.name = "Tail"
 				tail.mesh = bullet_tail_mesh
 				tail.material_override = tracer
-				tail.position = Vector3(0, 0.3, 0.38)
+				tail.position = Vector3(0, 0.3, 0.55)
 				tail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 				node.add_child(tail)
 				var r_body := MeshInstance3D.new()
@@ -460,7 +465,8 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
 				r_nose.visible = false
 				r_nose.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 				node.add_child(r_nose)
-				add_smoke(node)
+				if OS.has_feature("mobile"):
+					add_smoke(node)
 				var plasma_orb := MeshInstance3D.new()
 				plasma_orb.name = "PlasmaOrb"
 				plasma_orb.mesh = plasma_orb_mesh
@@ -472,7 +478,7 @@ func sync_nodes(nodes: Array[Node3D], count: int, kind: String) -> void:
 		nodes.append(node)
 	for i in range(nodes.size()):
 		nodes[i].visible = i < count
-		if kind == "bullet" and i >= count:
+		if kind == "bullet" and i >= count and nodes[i].has_node("Smoke"):
 			nodes[i].get_node("Smoke").emitting = false
 
 func add_smoke(node: Node3D) -> void:
@@ -503,7 +509,8 @@ func update_view() -> void:
 		if prewarm_frames == 0:
 			boss_warning.visible = false
 			if not projectile_nodes.is_empty():
-				projectile_nodes[0].get_node("Smoke").emitting = false
+				if projectile_nodes[0].has_node("Smoke"):
+					projectile_nodes[0].get_node("Smoke").emitting = false
 	visible = true
 	var skin_id: String = game.get("selected_skin") if game.get("selected_skin") != null else "standard"
 	if skin_id != applied_skin_id:
@@ -572,6 +579,7 @@ func update_view() -> void:
 		if e.kind == 3 and e.get("jump_warning", 0.0) > 0:
 			boss_warning.position = Vector3(e.jump_target.x / 50.0, 0.02, e.jump_target.y / 50.0)
 			boss_warning.visible = true
+	var trail_used := 0
 	for i in range(mini(game.bullets.size(), projectile_nodes.size())):
 		var p: Vector2 = game.bullets[i].pos
 		projectile_nodes[i].position = Vector3(p.x / 50.0, 0.5, p.y / 50.0)
@@ -588,7 +596,17 @@ func update_view() -> void:
 		projectile_nodes[i].rotation.y = atan2(velocity.x, velocity.y) + (0.0 if OS.has_feature("mobile") else PI)
 		if not OS.has_feature("mobile"):
 			projectile_nodes[i].scale = Vector3(0.8, 1.0, 0.8) if is_swarm else (Vector3(0.8, 1.0, 1.3) if is_turret else Vector3.ONE)
-		projectile_nodes[i].get_node("Smoke").emitting = is_rocket or is_swarm
+		if projectile_nodes[i].has_node("Smoke"):
+			projectile_nodes[i].get_node("Smoke").emitting = is_rocket or is_swarm
+		elif (is_rocket or is_swarm) and trail_used < rocket_trails.size():
+			var trail: Node3D = rocket_trails[trail_used]
+			trail.position = projectile_nodes[i].position + Vector3(velocity.x, 0, velocity.y).normalized() * -0.3
+			trail.get_node("Fire").emitting = true
+			trail.get_node("Smoke").emitting = true
+			trail_used += 1
+	for k in range(trail_used, rocket_trails.size()):
+		rocket_trails[k].get_node("Fire").emitting = false
+		rocket_trails[k].get_node("Smoke").emitting = false
 	for i in range(mini(game.enemy_shots.size(), enemy_projectile_nodes.size())):
 		var p: Vector2 = game.enemy_shots[i].pos
 		enemy_projectile_nodes[i].position = Vector3(p.x / 50.0, 0.4, p.y / 50.0)
@@ -597,3 +615,60 @@ func update_view() -> void:
 	for i in range(game.crystals.size()):
 		var p: Vector2 = game.crystals[i]
 		crystal_nodes[i].position = Vector3(p.x / 50.0, 0, p.y / 50.0)
+
+# PC: fixed pool of rocket fire + smoke trail emitters, reused by the first
+# MAX_ROCKET_TRAILS rockets/swarm missiles on screen.
+func setup_rocket_trails() -> void:
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE
+	quad.material = CombatEffects3D.soft_material(true)
+	var fire_proc := ParticleProcessMaterial.new()
+	fire_proc.direction = Vector3.UP
+	fire_proc.spread = 25.0
+	fire_proc.initial_velocity_min = 0.1
+	fire_proc.initial_velocity_max = 0.5
+	fire_proc.gravity = Vector3.ZERO
+	fire_proc.scale_min = 0.5
+	fire_proc.scale_max = 0.7
+	var shrink := Curve.new()
+	shrink.add_point(Vector2(0, 1.0))
+	shrink.add_point(Vector2(1, 0.2))
+	var shrink_tex := CurveTexture.new()
+	shrink_tex.curve = shrink
+	fire_proc.scale_curve = shrink_tex
+	fire_proc.color_ramp = CombatEffects3D.fade_ramp(Color(1.0, 0.7, 0.25, 1.0), Color(1.0, 0.3, 0.04, 0.8))
+	var smoke_quad := QuadMesh.new()
+	smoke_quad.size = Vector2.ONE
+	smoke_quad.material = CombatEffects3D.soft_material(false)
+	var smoke_proc := ParticleProcessMaterial.new()
+	smoke_proc.direction = Vector3.UP
+	smoke_proc.spread = 30.0
+	smoke_proc.initial_velocity_min = 0.2
+	smoke_proc.initial_velocity_max = 0.6
+	smoke_proc.gravity = Vector3(0, 0.5, 0)
+	smoke_proc.scale_min = 0.35
+	smoke_proc.scale_max = 0.55
+	smoke_proc.scale_curve = CombatEffects3D.grow_curve()
+	smoke_proc.color_ramp = CombatEffects3D.fade_ramp(Color(0.4, 0.38, 0.36, 0.5), Color(0.22, 0.21, 0.2, 0.35))
+	for i in range(MAX_ROCKET_TRAILS):
+		var holder := Node3D.new()
+		add_child(holder)
+		var fire := GPUParticles3D.new()
+		fire.name = "Fire"
+		fire.process_material = fire_proc
+		fire.draw_pass_1 = quad
+		fire.amount = ROCKET_FIRE_PARTICLES
+		fire.lifetime = 0.28
+		fire.emitting = false
+		fire.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		holder.add_child(fire)
+		var smoke := GPUParticles3D.new()
+		smoke.name = "Smoke"
+		smoke.process_material = smoke_proc
+		smoke.draw_pass_1 = smoke_quad
+		smoke.amount = ROCKET_SMOKE_PARTICLES
+		smoke.lifetime = 0.8
+		smoke.emitting = false
+		smoke.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		holder.add_child(smoke)
+		rocket_trails.append(holder)
