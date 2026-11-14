@@ -23,7 +23,7 @@ void fragment() {
     tex = mix(tex, vec3(dot(tex, vec3(0.2126, 0.7152, 0.0722))) * vec3(0.65, 0.70, 0.75), red * (1.0 - optic) * 0.8);
     tex = mix(tex, vec3(0.20, 0.23, 0.27), 0.38);
     ALBEDO = mix(tex, vec3(1.0), instance_tint.r);
-    EMISSION = mix(vec3(0.0), tex * vec3(1.8, 0.15, 0.08), optic);
-    METALLIC = 0.3;
-    ROUGHNESS = 0.42;
+    EMISSION = mix(vec3(0.0), tex * vec3(2.4, 0.16, 0.12), optic);
+    METALLIC = 0.50;
+    ROUGHNESS = 0.46;
 }

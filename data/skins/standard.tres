@@ -8,3 +8,5 @@ title = "Standard"
 armor_color = Color(0.6627451, 0.6392157, 0.6039216, 1)
 accent_color = Color(0.9137254901960784, 0.4470588235294118, 0.12549019607843137, 1)
 camouflage = false
+pattern = "hazard"
+unit_number = "01"

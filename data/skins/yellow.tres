@@ -8,3 +8,5 @@ title = "Gelb"
 armor_color = Color(0.7764705882352941, 0.6823529411764706, 0.39215686274509803, 1)
 accent_color = Color(0.5019607843137255, 0.44313725490196076, 0.23529411764705882, 1)
 camouflage = true
+pattern = "camo_hazard"
+unit_number = "04"

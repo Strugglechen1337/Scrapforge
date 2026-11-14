@@ -2,12 +2,14 @@
 class_name EnemySwarm3D
 
 const CAPACITY := 600
-const SIZES := [0.45, 0.80, 0.60, 2.50]
+const SIZES := [0.45, 0.80, 0.60, 2.50, 0.68, 2.95]
 
 var spider_kind_cache: Array[int] = []
 var spider: MultiMeshInstance3D
 var brute: MultiMeshInstance3D
+var brute_armor: MultiMeshInstance3D
 var ranged: MultiMeshInstance3D
+var ranged_cannon: MultiMeshInstance3D
 var ranged_sensor: MultiMeshInstance3D
 var bodies: MultiMeshInstance3D
 var heads: MultiMeshInstance3D
@@ -23,15 +25,26 @@ var boss_leg_pivots: Array[Node3D] = []
 var boss_hit_overlay: ShaderMaterial
 var boss_turrets: Array[Node3D] = []
 var boss_armor_meshes: Array[MeshInstance3D] = []
+var boss_armor_l: Node3D
+var boss_armor_r: Node3D
+var boss_smoke_l: Node3D
+var boss_smoke_r: Node3D
+var boss_sparks_l: Node3D
+var boss_sparks_r: Node3D
 var boss_steel_mat := StandardMaterial3D.new()
 var boss_trim_mat := StandardMaterial3D.new()
 var boss_dark_mat := StandardMaterial3D.new()
 var boss_flash_mat := StandardMaterial3D.new()
 var eye_mat := StandardMaterial3D.new()
+var enemy_gunmetal_mat := StandardMaterial3D.new()
+var enemy_dark_mat := StandardMaterial3D.new()
+var plates_normal: Texture2D
+var plates_roughness: Texture2D
 var time := 0.0
 var leg_phase := 0
 var prewarm_boss_frames := 2
 var previous_kinds: Array[int] = []
+var elite_lights: Array[OmniLight3D] = []
 
 func enemy_scale(kind: int) -> float:
 	return SIZES[clampi(kind, 0, SIZES.size() - 1)]
@@ -48,30 +61,63 @@ func leg_count(kind: int) -> int:
 func has_turret(kind: int) -> bool:
 	return kind == 2 or kind == 3
 
+func ranged_charge(e: Dictionary) -> float:
+	if int(e.get("kind", 0)) != 2:
+		return 0.0
+	var atk := float(e.get("attack", 2.0))
+	return clampf(1.0 - atk / 0.75, 0.0, 1.0) if atk <= 0.75 else 0.0
+
 func _ready() -> void:
+	if not OS.has_feature("mobile"):
+		for _i in range(4):
+			var el := OmniLight3D.new()
+			el.light_color = Color("c65cff")
+			el.light_energy = 4.2
+			el.omni_range = 4.5
+			el.visible = false
+			add_child(el)
+			elite_lights.append(el)
+	plates_normal = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_NormalGL.jpg")
+	plates_roughness = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_Roughness.jpg")
+
 	var shell := StandardMaterial3D.new()
 	shell.albedo_color = Color.WHITE
-	shell.metallic = 0.58
-	shell.roughness = 0.52
+	shell.metallic = 0.52
+	shell.roughness = 0.48
 	shell.vertex_color_use_as_albedo = true
 	shell.vertex_color_is_srgb = true
 	shell.normal_enabled = true
 	shell.normal_scale = 0.45
-	shell.normal_texture = load("res://assets/third_party/ambientcg/MetalPlates001/MetalPlates001_1K-JPG_NormalGL.jpg")
+	shell.normal_texture = plates_normal
+
+	enemy_gunmetal_mat.albedo_color = Color("2b313a")
+	enemy_gunmetal_mat.metallic = 0.52
+	enemy_gunmetal_mat.roughness = 0.48
+	enemy_gunmetal_mat.normal_enabled = true
+	enemy_gunmetal_mat.normal_texture = plates_normal
+	enemy_gunmetal_mat.normal_scale = 0.5
+	enemy_gunmetal_mat.roughness_texture = plates_roughness
+
+	enemy_dark_mat.albedo_color = Color("161a20")
+	enemy_dark_mat.metallic = 0.65
+	enemy_dark_mat.roughness = 0.44
+	enemy_dark_mat.normal_enabled = true
+	enemy_dark_mat.normal_texture = plates_normal
+	enemy_dark_mat.normal_scale = 0.45
 
 	eye_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	eye_mat.albedo_color = Color(0.96, 0.02, 0.015)
+	eye_mat.albedo_color = Color("ff2a2a")
 	eye_mat.emission_enabled = true
-	eye_mat.emission = Color(0.95, 0.01, 0.005)
-	eye_mat.emission_energy_multiplier = 0.78
+	eye_mat.emission = Color("ff2a2a")
+	eye_mat.emission_energy_multiplier = 1.6
 
 	var leg_shader := Shader.new()
 	leg_shader.code = """
 shader_type spatial;
 render_mode cull_back, specular_schlick_ggx;
 
-uniform float metallic : hint_range(0.0, 1.0) = 0.42;
-uniform float roughness : hint_range(0.0, 1.0) = 0.74;
+uniform float metallic : hint_range(0.0, 1.0) = 0.50;
+uniform float roughness : hint_range(0.0, 1.0) = 0.48;
 
 varying vec3 v_color;
 
@@ -145,13 +191,15 @@ void fragment() {
 	spider_material.set_shader_parameter("walk_vat", load("res://assets/third_party/sketchfab/mech_spider/walk_vat.png"))
 	spider = batch(spider_mesh, spider_material, CAPACITY, true)
 	brute = variant_batch("res://assets/third_party/sketchfab/brute_spider/brute_spider.glb", false)
+	brute_armor = attachment_batch("res://assets/models/enemies/brute_armor.glb", CAPACITY)
 	ranged = variant_batch("res://assets/third_party/sketchfab/ranged_spider/ranged_spider.glb", true)
+	ranged_cannon = attachment_batch("res://assets/models/enemies/ranged_cannon.glb", CAPACITY)
 	var sensor_mat := StandardMaterial3D.new()
 	sensor_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	sensor_mat.albedo_color = Color(0.1, 0.95, 1.0)
+	sensor_mat.albedo_color = Color("ff2a2a")
 	sensor_mat.emission_enabled = true
-	sensor_mat.emission = Color(0.05, 0.8, 1.0)
-	sensor_mat.emission_energy_multiplier = 1.1
+	sensor_mat.emission = Color("ff2a2a")
+	sensor_mat.emission_energy_multiplier = 3.5
 	ranged_sensor = batch(eye_sphere, sensor_mat, CAPACITY, false)
 	bodies = batch(dome, shell, CAPACITY, true)
 	heads = batch(block, shell, CAPACITY, true)
@@ -173,6 +221,21 @@ func find_mesh(node: Node) -> Mesh:
 			return found
 	return null
 
+func attachment_batch(path: String, count: int) -> MultiMeshInstance3D:
+	var scene := load(path) as PackedScene
+	var root := scene.instantiate()
+	var mesh := find_mesh(root).duplicate() as Mesh
+	root.free()
+	for i in range(mesh.get_surface_count()):
+		var source := mesh.surface_get_material(i)
+		if source and source.resource_name == "mat_red":
+			mesh.surface_set_material(i, eye_mat)
+		elif source and source.resource_name == "mat_dark":
+			mesh.surface_set_material(i, enemy_dark_mat)
+		else:
+			mesh.surface_set_material(i, enemy_gunmetal_mat)
+	return batch(mesh, null, count, false)
+
 func variant_batch(path: String, hovering: bool) -> MultiMeshInstance3D:
 	var scene := load(path) as PackedScene
 	var root := scene.instantiate()
@@ -184,6 +247,7 @@ func variant_batch(path: String, hovering: bool) -> MultiMeshInstance3D:
 		var material := ShaderMaterial.new()
 		material.shader = shader
 		material.set_shader_parameter("hover", hovering)
+		material.set_shader_parameter("normal_texture", plates_normal)
 		if source:
 			material.set_shader_parameter("albedo_texture", source.albedo_texture)
 		mesh.surface_set_material(i, material)
@@ -204,11 +268,69 @@ func batch(mesh: Mesh, material: Material, count: int, colors: bool) -> MultiMes
 	add_child(instance)
 	return instance
 
+func _load_boss_part(path: String, pos: Vector3, rot_deg := Vector3.ZERO) -> Node3D:
+	var scene := load(path) as PackedScene
+	var node := scene.instantiate() as Node3D
+	node.position = pos
+	node.rotation_degrees = rot_deg
+	_apply_enemy_glb_materials(node)
+	boss_rig.add_child(node)
+	return node
+
+func _apply_enemy_glb_materials(node: Node) -> void:
+	if node is MeshInstance3D:
+		var mesh_node := node as MeshInstance3D
+		for s in range(mesh_node.mesh.get_surface_count()):
+			var orig := mesh_node.get_active_material(s)
+			if orig and orig.resource_name == "mat_red":
+				mesh_node.set_surface_override_material(s, eye_mat)
+			elif orig and orig.resource_name == "mat_dark":
+				mesh_node.set_surface_override_material(s, enemy_dark_mat)
+			else:
+				mesh_node.set_surface_override_material(s, enemy_gunmetal_mat)
+		mesh_node.material_overlay = boss_hit_overlay
+		mesh_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for child in node.get_children():
+		_apply_enemy_glb_materials(child)
+
+func _make_damage_emitter(pos: Vector3, is_smoke: bool) -> Node3D:
+	var ps: Variant = CPUParticles3D.new() if OS.has_feature("mobile") else GPUParticles3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.55, 0.55) if is_smoke else Vector2(0.18, 0.18)
+	var mat := CombatEffects3D.soft_material(not is_smoke)
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mat.albedo_color = Color(0.14, 0.14, 0.15, 0.65) if is_smoke else Color(1.0, 0.55, 0.12, 0.95)
+	quad.material = mat
+	if ps is GPUParticles3D:
+		var proc := ParticleProcessMaterial.new()
+		proc.direction = Vector3.UP
+		proc.spread = 28.0 if is_smoke else 65.0
+		proc.initial_velocity_min = 0.8 if is_smoke else 2.0
+		proc.initial_velocity_max = 1.8 if is_smoke else 4.5
+		proc.gravity = Vector3(0, 0.6, 0) if is_smoke else Vector3(0, -6.0, 0)
+		ps.process_material = proc
+		ps.draw_pass_1 = quad
+	else:
+		ps.mesh = quad
+		ps.direction = Vector3.UP
+		ps.spread = 28.0 if is_smoke else 65.0
+		ps.initial_velocity_min = 0.8 if is_smoke else 2.0
+		ps.initial_velocity_max = 1.8 if is_smoke else 4.5
+		ps.gravity = Vector3(0, 0.6, 0) if is_smoke else Vector3(0, -6.0, 0)
+	ps.amount = 6 if is_smoke else 8
+	ps.lifetime = 0.9 if is_smoke else 0.4
+	ps.emitting = false
+	ps.position = pos
+	ps.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	boss_rig.add_child(ps)
+	return ps
+
 func build_boss_rig() -> void:
 	var scene := load("res://assets/third_party/sketchfab/boss_spider/boss_spider.glb") as PackedScene
 	boss_rig = scene.instantiate() as Node3D
 	add_child(boss_rig)
 	boss_leg_pivots.clear()
+	boss_turrets.clear()
 	for i in range(4):
 		var pivot := boss_rig.find_child("LegPivot%d" % i, true, false) as Node3D
 		if pivot:
@@ -222,32 +344,46 @@ void fragment() { ALBEDO = vec3(0.65, 0.35, 0.22); ALPHA = hit * 0.06; }
 	boss_hit_overlay = ShaderMaterial.new()
 	boss_hit_overlay.shader = shader
 	prepare_boss_meshes(boss_rig)
+	# Red glowing optics + dorsal turret + exposed flank/rear weakspots + detachable flank armor
 	var lamp_mesh := SphereMesh.new()
-	lamp_mesh.radius = 0.075
-	lamp_mesh.height = 0.15
+	lamp_mesh.radius = 0.09
+	lamp_mesh.height = 0.18
 	for side in [-1.0, 1.0]:
 		var lamp := MeshInstance3D.new()
 		lamp.mesh = lamp_mesh
 		lamp.material_override = eye_mat
 		lamp.position = Vector3(side * 0.38, 1.2, 1.15)
 		boss_rig.add_child(lamp)
-	var stripe_mat := StandardMaterial3D.new()
-	stripe_mat.albedo_color = Color("d76a1b")
-	stripe_mat.metallic = 0.35
-	stripe_mat.roughness = 0.5
-	for side in [-1.0, 1.0]:
-		var stripe := MeshInstance3D.new()
-		var stripe_mesh := BoxMesh.new()
-		stripe_mesh.size = Vector3(0.12, 0.025, 0.65)
-		stripe.mesh = stripe_mesh
-		stripe.material_override = stripe_mat
-		stripe.position = Vector3(side * 0.5, 2.06, -0.35)
-		boss_rig.add_child(stripe)
+	var turret := _load_boss_part("res://assets/models/enemies/boss_turret.glb", Vector3(0, 1.98, 0.05))
+	boss_turrets.append(turret)
+	_load_boss_part("res://assets/models/enemies/boss_weakspot.glb", Vector3(-0.92, 1.05, 0.05))
+	_load_boss_part("res://assets/models/enemies/boss_weakspot.glb", Vector3(0.92, 1.05, 0.05), Vector3(0, 180, 0))
+	_load_boss_part("res://assets/models/enemies/boss_weakspot.glb", Vector3(0.0, 1.38, -1.02), Vector3(0, 90, 0))
+	boss_armor_l = _load_boss_part("res://assets/models/enemies/boss_armor_plate.glb", Vector3(-1.12, 1.05, 0.05))
+	boss_armor_r = _load_boss_part("res://assets/models/enemies/boss_armor_plate.glb", Vector3(1.12, 1.05, 0.05))
+	boss_smoke_l = _make_damage_emitter(Vector3(-0.95, 1.15, 0.05), true)
+	boss_smoke_r = _make_damage_emitter(Vector3(0.95, 1.15, 0.05), true)
+	boss_sparks_l = _make_damage_emitter(Vector3(-0.95, 1.10, 0.05), false)
+	boss_sparks_r = _make_damage_emitter(Vector3(0.95, 1.10, 0.05), false)
 
 func prepare_boss_meshes(node: Node) -> void:
 	if node is MeshInstance3D:
-		node.material_overlay = boss_hit_overlay
-		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var mesh_node := node as MeshInstance3D
+		for s in range(mesh_node.mesh.get_surface_count()):
+			var orig := mesh_node.get_active_material(s) as StandardMaterial3D
+			var mat := StandardMaterial3D.new()
+			if orig and orig.albedo_texture:
+				mat.albedo_texture = orig.albedo_texture
+			mat.albedo_color = Color("6b7482")
+			mat.metallic = 0.54
+			mat.roughness = 0.48
+			mat.normal_enabled = true
+			mat.normal_texture = plates_normal
+			mat.normal_scale = 0.55
+			mat.roughness_texture = plates_roughness
+			mesh_node.set_surface_override_material(s, mat)
+		mesh_node.material_overlay = boss_hit_overlay
+		mesh_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for child in node.get_children():
 		prepare_boss_meshes(child)
 
@@ -262,7 +398,9 @@ func update_swarm(enemies: Array, player: Vector2, delta: float) -> void:
 		spider_kind_cache.append(-1)
 	spider.multimesh.visible_instance_count = count
 	brute.multimesh.visible_instance_count = count
+	brute_armor.multimesh.visible_instance_count = count
 	ranged.multimesh.visible_instance_count = count
+	ranged_cannon.multimesh.visible_instance_count = count
 	ranged_sensor.multimesh.visible_instance_count = count
 	for node in [bodies, heads, armor]:
 		node.multimesh.visible_instance_count = count
@@ -279,10 +417,14 @@ func update_swarm(enemies: Array, player: Vector2, delta: float) -> void:
 	else:
 		boss_rig.visible = false
 
+	var elite_light_used := 0
+	for l in elite_lights:
+		l.visible = false
 	for i in range(count):
 		var e: Dictionary = enemies[i]
 		var kind: int = e.kind
-		var size := enemy_scale(kind)
+		var is_elite: bool = e.get("elite", false)
+		var size := enemy_scale(kind) * (1.45 if is_elite else 1.0)
 		var pos := Vector3(e.pos.x / 50.0, 0.0, e.pos.y / 50.0)
 		var yaw := atan2(player.x - e.pos.x, player.y - e.pos.y)
 		var rotation := Basis(Vector3.UP, yaw)
@@ -295,7 +437,7 @@ func update_swarm(enemies: Array, player: Vector2, delta: float) -> void:
 		var hidden_variant := Transform3D(Basis.from_scale(Vector3.ONE * 0.001), Vector3.ZERO)
 		spider_kind_cache[i] = kind
 		if kind_changed:
-			for node in [spider, brute, ranged, ranged_sensor, bodies, heads, armor]:
+			for node in [spider, brute, brute_armor, ranged, ranged_cannon, ranged_sensor, bodies, heads, armor]:
 				node.multimesh.set_instance_transform(i, hidden_variant)
 			for k in range(3):
 				seams.multimesh.set_instance_transform(i * 3 + k, hidden_variant)
@@ -307,24 +449,52 @@ func update_swarm(enemies: Array, player: Vector2, delta: float) -> void:
 			for k in range(16):
 				legs.multimesh.set_instance_transform(i * 16 + k, hidden_variant)
 				legs.multimesh.set_instance_color(i * 16 + k, Color(0, 0, 0, 0))
-		if kind < 3:
-			var chosen: MultiMeshInstance3D = [spider, brute, ranged][kind]
-			chosen.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3.ZERO, Vector3.ONE * size))
-			chosen.multimesh.set_instance_color(i, Color.WHITE if flash else Color.BLACK)
+		if kind < 3 or kind == 4:
+			var chosen: MultiMeshInstance3D = ranged if kind == 4 else [spider, brute, ranged][kind]
+			var type_scale := Vector3(1.0, 0.85, 1.0) if kind == 0 else (Vector3(1.22, 1.08, 1.05) if kind == 1 else (Vector3(1.1, 0.85, 1.25) if kind == 4 else Vector3.ONE))
+			var hover := Vector3(0, 0.35 + sin(time * 8.0 + float(i)) * 0.12, 0) if kind == 4 else Vector3.ZERO
+			chosen.multimesh.set_instance_transform(i, transform_at(pos, rotation, hover, type_scale * size))
+			var charge := ranged_charge(e)
+			chosen.multimesh.set_instance_color(i, Color(1.0 if flash else 0.0, charge, 0.0, 1.0))
 			if kind == 0 or kind == 1:
 				for eye in range(2):
 					var eye_x := (-0.12 if eye == 0 else 0.12) * size
 					eyes.multimesh.set_instance_transform(i * 4 + eye, transform_at(pos, rotation, Vector3(eye_x, 0.48 * size, 0.32 * size), Vector3.ONE * 0.10 * size))
+			if is_elite and not OS.has_feature("mobile"):
+				if elite_light_used < elite_lights.size():
+					elite_lights[elite_light_used].position = pos + Vector3(0, 1.3 * size, 0)
+					elite_lights[elite_light_used].visible = true
+					elite_light_used += 1
+			if kind == 1 or kind == 4 or is_elite:
+				brute_armor.multimesh.set_instance_transform(i, transform_at(pos, rotation, hover, type_scale * size))
 			if kind == 2:
 				var bob := 0.14 + sin(time * 4.0 + float(i) * 0.77) * 0.045
-				ranged_sensor.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3(0, 0.55 + bob, 0.46) * size, Vector3.ONE * 0.16 * size))
+				ranged_cannon.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3(0, bob, 0) * size, Vector3.ONE * size))
+				var orb_scale := (0.07 + charge * 0.22) * size
+				ranged_sensor.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3(0, 0.58 + bob, 0.72) * size, Vector3.ONE * orb_scale))
 			continue
 
-		if kind == 3:
+		if kind == 3 or kind == 5:
+			var intro := float(e.get("intro", 0.0))
+			var drop_y := pow(clampf(intro / 1.35, 0.0, 1.0), 2.0) * 7.5
+			var hp_ratio := float(e.get("hp", 1800)) / maxf(float(e.get("max_hp", 1800)), 1.0)
 			boss_rig.visible = true
-			boss_rig.position = pos
+			boss_rig.position = pos + Vector3(0, drop_y, 0)
 			boss_rig.basis = rotation
+			boss_rig.scale = Vector3.ONE * (1.18 if kind == 5 else 1.0)
 			boss_hit_overlay.set_shader_parameter("hit", 1.0 if flash else 0.0)
+			if is_instance_valid(boss_armor_l):
+				boss_armor_l.visible = hp_ratio >= 0.70
+			if is_instance_valid(boss_armor_r):
+				boss_armor_r.visible = hp_ratio >= 0.35
+			if is_instance_valid(boss_smoke_l):
+				boss_smoke_l.emitting = hp_ratio < 0.70
+				boss_sparks_l.emitting = hp_ratio < 0.70
+			if is_instance_valid(boss_smoke_r):
+				boss_smoke_r.emitting = hp_ratio < 0.35
+				boss_sparks_r.emitting = hp_ratio < 0.35
+			for t in boss_turrets:
+				t.rotation.y = sin(time * 1.4) * 0.15
 			for j in range(boss_leg_pivots.size()):
 				var phase := time * 7.0 + float(j % 2) * PI + float(j / 2) * PI
 				boss_leg_pivots[j].rotation.y = sin(phase) * 0.16
@@ -349,69 +519,3 @@ func update_swarm(enemies: Array, player: Vector2, delta: float) -> void:
 				legs.multimesh.set_instance_transform(i * 16 + l, hidden)
 				legs.multimesh.set_instance_color(i * 16 + l, Color(0, 0, 0, 0))
 			continue
-
-		var base_color: Color = [Color("272d36"), Color("323842"), Color("2b3440"), Color("282e38")][kind]
-		var plate_color: Color = [Color("404854"), Color("545e6c"), Color("465262"), Color("404854")][kind]
-		var seam_color: Color = [Color("101318"), Color("14181f"), Color("12161d"), Color("12161c")][kind]
-		var leg_tint: Color = [Color("3b4352"), Color("465060"), Color("3e4858"), Color("38404e")][kind]
-		if flash:
-			base_color = Color.WHITE
-			plate_color = Color.WHITE
-			seam_color = Color.WHITE
-			leg_tint = Color.WHITE
-
-		var width := 1.42 if kind == 1 else (1.04 if kind == 2 else 0.94)
-		var body_len := 0.92 if kind == 1 else 0.76
-		bodies.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3(0, 0.23, -0.10) * size, Vector3(0.72 * width, 0.30, body_len) * size))
-		bodies.multimesh.set_instance_color(i, base_color)
-
-		var head_w := 0.54 * width if kind == 1 else 0.44 * width
-		heads.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3(0, 0.24, 0.29) * size, Vector3(head_w, 0.21, 0.34) * size))
-		heads.multimesh.set_instance_color(i, base_color.lightened(0.06))
-
-		var armor_h := 0.22 if kind == 1 else 0.16
-		armor.multimesh.set_instance_transform(i, transform_at(pos, rotation, Vector3(0, 0.32, -0.10) * size, Vector3(0.58 * width, armor_h, body_len * 0.82) * size))
-		armor.multimesh.set_instance_color(i, plate_color)
-
-		var is_fresh: bool = e.get("fresh", true)
-		var flash_changed: bool = e.get("was_flash", false) != flash
-		if is_fresh or flash_changed or (i % 2 == leg_phase):
-			e["fresh"] = false
-			e["was_flash"] = flash
-			for k in range(3):
-				var panel_z := (-0.28 + float(k) * 0.17) * size
-				seams.multimesh.set_instance_transform(i * 3 + k, transform_at(pos, rotation, Vector3(0, 0.38 * size, panel_z), Vector3(0.62 * width, 0.06, 0.045) * size))
-				seams.multimesh.set_instance_color(i * 3 + k, seam_color)
-
-			for j in range(4):
-				var spread_x := (float(j) - 1.5) * 0.095 * width
-				var curve_z := 0.45 - absf(float(j) - 1.5) * 0.025
-				var eye_scale := 0.082 if (j == 1 or j == 2) else 0.065
-				eyes.multimesh.set_instance_transform(i * 4 + j, transform_at(pos, rotation, Vector3(spread_x, 0.29, curve_z) * size, Vector3.ONE * eye_scale * size))
-
-			accents.multimesh.set_instance_transform(i * 2, transform_at(pos, rotation, Vector3(0, 0.42, -0.12) * size, Vector3(0.08 * width, 0.025, 0.10) * size))
-			var front_y := 0.56 if kind == 2 else 0.35
-			var front_z := 0.12 if kind == 2 else 0.26
-			accents.multimesh.set_instance_transform(i * 2 + 1, transform_at(pos, rotation, Vector3(0, front_y, front_z) * size, Vector3(0.11 * width, 0.025, 0.05) * size))
-
-			var enemy_xform := Transform3D(rotation * Basis.from_scale(Vector3.ONE * size), pos)
-			var leg_col := Color(leg_tint.r, leg_tint.g, leg_tint.b, 1.0)
-			var off_col := Color(0, 0, 0, 0)
-			var base_leg := i * 16
-			for j in range(8):
-				var used := kind != 1 or (j % 4) != 3
-				var col := leg_col if used else off_col
-				legs.multimesh.set_instance_transform(base_leg + j * 2, enemy_xform)
-				legs.multimesh.set_instance_transform(base_leg + j * 2 + 1, enemy_xform)
-				legs.multimesh.set_instance_color(base_leg + j * 2, col)
-				legs.multimesh.set_instance_color(base_leg + j * 2 + 1, col)
-
-			if kind == 2:
-				guns.multimesh.set_instance_transform(i * 2, transform_at(pos, rotation, Vector3(0, 0.45, -0.02) * size, Vector3(0.32, 0.16, 0.36) * size))
-				guns.multimesh.set_instance_color(i * 2, plate_color.lightened(0.12))
-				guns.multimesh.set_instance_transform(i * 2 + 1, transform_at(pos, rotation, Vector3(0, 0.47, 0.28) * size, Vector3(0.18, 0.09, 0.58) * size))
-				guns.multimesh.set_instance_color(i * 2 + 1, seam_color.lightened(0.15))
-			else:
-				var zero_gun := Transform3D(Basis.from_scale(Vector3.ONE * 0.001), pos)
-				guns.multimesh.set_instance_transform(i * 2, zero_gun)
-				guns.multimesh.set_instance_transform(i * 2 + 1, zero_gun)

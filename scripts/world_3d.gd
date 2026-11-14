@@ -15,6 +15,10 @@ var entities: Node3D
 var enemy_nodes: Array[Node3D] = []
 var projectile_nodes: Array[Node3D] = []
 var crystal_nodes: Array[Node3D] = []
+var crate_nodes: Array[Node3D] = []
+var crate_scene: PackedScene = preload("res://assets/third_party/sketchfab/props/crate_scifi.glb")
+var applied_arena_id := ""
+var rain_particles: GPUParticles3D
 var enemy_projectile_nodes: Array[Node3D] = []
 var swarm: EnemySwarm3D
 var effects_3d: CombatEffects3D
@@ -255,6 +259,46 @@ func _ready() -> void:
 		enemy_projectile_nodes[0].visible = true
 	if not crystal_nodes.is_empty():
 		crystal_nodes[0].visible = true
+	for _i in range(4):
+		var cnode: Node3D = crate_scene.instantiate()
+		cnode.scale = Vector3.ONE * 0.72
+		cnode.visible = false
+		if not OS.has_feature("mobile"):
+			var clight := OmniLight3D.new()
+			clight.light_color = Color("c65cff")
+			clight.light_energy = 4.5
+			clight.omni_range = 4.0
+			clight.position = Vector3(0, 1.4, 0)
+			cnode.add_child(clight)
+		add_child(cnode)
+		crate_nodes.append(cnode)
+	if not crate_nodes.is_empty():
+		crate_nodes[0].visible = true
+	if not OS.has_feature("mobile"):
+		rain_particles = GPUParticles3D.new()
+		rain_particles.amount = 180
+		rain_particles.lifetime = 0.65
+		rain_particles.emitting = false
+		rain_particles.visible = false
+		var rproc := ParticleProcessMaterial.new()
+		rproc.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+		rproc.emission_box_extents = Vector3(16.0, 0.5, 12.0)
+		rproc.direction = Vector3(-0.12, -1.0, 0.08)
+		rproc.spread = 2.0
+		rproc.initial_velocity_min = 18.0
+		rproc.initial_velocity_max = 22.0
+		rproc.gravity = Vector3.ZERO
+		rain_particles.process_material = rproc
+		var rquad := QuadMesh.new()
+		rquad.size = Vector2(0.03, 0.85)
+		var rmat := StandardMaterial3D.new()
+		rmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		rmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		rmat.albedo_color = Color(0.58, 0.78, 0.96, 0.35)
+		rmat.billboard_mode = BaseMaterial3D.BILLBOARD_FIXED_Y
+		rquad.material = rmat
+		rain_particles.draw_pass_1 = rquad
+		add_child(rain_particles)
 	for id in ["minigun", "rocket", "armor"]:
 		for n in range(3 if id != "armor" else 2):
 			menu_state.upgrade(id)
@@ -532,6 +576,23 @@ func add_smoke(node: Node3D) -> void:
 	smoke.emitting = false
 	node.add_child(smoke)
 
+func apply_arena(arena_id: String) -> void:
+	if applied_arena_id == arena_id:
+		return
+	applied_arena_id = arena_id
+	var cfg: Dictionary = ArenaCatalog.get_def(arena_id)
+	if lighting.has("environment") and is_instance_valid(lighting["environment"]):
+		var env: Environment = lighting["environment"]
+		env.fog_light_color = cfg["fog_color"]
+		env.ambient_light_color = cfg["ambient_tint"]
+	if lighting.has("sun") and is_instance_valid(lighting["sun"]):
+		lighting["sun"].light_color = cfg["sun_color"]
+	if is_instance_valid(rain_particles):
+		var is_rain: bool = bool(cfg["rain"])
+		rain_particles.visible = is_rain
+		rain_particles.emitting = is_rain
+
+
 func update_view() -> void:
 	if not game:
 		return
@@ -552,6 +613,14 @@ func update_view() -> void:
 			robot.set_skin(skin_res)
 			if is_instance_valid(hangar_robot):
 				hangar_robot.set_skin(skin_res)
+	var chassis_id: String = game.progress.selected_chassis
+	if is_instance_valid(robot):
+		robot.set_chassis(chassis_id)
+	if is_instance_valid(hangar_robot):
+		hangar_robot.set_chassis(chassis_id)
+	apply_arena(game.progress.selected_arena)
+	if is_instance_valid(rain_particles) and rain_particles.visible:
+		rain_particles.position = robot.position + Vector3(0, 12.0, 0)
 	var in_hangar: bool = game.mode in ["menu", "hangar", "settings", "end", "credits"]
 	if is_instance_valid(hangar_stage):
 		hangar_stage.visible = in_hangar
@@ -654,6 +723,16 @@ func update_view() -> void:
 	for i in range(game.crystals.size()):
 		var p: Vector2 = game.crystals[i]
 		crystal_nodes[i].position = Vector3(p.x / 50.0, 0, p.y / 50.0)
+	var crate_count: int = mini(game.crates.size(), crate_nodes.size())
+	for i in range(crate_nodes.size()):
+		if prewarm_frames > 0 and i == 0:
+			crate_nodes[i].visible = true
+		else:
+			crate_nodes[i].visible = i < crate_count
+		if i < crate_count:
+			var cp: Vector2 = game.crates[i]
+			crate_nodes[i].position = Vector3(cp.x / 50.0, 0.08, cp.y / 50.0)
+			crate_nodes[i].rotation.y = Time.get_ticks_msec() * 0.0012
 
 # PC: fixed pool of rocket fire + smoke trail emitters, reused by the first
 # MAX_ROCKET_TRAILS rockets/swarm missiles on screen.
