@@ -10,6 +10,7 @@ uniform sampler2D concrete_color : source_color, filter_linear_mipmap, repeat_en
 uniform sampler2D floor_mask : filter_linear_mipmap, repeat_enable;
 uniform float brightness = 0.056;
 uniform float normal_depth = 0.3;
+uniform float yard_blend = 0.0;
 
 // Stable per-plate wear: no low-frequency gradients or blurred stains.
 float plate_tone(vec2 id) {
@@ -22,10 +23,14 @@ void fragment() {
     vec3 detail = texture(floor_mask, UV * vec2(38.0, 26.0)).rgb;
     vec3 metal = texture(metal_color, uv).rgb * brightness * variation;
     vec3 concrete = texture(concrete_color, uv * 0.5 + vec2(0.13, 0.27)).rgb;
-    ALBEDO = max(metal * mix(0.96, 1.04, detail.g) + concrete * 0.001, vec3(0.020));
+    vec3 hall_albedo = max(metal * mix(0.96, 1.04, detail.g) + concrete * 0.001, vec3(0.020));
+    vec3 yard_albedo = max(concrete * vec3(0.14, 0.16, 0.19) * mix(0.82, 1.12, detail.g), vec3(0.024));
+    ALBEDO = mix(hall_albedo, yard_albedo, yard_blend);
     float rough = texture(metal_rough, uv).r;
-    METALLIC = 0.4;
-    ROUGHNESS = clamp(rough + (detail.g - 0.5) * 0.08, 0.55, 0.95);
+    float hall_rough = clamp(rough + (detail.g - 0.5) * 0.08, 0.55, 0.95);
+    float yard_rough = clamp(0.22 + detail.g * 0.36, 0.16, 0.65);
+    METALLIC = mix(0.4, 0.08, yard_blend);
+    ROUGHNESS = mix(hall_rough, yard_rough, yard_blend);
     NORMAL_MAP = texture(metal_normal, uv).rgb;
     NORMAL_MAP_DEPTH = normal_depth;
 }

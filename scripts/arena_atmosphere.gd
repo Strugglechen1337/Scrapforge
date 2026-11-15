@@ -48,6 +48,15 @@ static func build(parent: Node3D, mobile: bool) -> Node3D:
 		_add_source(root, item[0], item[1], item[2])
 	return root
 
+
+static func set_outdoor(root: Node3D, is_outdoor: bool) -> void:
+	if not is_instance_valid(root):
+		return
+	for node_name in ["DistantHall", "DistantPiers", "CraneRails"]:
+		var n := root.get_node_or_null(node_name)
+		if n is Node3D:
+			(n as Node3D).visible = not is_outdoor
+
 static func _add_source(root: Node3D, kind: String, pos: Vector3, color: Color) -> void:
 	var source := Node3D.new()
 	source.name = kind + "Source" + str(root.get_child_count())

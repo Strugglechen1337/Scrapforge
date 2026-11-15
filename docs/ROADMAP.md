@@ -64,7 +64,7 @@ Diese beiden Punkte gehen in keiner Phase verloren:
 | 9a | Evolutionen, Elitegegner und Kisten | fertig |
 | 9b | Dauerhafter Fortschritt (Hangar-Upgrades) | fertig |
 | 9c | Chassis & Startwaffen | fertig |
-| 9d | Arenen & Gegnertypen | umgesetzt, Abnahme offen |
+| 9d | Arenen & Gegnertypen | fertig |
 | 9e | Bosse & Freischalt-Ziele | fertig |
 
 ---

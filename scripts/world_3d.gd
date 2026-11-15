@@ -579,14 +579,49 @@ func add_smoke(node: Node3D) -> void:
 func apply_arena(arena_id: String) -> void:
 	if applied_arena_id == arena_id:
 		return
+	var first_apply := applied_arena_id.is_empty()
 	applied_arena_id = arena_id
+	var is_yard := arena_id == "rainyard"
 	var cfg: Dictionary = ArenaCatalog.get_def(arena_id)
 	if lighting.has("environment") and is_instance_valid(lighting["environment"]):
 		var env: Environment = lighting["environment"]
 		env.fog_light_color = cfg["fog_color"]
 		env.ambient_light_color = cfg["ambient_tint"]
+		if not OS.has_feature("mobile") and env.sky:
+			if is_yard:
+				var outdoor_sky := ProceduralSkyMaterial.new()
+				outdoor_sky.sky_top_color = Color("0a1524")
+				outdoor_sky.sky_horizon_color = Color("1f354d")
+				outdoor_sky.ground_bottom_color = Color("0b1018")
+				outdoor_sky.ground_horizon_color = Color("172434")
+				env.sky.sky_material = outdoor_sky
+				env.background_energy_multiplier = 0.65
+			else:
+				var panorama := PanoramaSkyMaterial.new()
+				panorama.panorama = load("res://assets/third_party/polyhaven/industrial_pipe_and_valve_01/industrial_pipe_and_valve_01_2k.hdr")
+				env.sky.sky_material = panorama
+				env.background_energy_multiplier = 0.14
 	if lighting.has("sun") and is_instance_valid(lighting["sun"]):
 		lighting["sun"].light_color = cfg["sun_color"]
+	var floor_root := get_node_or_null("ArenaFloor")
+	if floor_root:
+		var floor_mesh := floor_root.get_node_or_null("Floor") as MeshInstance3D
+		if floor_mesh and floor_mesh.material_override is ShaderMaterial:
+			(floor_mesh.material_override as ShaderMaterial).set_shader_parameter("yard_blend", 1.0 if is_yard else 0.0)
+	var atmo := get_node_or_null("ArenaAtmosphere") as Node3D
+	if atmo:
+		ArenaAtmosphere.set_outdoor(atmo, is_yard)
+	if not first_apply and not OS.has_feature("mobile"):
+		var old_b := get_node_or_null("ArenaBoundary")
+		if old_b:
+			remove_child(old_b)
+			old_b.queue_free()
+		ArenaBoundary.build(self, 36.0, 24.0, arena_id)
+		var old_p := get_node_or_null("ArenaProps")
+		if old_p:
+			remove_child(old_p)
+			old_p.queue_free()
+		ArenaProps.build(self, 36.0, 24.0, 4711, arena_id)
 	if is_instance_valid(rain_particles):
 		var is_rain: bool = bool(cfg["rain"])
 		rain_particles.visible = is_rain

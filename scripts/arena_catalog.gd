@@ -29,7 +29,7 @@ const ARENAS := {
 		"floor_roughness": 0.28,
 		"boss_kind": 5,
 		"boss_title": "WARNUNG // BOSS: BELAGERUNGS-KOLOSS",
-		"has_unique_scene": false,
+		"has_unique_scene": true,
 	},
 }
 
