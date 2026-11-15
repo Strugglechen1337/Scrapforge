@@ -262,16 +262,16 @@ static func show_hangar(game) -> void:
 	upg_style.content_margin_top = 18
 	upg_style.content_margin_bottom = 18
 	upg_frame.add_theme_stylebox_override("panel", upg_style)
-	upg_frame.position = Vector2(900, 36)
-	upg_frame.custom_minimum_size = Vector2(360, 720)
+	upg_frame.position = Vector2(890, 36)
+	upg_frame.custom_minimum_size = Vector2(368, 720)
 	game.panel.add_child(upg_frame)
 	ScrapUI.anchor_horizontal(upg_frame, 1.0)
 
 	var ubox := VBoxContainer.new()
 	ubox.add_theme_constant_override("separation", 10)
 	upg_frame.add_child(ubox)
-	ubox.add_child(heading("DAUERHAFTE UPGRADES", 24, ScrapUI.ORANGE))
-	ubox.add_child(heading("SCHROTT-KONTO: %d" % game.progress.scrap, 16, ScrapUI.CYAN))
+	ubox.add_child(heading("DAUERHAFTE UPGRADES", 22, ScrapUI.ORANGE))
+	ubox.add_child(heading("SCHROTT-KONTO: %d" % game.progress.scrap, 15, ScrapUI.CYAN))
 
 	var usep := ColorRect.new()
 	usep.custom_minimum_size = Vector2(0, 2)
@@ -289,13 +289,13 @@ static func show_hangar(game) -> void:
 		row.add_theme_stylebox_override("panel", ScrapUI.make_chamfer_style(Color(0.03, 0.048, 0.08, 0.92), ScrapUI.CYAN if lv > 0 else ScrapUI.BORDER_STEEL, 1, 8))
 		ubox.add_child(row)
 		var hbox := HBoxContainer.new()
-		hbox.add_theme_constant_override("separation", 10)
+		hbox.add_theme_constant_override("separation", 8)
 		row.add_child(hbox)
 		var info := VBoxContainer.new()
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		info.add_theme_constant_override("separation", 2)
-		info.add_child(heading("%s  (S%d/%d)" % [cfg["title"], lv, max_lv], 15, Color.WHITE))
-		info.add_child(heading(cfg["desc"], 13, ScrapUI.TEXT_MUTED))
+		info.add_child(heading("%s  (S%d/%d)" % [cfg["title"], lv, max_lv], 14, Color.WHITE))
+		info.add_child(heading(cfg["desc"], 12, ScrapUI.TEXT_MUTED))
 		hbox.add_child(info)
 		var can_buy: bool = game.progress.can_buy(uid)
 		var btn_txt := "MAX" if lv >= max_lv else ("%d SCHROTT" % game.progress.cost(uid))
@@ -304,7 +304,7 @@ static func show_hangar(game) -> void:
 				game.progress.save()
 				game.play_sfx(&"upgrade")
 				game.show_hangar()
-		, ScrapUI.CYAN if can_buy else ScrapUI.BORDER_STEEL, Vector2(118, 44))
+		, ScrapUI.CYAN if can_buy else ScrapUI.BORDER_STEEL, Vector2(108, 42))
 		buy_btn.disabled = not can_buy
 		buy_btn.set_meta("progress_buy_id", uid)
 		hbox.add_child(buy_btn)
