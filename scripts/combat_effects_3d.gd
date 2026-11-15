@@ -136,7 +136,9 @@ func _ready() -> void:
 		label.font_size = 38 if OS.has_feature("mobile") else 72
 		if not OS.has_feature("mobile"):
 			label.pixel_size = 0.0095
-			label.outline_modulate = Color(0.05, 0.03, 0.02, 1.0)
+			label.shaded = false
+			label.render_priority = 10
+			label.outline_modulate = Color(0.04, 0.02, 0.01, 1.0)
 		label.outline_size = 7 if OS.has_feature("mobile") else 18
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		label.no_depth_test = true
@@ -889,8 +891,8 @@ func burst(p: Vector2, kind: String) -> void:
 		piece.velocity = Vector3(randf_range(-2.4, 2.4), randf_range(1.2, 3.2), randf_range(-2.4, 2.4))
 	effects.append(slot)
 
-const NORMAL_COLOR := Color("ff7a1a")
-const STRONG_COLOR := Color("fff2a0")
+const NORMAL_COLOR := Color("ff8a2a")
+const STRONG_COLOR := Color("fff8c4")
 
 # PC: bigger outlined numbers, orange normal / white-yellow strong (rocket, plasma).
 # Hits on the same spot within a short time are merged into one label.
@@ -943,7 +945,9 @@ func _process(delta: float) -> void:
 		e.life -= delta
 		if e.get("label", false):
 			e.node.position.y += delta * (1.15 if OS.has_feature("mobile") else 1.5)
-			e.node.modulate.a = clampf(e.life / e.total, 0.0, 1.0)
+			var alpha := clampf((e.life / e.total) * 3.0, 0.0, 1.0)
+			e.node.modulate.a = alpha
+			e.node.outline_modulate.a = alpha
 		else:
 			if e.orb.visible:
 				var ratio := clampf(e.life / 0.55, 0.0, 1.0)
