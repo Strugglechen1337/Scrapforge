@@ -1,7 +1,7 @@
 ﻿extends Node3D
 
 const SAW_RADIUS := 1.56
-const SAW_HEIGHT := 0.55
+const SAW_HEIGHT := 1.05
 const SAW_ORBIT_SPEED := 1.8
 const SAW_SPIN_SPEED := 14.0
 
