@@ -43,7 +43,24 @@ func _ready() -> void:
 	visor_glow.emission_enabled = true
 	visor_glow.emission = Color("31eaff")
 	visor_glow.emission_energy_multiplier = 2.5
-	_load_chassis_model(chassis_id)
+	model = (load("res://assets/third_party/sketchfab/colossus/colossus-parts.glb") as PackedScene).instantiate() as Node3D
+	model.position.y = 0.956
+	add_child(model)
+	for part_name in ["torso", "head", "shoulder_l", "shoulder_r", "upper_arm_l", "upper_arm_r", "forearm_l", "forearm_r", "thigh_l", "thigh_r", "shin_l", "shin_r"]:
+		var node := model.find_child(part_name, true, false) as MeshInstance3D
+		chassis[part_name] = node
+	var original := (chassis["torso"] as MeshInstance3D).get_active_material(0) as StandardMaterial3D
+	body_material = ShaderMaterial.new()
+	body_material.shader = load("res://scripts/colossus_paint.gdshader")
+	body_material.set_shader_parameter("base_texture", original.albedo_texture)
+	body_material.set_shader_parameter("normal_texture", original.normal_texture)
+	body_material.set_shader_parameter("paint_mask", load("res://assets/models/colossus_paint_mask.png"))
+	for part_name in chassis:
+		var node: MeshInstance3D = chassis[part_name]
+		node.material_override = body_material
+		node.set_instance_shader_parameter("orange_panel", 1.0 if part_name in ["shoulder_l", "shoulder_r", "thigh_l", "thigh_r"] else 0.0)
+		node.set_instance_shader_parameter("chest_panel", 1.0 if part_name == "torso" else 0.0)
+		if part_name != "torso": node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# The AnimationPlayer provides a pause control for the existing hangar and
 	# showcase; the actual rigid-part motion is generated below.
 	animation = AnimationPlayer.new()
@@ -55,57 +72,6 @@ func _ready() -> void:
 	animation.add_animation_library("", library)
 	add_child(animation)
 	animation.play("Walk")
-	parts = Node3D.new()
-	add_child(parts)
-	set_skin(load("res://data/skins/standard.tres"))
-	set_robot_layer(self)
-
-
-func _chassis_scene_path(id: String) -> String:
-	match id:
-		"vanguard":
-			return "res://assets/models/chassis/vanguard.glb"
-		"bastion_mech":
-			return "res://assets/models/chassis/bastion_mech.glb"
-		_:
-			return "res://assets/third_party/sketchfab/colossus/colossus-parts.glb"
-
-
-func _default_paint_mask() -> Texture2D:
-	var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
-	img.fill(Color(1.0, 0.25, 0.9, 1.0))
-	return ImageTexture.create_from_image(img)
-
-
-func _load_chassis_model(id: String) -> void:
-	if is_instance_valid(visor):
-		visor.queue_free()
-		visor = null
-	if is_instance_valid(model):
-		remove_child(model)
-		model.queue_free()
-	chassis.clear()
-	sockets.clear()
-	model = (load(_chassis_scene_path(id)) as PackedScene).instantiate() as Node3D
-	model.position.y = 0.956
-	add_child(model)
-	for part_name in ["torso", "head", "shoulder_l", "shoulder_r", "upper_arm_l", "upper_arm_r", "forearm_l", "forearm_r", "thigh_l", "thigh_r", "shin_l", "shin_r"]:
-		var node := model.find_child(part_name, true, false) as MeshInstance3D
-		chassis[part_name] = node
-	var original := (chassis["torso"] as MeshInstance3D).get_active_material(0) as StandardMaterial3D
-	body_material = ShaderMaterial.new()
-	body_material.shader = load("res://scripts/colossus_paint.gdshader")
-	if original:
-		body_material.set_shader_parameter("base_texture", original.albedo_texture)
-		body_material.set_shader_parameter("normal_texture", original.normal_texture)
-	var mask_tex: Texture2D = load("res://assets/models/colossus_paint_mask.png") if id == "colossus" else _default_paint_mask()
-	body_material.set_shader_parameter("paint_mask", mask_tex)
-	for part_name in chassis:
-		var node: MeshInstance3D = chassis[part_name]
-		node.material_override = body_material
-		node.set_instance_shader_parameter("orange_panel", 1.0 if part_name in ["shoulder_l", "shoulder_r", "thigh_l", "thigh_r"] else 0.0)
-		node.set_instance_shader_parameter("chest_panel", 1.0 if part_name == "torso" else 0.0)
-		if part_name != "torso": node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for entry in [
 		["left_arm", "forearm_l", Vector3(-0.12, -0.12, 0.08)],
 		["right_arm", "forearm_r", Vector3(0.18, 0.02, 0.08)],
@@ -116,14 +82,15 @@ func _load_chassis_model(id: String) -> void:
 		["legs", "torso", Vector3(0, -0.20, 0)],
 		["core", "torso", Vector3(0, 0.10, 0.22)]]:
 		sockets[entry[0]] = make_marker(chassis[entry[1]], entry[0], entry[2])
+	parts = Node3D.new()
+	add_child(parts)
 	visor = MeshInstance3D.new()
 	var visor_mesh := BoxMesh.new()
 	visor_mesh.size = Vector3(0.24, 0.055, 0.035)
 	visor.mesh = visor_mesh
 	visor.material_override = visor_glow
 	sockets["head"].add_child(visor)
-	if skin:
-		set_skin(skin)
+	set_skin(load("res://data/skins/standard.tres"))
 	set_robot_layer(self)
 
 func make_marker(parent: Node3D, marker_name: String, offset: Vector3) -> Marker3D:
@@ -186,8 +153,6 @@ func set_chassis(id: String) -> void:
 		return
 	chassis_id = id
 	scale = ChassisCatalog.model_scale(id)
-	_load_chassis_model(id)
-	signature = ""
 	refresh()
 
 
@@ -219,6 +184,25 @@ func refresh() -> void:
 			other.set_meta("level", level)
 			other.build(id, level, metal, dark, glow, accent)
 			set_robot_layer(other)
+	var mod_script := preload("res://scripts/module_visual_3d.gd")
+	if chassis_id == "vanguard":
+		for side_sock in ["left_shoulder", "right_shoulder"]:
+			var fin_mod: Node3D = mod_script.new()
+			parts.add_child(fin_mod)
+			fin_mod.set_meta("socket", side_sock)
+			fin_mod.set_meta("module_id", "chassis_fin")
+			fin_mod.set_meta("level", 1)
+			fin_mod.build("thruster", 4, metal, dark, glow, accent)
+			set_robot_layer(fin_mod)
+	elif chassis_id == "bastion_mech":
+		for side_sock in ["left_shoulder", "right_shoulder"]:
+			var plate_mod: Node3D = mod_script.new()
+			parts.add_child(plate_mod)
+			plate_mod.set_meta("socket", side_sock)
+			plate_mod.set_meta("module_id", "chassis_plate")
+			plate_mod.set_meta("level", 1)
+			plate_mod.build("armor", 5, metal, dark, glow, accent)
+			set_robot_layer(plate_mod)
 	update_parts()
 
 func update_parts() -> void:
