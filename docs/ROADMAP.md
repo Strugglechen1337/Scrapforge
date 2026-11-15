@@ -59,7 +59,7 @@ Diese beiden Punkte gehen in keiner Phase verloren:
 | 4 | Module und Säge: Primitive ersetzen | fertig |
 | 5 | Gegner und Boss vereinheitlichen | fertig |
 | 6 | Skins als Lack | fertig |
-| 7 | Audio | umgesetzt, Abnahme offen |
+| 7 | Audio | fertig |
 | 8 | Code-Aufräumen (`main.gd`) | fertig |
 | 9a | Evolutionen, Elitegegner und Kisten | fertig |
 | 9b | Dauerhafter Fortschritt (Hangar-Upgrades) | fertig |
