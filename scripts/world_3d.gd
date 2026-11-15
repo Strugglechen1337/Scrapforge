@@ -590,10 +590,10 @@ func apply_arena(arena_id: String) -> void:
 		if not OS.has_feature("mobile") and env.sky:
 			if is_yard:
 				var outdoor_sky := ProceduralSkyMaterial.new()
-				outdoor_sky.sky_top_color = Color("0a1524")
-				outdoor_sky.sky_horizon_color = Color("1f354d")
-				outdoor_sky.ground_bottom_color = Color("0b1018")
-				outdoor_sky.ground_horizon_color = Color("172434")
+				outdoor_sky.sky_top_color = Color("10151d")
+				outdoor_sky.sky_horizon_color = Color("262e38")
+				outdoor_sky.ground_bottom_color = Color("0d1015")
+				outdoor_sky.ground_horizon_color = Color("1b2129")
 				env.sky.sky_material = outdoor_sky
 				env.background_energy_multiplier = 0.65
 			else:
