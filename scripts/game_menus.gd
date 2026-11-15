@@ -152,7 +152,7 @@ static func show_hangar(game) -> void:
 	style.content_margin_bottom = 18
 	frame.add_theme_stylebox_override("panel", style)
 	frame.position = Vector2(20, 36)
-	frame.custom_minimum_size = Vector2(360, 720)
+	frame.custom_minimum_size = Vector2(350, 720)
 	game.panel.add_child(frame)
 
 	var box := VBoxContainer.new()
@@ -170,7 +170,7 @@ static func show_hangar(game) -> void:
 	for cid: String in ChassisCatalog.CHASSIS_IDS:
 		if ChassisCatalog.has_unique_model(cid):
 			visible_chassis.append(cid)
-	var chassis_w := int((324 - 6 * maxi(0, visible_chassis.size() - 1)) / maxi(1, visible_chassis.size()))
+	var chassis_w := int((310 - 6 * maxi(0, visible_chassis.size() - 1)) / maxi(1, visible_chassis.size()))
 	for cid: String in visible_chassis:
 		var cdef: Dictionary = ChassisCatalog.get_def(cid)
 		var unlocked: bool = game.progress.is_chassis_unlocked(cid)
@@ -194,7 +194,7 @@ static func show_hangar(game) -> void:
 	for aid: String in ArenaCatalog.ARENA_IDS:
 		if ArenaCatalog.has_unique_scene(aid):
 			visible_arenas.append(aid)
-	var arena_w := int((324 - 6 * maxi(0, visible_arenas.size() - 1)) / maxi(1, visible_arenas.size()))
+	var arena_w := int((310 - 6 * maxi(0, visible_arenas.size() - 1)) / maxi(1, visible_arenas.size()))
 	for aid: String in visible_arenas:
 		var adef: Dictionary = ArenaCatalog.get_def(aid)
 		var unlocked_a: bool = game.progress.is_arena_unlocked(aid)
@@ -223,7 +223,7 @@ static func show_hangar(game) -> void:
 		var b := button(game, "      " + skin_def.title.to_upper() + suffix, func():
 			game.select_skin(skin_id)
 			game.show_hangar()
-		, ScrapUI.CYAN if is_active else ScrapUI.ORANGE, Vector2(324, 42))
+		, ScrapUI.CYAN if is_active else ScrapUI.ORANGE, Vector2(310, 42))
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		# Color swatches inside button
 		var swatch_armor := ColorRect.new()
@@ -245,12 +245,12 @@ static func show_hangar(game) -> void:
 		game.hangar_buttons.append(b)
 		focus_controls.append(b)
 
-	var unlocks_btn := button(game, "ZIELE & FREISCHALTUNGEN", game.show_unlocks, ScrapUI.CYAN, Vector2(324, 42))
+	var unlocks_btn := button(game, "ZIELE & FREISCHALTUNGEN", game.show_unlocks, ScrapUI.CYAN, Vector2(310, 42))
 	unlocks_btn.set_meta("open_unlocks", true)
 	box.add_child(unlocks_btn)
 	focus_controls.append(unlocks_btn)
 
-	var back := button(game, "ZURÜCK ZUM HAUPTMENÜ", game.show_menu, ScrapUI.ORANGE, Vector2(324, 44))
+	var back := button(game, "ZURÜCK ZUM HAUPTMENÜ", game.show_menu, ScrapUI.ORANGE, Vector2(310, 44))
 	box.add_child(back)
 	focus_controls.append(back)
 
@@ -262,8 +262,8 @@ static func show_hangar(game) -> void:
 	upg_style.content_margin_top = 18
 	upg_style.content_margin_bottom = 18
 	upg_frame.add_theme_stylebox_override("panel", upg_style)
-	upg_frame.position = Vector2(886, 36)
-	upg_frame.custom_minimum_size = Vector2(374, 720)
+	upg_frame.position = Vector2(888, 36)
+	upg_frame.custom_minimum_size = Vector2(372, 720)
 	game.panel.add_child(upg_frame)
 	ScrapUI.anchor_horizontal(upg_frame, 1.0)
 
@@ -296,11 +296,11 @@ static func show_hangar(game) -> void:
 		info.add_theme_constant_override("separation", 2)
 		var t_lbl := heading("%s  (S%d/%d)" % [cfg["title"], lv, max_lv], 14, Color.WHITE)
 		t_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		t_lbl.custom_minimum_size = Vector2(180, 0)
+		t_lbl.custom_minimum_size = Vector2(156, 0)
 		info.add_child(t_lbl)
 		var d_lbl := heading(cfg["desc"], 12, ScrapUI.TEXT_MUTED)
 		d_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		d_lbl.custom_minimum_size = Vector2(180, 0)
+		d_lbl.custom_minimum_size = Vector2(156, 0)
 		info.add_child(d_lbl)
 		hbox.add_child(info)
 		var can_buy: bool = game.progress.can_buy(uid)

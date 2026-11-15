@@ -679,8 +679,8 @@ func update_view() -> void:
 			camera.position = base_pos + Vector3(0.95, 1.75, 5.8)
 			camera.look_at(base_pos + Vector3(0.95, 0.98, 0.0))
 		elif game.mode == "hangar":
-			camera.position = base_pos + Vector3(0.0, 1.65, 6.2)
-			camera.look_at(base_pos + Vector3(0.0, 0.92, 0.0))
+			camera.position = base_pos + Vector3(-0.08, 1.75, 7.4)
+			camera.look_at(base_pos + Vector3(-0.08, 1.02, 0.0))
 		else:
 			camera.position = base_pos + Vector3(-0.78, 1.55, 5.0)
 			camera.look_at(base_pos + Vector3(-0.78, 0.88, 0.0))
