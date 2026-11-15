@@ -146,21 +146,21 @@ static func show_hangar(game) -> void:
 	game.hangar_buttons.clear()
 	var frame := PanelContainer.new()
 	var style := ScrapUI.make_chamfer_style(Color(0.045, 0.068, 0.105, 0.90), ScrapUI.CYAN, 2, 12, 6)
-	style.content_margin_left = 24
-	style.content_margin_right = 24
-	style.content_margin_top = 20
-	style.content_margin_bottom = 20
+	style.content_margin_left = 18
+	style.content_margin_right = 18
+	style.content_margin_top = 18
+	style.content_margin_bottom = 18
 	frame.add_theme_stylebox_override("panel", style)
-	frame.position = Vector2(54, 42)
-	frame.custom_minimum_size = Vector2(470, 710)
+	frame.position = Vector2(20, 36)
+	frame.custom_minimum_size = Vector2(360, 720)
 	game.panel.add_child(frame)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
+	box.add_theme_constant_override("separation", 10)
 	frame.add_child(box)
 
-	box.add_child(heading("DEIN HANGAR", 30, ScrapUI.ORANGE))
-	box.add_child(heading("CHASSIS · ARENA · LACKIERUNG", 14, ScrapUI.CYAN))
+	box.add_child(heading("DEIN HANGAR", 28, ScrapUI.ORANGE))
+	box.add_child(heading("CHASSIS · ARENA · LACKIERUNG", 13, ScrapUI.CYAN))
 
 	var focus_controls: Array[Control] = []
 	var chassis_row := HBoxContainer.new()
@@ -176,7 +176,7 @@ static func show_hangar(game) -> void:
 				game.progress.selected_chassis = cid
 				game.progress.save()
 				game.show_hangar()
-		, ScrapUI.CYAN if is_sel else (ScrapUI.ORANGE if unlocked else ScrapUI.BORDER_STEEL), Vector2(136, 40))
+		, ScrapUI.CYAN if is_sel else (ScrapUI.ORANGE if unlocked else ScrapUI.BORDER_STEEL), Vector2(104, 38))
 		cb.disabled = not unlocked
 		cb.set_meta("chassis_id", cid)
 		chassis_row.add_child(cb)
@@ -195,7 +195,7 @@ static func show_hangar(game) -> void:
 				game.progress.selected_arena = aid
 				game.progress.save()
 				game.show_hangar()
-		, ScrapUI.CYAN if is_sel_a else (ScrapUI.ORANGE if unlocked_a else ScrapUI.BORDER_STEEL), Vector2(207, 40))
+		, ScrapUI.CYAN if is_sel_a else (ScrapUI.ORANGE if unlocked_a else ScrapUI.BORDER_STEEL), Vector2(159, 38))
 		ab.disabled = not unlocked_a
 		ab.set_meta("arena_id", aid)
 		arena_row.add_child(ab)
@@ -213,7 +213,7 @@ static func show_hangar(game) -> void:
 		var b := button(game, "      " + skin_def.title.to_upper() + suffix, func():
 			game.select_skin(skin_id)
 			game.show_hangar()
-		, ScrapUI.CYAN if is_active else ScrapUI.ORANGE, Vector2(420, 44))
+		, ScrapUI.CYAN if is_active else ScrapUI.ORANGE, Vector2(324, 42))
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		# Color swatches inside button
 		var swatch_armor := ColorRect.new()
@@ -235,33 +235,33 @@ static func show_hangar(game) -> void:
 		game.hangar_buttons.append(b)
 		focus_controls.append(b)
 
-	var unlocks_btn := button(game, "ZIELE & FREISCHALTUNGEN", game.show_unlocks, ScrapUI.CYAN, Vector2(420, 44))
+	var unlocks_btn := button(game, "ZIELE & FREISCHALTUNGEN", game.show_unlocks, ScrapUI.CYAN, Vector2(324, 42))
 	unlocks_btn.set_meta("open_unlocks", true)
 	box.add_child(unlocks_btn)
 	focus_controls.append(unlocks_btn)
 
-	var back := button(game, "ZURÜCK ZUM HAUPTMENÜ", game.show_menu, ScrapUI.ORANGE, Vector2(420, 46))
+	var back := button(game, "ZURÜCK ZUM HAUPTMENÜ", game.show_menu, ScrapUI.ORANGE, Vector2(324, 44))
 	box.add_child(back)
 	focus_controls.append(back)
 
 	# Right panel: permanent Hangar upgrades
 	var upg_frame := PanelContainer.new()
 	var upg_style := ScrapUI.make_chamfer_style(Color(0.045, 0.068, 0.105, 0.90), ScrapUI.ORANGE, 2, 12, 6)
-	upg_style.content_margin_left = 22
-	upg_style.content_margin_right = 22
+	upg_style.content_margin_left = 18
+	upg_style.content_margin_right = 18
 	upg_style.content_margin_top = 18
 	upg_style.content_margin_bottom = 18
 	upg_frame.add_theme_stylebox_override("panel", upg_style)
-	upg_frame.position = Vector2(760, 42)
-	upg_frame.custom_minimum_size = Vector2(466, 710)
+	upg_frame.position = Vector2(900, 36)
+	upg_frame.custom_minimum_size = Vector2(360, 720)
 	game.panel.add_child(upg_frame)
 	ScrapUI.anchor_horizontal(upg_frame, 1.0)
 
 	var ubox := VBoxContainer.new()
 	ubox.add_theme_constant_override("separation", 10)
 	upg_frame.add_child(ubox)
-	ubox.add_child(heading("DAUERHAFTE UPGRADES", 28, ScrapUI.ORANGE))
-	ubox.add_child(heading("SCHROTT-KONTO: %d" % game.progress.scrap, 18, ScrapUI.CYAN))
+	ubox.add_child(heading("DAUERHAFTE UPGRADES", 24, ScrapUI.ORANGE))
+	ubox.add_child(heading("SCHROTT-KONTO: %d" % game.progress.scrap, 16, ScrapUI.CYAN))
 
 	var usep := ColorRect.new()
 	usep.custom_minimum_size = Vector2(0, 2)
@@ -294,7 +294,7 @@ static func show_hangar(game) -> void:
 				game.progress.save()
 				game.play_sfx(&"upgrade")
 				game.show_hangar()
-		, ScrapUI.CYAN if can_buy else ScrapUI.BORDER_STEEL, Vector2(142, 46))
+		, ScrapUI.CYAN if can_buy else ScrapUI.BORDER_STEEL, Vector2(118, 44))
 		buy_btn.disabled = not can_buy
 		buy_btn.set_meta("progress_buy_id", uid)
 		hbox.add_child(buy_btn)
@@ -309,7 +309,7 @@ static func show_hangar(game) -> void:
 			game.progress.save()
 			game.play_sfx(&"upgrade")
 			game.show_hangar()
-	, ScrapUI.ORANGE, Vector2(422, 48))
+	, ScrapUI.ORANGE, Vector2(324, 44))
 	reset_btn.disabled = not any_bought
 	reset_btn.set_meta("progress_reset", true)
 	ubox.add_child(reset_btn)
