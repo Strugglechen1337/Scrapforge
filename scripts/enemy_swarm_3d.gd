@@ -106,10 +106,25 @@ func _ready() -> void:
 	enemy_dark_mat.normal_scale = 0.45
 
 	eye_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	eye_mat.albedo_color = Color("ff2a2a")
+	eye_mat.albedo_color = Color(2.8, 0.28, 0.22, 1.0)
 	eye_mat.emission_enabled = true
 	eye_mat.emission = Color("ff2a2a")
-	eye_mat.emission_energy_multiplier = 1.6
+	eye_mat.emission_energy_multiplier = 4.2
+
+	boss_steel_mat.albedo_color = Color("626c7a")
+	boss_steel_mat.metallic = 0.38
+	boss_steel_mat.roughness = 0.42
+	boss_steel_mat.normal_enabled = true
+	boss_steel_mat.normal_texture = plates_normal
+	boss_steel_mat.normal_scale = 0.55
+	boss_steel_mat.roughness_texture = plates_roughness
+
+	boss_dark_mat.albedo_color = Color("3e4756")
+	boss_dark_mat.metallic = 0.48
+	boss_dark_mat.roughness = 0.40
+	boss_dark_mat.normal_enabled = true
+	boss_dark_mat.normal_texture = plates_normal
+	boss_dark_mat.normal_scale = 0.45
 
 	var leg_shader := Shader.new()
 	leg_shader.code = """
@@ -273,11 +288,11 @@ func _load_boss_part(path: String, pos: Vector3, rot_deg := Vector3.ZERO) -> Nod
 	var node := scene.instantiate() as Node3D
 	node.position = pos
 	node.rotation_degrees = rot_deg
-	_apply_enemy_glb_materials(node)
+	_apply_enemy_glb_materials(node, true)
 	boss_rig.add_child(node)
 	return node
 
-func _apply_enemy_glb_materials(node: Node) -> void:
+func _apply_enemy_glb_materials(node: Node, is_boss := false) -> void:
 	if node is MeshInstance3D:
 		var mesh_node := node as MeshInstance3D
 		for s in range(mesh_node.mesh.get_surface_count()):
@@ -285,13 +300,13 @@ func _apply_enemy_glb_materials(node: Node) -> void:
 			if orig and orig.resource_name == "mat_red":
 				mesh_node.set_surface_override_material(s, eye_mat)
 			elif orig and orig.resource_name == "mat_dark":
-				mesh_node.set_surface_override_material(s, enemy_dark_mat)
+				mesh_node.set_surface_override_material(s, boss_dark_mat if is_boss else enemy_dark_mat)
 			else:
-				mesh_node.set_surface_override_material(s, enemy_gunmetal_mat)
+				mesh_node.set_surface_override_material(s, boss_steel_mat if is_boss else enemy_gunmetal_mat)
 		mesh_node.material_overlay = boss_hit_overlay
 		mesh_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for child in node.get_children():
-		_apply_enemy_glb_materials(child)
+		_apply_enemy_glb_materials(child, is_boss)
 
 func _make_damage_emitter(pos: Vector3, is_smoke: bool) -> Node3D:
 	var ps: Variant = CPUParticles3D.new() if OS.has_feature("mobile") else GPUParticles3D.new()
@@ -344,18 +359,33 @@ void fragment() { ALBEDO = vec3(0.65, 0.35, 0.22); ALPHA = hit * 0.06; }
 	boss_hit_overlay = ShaderMaterial.new()
 	boss_hit_overlay.shader = shader
 	prepare_boss_meshes(boss_rig)
-	# Red glowing optics + dorsal turret + exposed flank/rear weakspots + detachable flank armor
+	# Red glowing optics + dorsal turret + weapon muzzles + exposed flank/rear weakspots + detachable flank armor
 	var lamp_mesh := SphereMesh.new()
-	lamp_mesh.radius = 0.09
-	lamp_mesh.height = 0.18
-	for side in [-1.0, 1.0]:
+	lamp_mesh.radius = 0.14
+	lamp_mesh.height = 0.24
+	for eye_pos in [Vector3(-0.36, 1.35, 1.24), Vector3(0.36, 1.35, 1.24), Vector3(0.0, 1.44, 1.30)]:
 		var lamp := MeshInstance3D.new()
 		lamp.mesh = lamp_mesh
 		lamp.material_override = eye_mat
-		lamp.position = Vector3(side * 0.38, 1.2, 1.15)
+		lamp.position = eye_pos
 		boss_rig.add_child(lamp)
 	var turret := _load_boss_part("res://assets/models/enemies/boss_turret.glb", Vector3(0, 1.98, 0.05))
+	var muzzle_mesh := SphereMesh.new()
+	muzzle_mesh.radius = 0.11
+	muzzle_mesh.height = 0.20
+	for m_pos in [Vector3(-0.22, 0.14, 0.72), Vector3(0.22, 0.14, 0.72)]:
+		var muzzle := MeshInstance3D.new()
+		muzzle.mesh = muzzle_mesh
+		muzzle.material_override = eye_mat
+		muzzle.position = m_pos
+		turret.add_child(muzzle)
 	boss_turrets.append(turret)
+	for side in [-1.0, 1.0]:
+		var pod_glow := MeshInstance3D.new()
+		pod_glow.mesh = muzzle_mesh
+		pod_glow.material_override = eye_mat
+		pod_glow.position = Vector3(side * 0.74, 1.28, 0.96)
+		boss_rig.add_child(pod_glow)
 	_load_boss_part("res://assets/models/enemies/boss_weakspot.glb", Vector3(-0.92, 1.05, 0.05))
 	_load_boss_part("res://assets/models/enemies/boss_weakspot.glb", Vector3(0.92, 1.05, 0.05), Vector3(0, 180, 0))
 	_load_boss_part("res://assets/models/enemies/boss_weakspot.glb", Vector3(0.0, 1.38, -1.02), Vector3(0, 90, 0))
@@ -371,12 +401,13 @@ func prepare_boss_meshes(node: Node) -> void:
 		var mesh_node := node as MeshInstance3D
 		for s in range(mesh_node.mesh.get_surface_count()):
 			var orig := mesh_node.get_active_material(s) as StandardMaterial3D
+			if orig and orig.emission_enabled and orig.emission.r > 0.5:
+				mesh_node.set_surface_override_material(s, eye_mat)
+				continue
 			var mat := StandardMaterial3D.new()
-			if orig and orig.albedo_texture:
-				mat.albedo_texture = orig.albedo_texture
-			mat.albedo_color = Color("6b7482")
-			mat.metallic = 0.54
-			mat.roughness = 0.48
+			mat.albedo_color = Color("56606e")
+			mat.metallic = 0.36
+			mat.roughness = 0.42
 			mat.normal_enabled = true
 			mat.normal_texture = plates_normal
 			mat.normal_scale = 0.55

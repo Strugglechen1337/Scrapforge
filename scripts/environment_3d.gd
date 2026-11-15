@@ -51,9 +51,9 @@ static func build(parent: Node3D, mobile: bool, quality: String) -> Dictionary:
 		sun.shadow_enabled = true
 		sun.directional_shadow_max_distance = 45.0
 		var rim := DirectionalLight3D.new()
-		rim.rotation_degrees = Vector3(-25, 135, 0)
-		rim.light_color = Color("e4be96")
-		rim.light_energy = 0.95
+		rim.rotation_degrees = Vector3(-20, 145, 0)
+		rim.light_color = Color("ffd8ae")
+		rim.light_energy = 2.2
 		parent.add_child(rim)
 		# Half-resolution screen-space effects and a smaller fog grid retain the
 		# high profile while reducing GPU work in dense swarms.
