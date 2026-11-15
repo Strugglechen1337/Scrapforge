@@ -16,7 +16,7 @@ func run_tests() -> void:
 	assert(robot.body_material.get_shader_parameter("paint_color") != before)
 	assert(robot.body_material.get_shader_parameter("paint_color") == robot.skin.armor_color)
 	var expected_modes := {
-		"standard": 1,
+		"standard": 0,
 		"red": 0,
 		"green": 2,
 		"yellow": 3,

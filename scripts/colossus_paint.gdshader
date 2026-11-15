@@ -134,15 +134,12 @@ void fragment() {
 		coat = mix(coat, vec3(0.90, 0.88, 0.84), pin * 0.75);
 	}
 
-	// Hazard warning stripes on shoulder/thigh trim & lower torso skirt.
+	// Crisp, undistorted hazard warning stripes on dedicated shoulder/thigh trim bands.
 	if (is_hazard) {
-		float diag = fract((part_position.x + part_position.y + part_position.z) * 11.5);
-		float hz_band = step(0.5, diag);
+		float diag = fract((UV.x + UV.y) * 28.0);
+		float hz_band = smoothstep(0.47, 0.53, diag);
 		vec3 hz_col = mix(vec3(0.08, 0.08, 0.09), vec3(0.93, 0.72, 0.07), hz_band);
-		float hz_zone = max(
-			orange_panel * step(0.02, part_position.y),
-			chest_panel * step(part_position.y, 0.14)
-		);
+		float hz_zone = orange_panel * step(0.06, part_position.y) * step(part_position.y, 0.22);
 		coat = mix(coat, hz_col, hz_zone * 0.92);
 	}
 
