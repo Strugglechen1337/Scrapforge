@@ -190,7 +190,12 @@ static func show_hangar(game) -> void:
 	var arena_row := HBoxContainer.new()
 	arena_row.add_theme_constant_override("separation", 6)
 	box.add_child(arena_row)
+	var visible_arenas: Array[String] = []
 	for aid: String in ArenaCatalog.ARENA_IDS:
+		if ArenaCatalog.has_unique_scene(aid):
+			visible_arenas.append(aid)
+	var arena_w := int((324 - 6 * maxi(0, visible_arenas.size() - 1)) / maxi(1, visible_arenas.size()))
+	for aid: String in visible_arenas:
 		var adef: Dictionary = ArenaCatalog.get_def(aid)
 		var unlocked_a: bool = game.progress.is_arena_unlocked(aid)
 		var is_sel_a: bool = (game.progress.selected_arena == aid)
@@ -200,7 +205,7 @@ static func show_hangar(game) -> void:
 				game.progress.selected_arena = aid
 				game.progress.save()
 				game.show_hangar()
-		, ScrapUI.CYAN if is_sel_a else (ScrapUI.ORANGE if unlocked_a else ScrapUI.BORDER_STEEL), Vector2(159, 38))
+		, ScrapUI.CYAN if is_sel_a else (ScrapUI.ORANGE if unlocked_a else ScrapUI.BORDER_STEEL), Vector2(arena_w, 38))
 		ab.disabled = not unlocked_a
 		ab.set_meta("arena_id", aid)
 		arena_row.add_child(ab)

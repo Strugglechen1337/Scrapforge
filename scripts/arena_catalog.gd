@@ -15,6 +15,7 @@ const ARENAS := {
 		"floor_roughness": 0.72,
 		"boss_kind": 3,
 		"boss_title": "WARNUNG // BOSS: SPINNEN-MECH",
+		"has_unique_scene": true,
 	},
 	"rainyard": {
 		"title": "VERLADEHOF",
@@ -28,6 +29,7 @@ const ARENAS := {
 		"floor_roughness": 0.28,
 		"boss_kind": 5,
 		"boss_title": "WARNUNG // BOSS: BELAGERUNGS-KOLOSS",
+		"has_unique_scene": false,
 	},
 }
 
@@ -42,3 +44,7 @@ static func has_rain(id: String) -> bool:
 
 static func boss_kind(id: String) -> int:
 	return int(get_def(id)["boss_kind"])
+
+
+static func has_unique_scene(id: String) -> bool:
+	return bool(get_def(id).get("has_unique_scene", false))
