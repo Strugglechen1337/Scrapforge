@@ -56,15 +56,15 @@ Diese beiden Punkte gehen in keiner Phase verloren:
 | 1 | Licht und Rendering | fertig |
 | 2 | Arena und Boden | fertig |
 | 3 | Effekte und Trefferfeedback | fertig |
-| 4 | Module und Säge: Primitive ersetzen | fertig |
+| 4 | Module und Säge: Primitive ersetzen | umgesetzt, Abnahme offen |
 | 5 | Gegner und Boss vereinheitlichen | fertig |
 | 6 | Skins als Lack | fertig |
-| 7 | Audio | fertig |
+| 7 | Audio | umgesetzt, Abnahme offen |
 | 8 | Code-Aufräumen (`main.gd`) | fertig |
 | 9a | Evolutionen, Elitegegner und Kisten | fertig |
 | 9b | Dauerhafter Fortschritt (Hangar-Upgrades) | fertig |
-| 9c | Chassis & Startwaffen | fertig |
-| 9d | Arenen & Gegnertypen | fertig |
+| 9c | Chassis & Startwaffen | umgesetzt, Abnahme offen |
+| 9d | Arenen & Gegnertypen | umgesetzt, Abnahme offen |
 | 9e | Bosse & Freischalt-Ziele | fertig |
 
 ---
