@@ -63,7 +63,7 @@ Diese beiden Punkte gehen in keiner Phase verloren:
 | 8 | Code-Aufräumen (`main.gd`) | fertig |
 | 9a | Evolutionen, Elitegegner und Kisten | fertig |
 | 9b | Dauerhafter Fortschritt (Hangar-Upgrades) | fertig |
-| 9c | Chassis & Startwaffen | umgesetzt, Abnahme offen |
+| 9c | Chassis & Startwaffen | fertig |
 | 9d | Arenen & Gegnertypen | umgesetzt, Abnahme offen |
 | 9e | Bosse & Freischalt-Ziele | fertig |
 

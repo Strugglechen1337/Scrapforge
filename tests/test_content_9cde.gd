@@ -47,6 +47,9 @@ func run_tests() -> void:
 	assert(is_equal_approx(scene.hp, 85.0))
 	assert(scene.world_3d.applied_arena_id == "rainyard")
 	assert(scene.world_3d.robot.chassis_id == "vanguard")
+	assert(scene.world_3d.robot.chassis.size() == 12 and scene.world_3d.robot.sockets.size() == 8)
+	scene.world_3d.robot.set_chassis("bastion_mech")
+	assert(scene.world_3d.robot.chassis.size() == 12 and scene.world_3d.robot.sockets.size() == 8)
 
 	# Conditional boss kind 5 in rainyard (or with evolution)
 	scene.enemies.clear()
@@ -59,7 +62,7 @@ func run_tests() -> void:
 	scene.show_hangar()
 	var c_btns: Array = scene.panel.find_children("*", "Button", true, false).filter(func(b): return b.has_meta("chassis_id"))
 	var a_btns: Array = scene.panel.find_children("*", "Button", true, false).filter(func(b): return b.has_meta("arena_id"))
-	assert(c_btns.size() == 1 and c_btns[0].get_meta("chassis_id") == "colossus" and a_btns.size() == 1 and a_btns[0].get_meta("arena_id") == "foundry")
+	assert(c_btns.size() == 3 and a_btns.size() == 1 and a_btns[0].get_meta("arena_id") == "foundry")
 	scene.show_unlocks()
 	var g_rows: Array = scene.panel.find_children("*", "PanelContainer", true, false).filter(func(n): return n.has_meta("unlock_goal_id"))
 	assert(g_rows.size() == UnlockCatalog.GOAL_IDS.size())
