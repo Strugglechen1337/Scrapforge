@@ -262,8 +262,8 @@ static func show_hangar(game) -> void:
 	upg_style.content_margin_top = 18
 	upg_style.content_margin_bottom = 18
 	upg_frame.add_theme_stylebox_override("panel", upg_style)
-	upg_frame.position = Vector2(890, 36)
-	upg_frame.custom_minimum_size = Vector2(368, 720)
+	upg_frame.position = Vector2(886, 36)
+	upg_frame.custom_minimum_size = Vector2(374, 720)
 	game.panel.add_child(upg_frame)
 	ScrapUI.anchor_horizontal(upg_frame, 1.0)
 
@@ -294,8 +294,14 @@ static func show_hangar(game) -> void:
 		var info := VBoxContainer.new()
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		info.add_theme_constant_override("separation", 2)
-		info.add_child(heading("%s  (S%d/%d)" % [cfg["title"], lv, max_lv], 14, Color.WHITE))
-		info.add_child(heading(cfg["desc"], 12, ScrapUI.TEXT_MUTED))
+		var t_lbl := heading("%s  (S%d/%d)" % [cfg["title"], lv, max_lv], 14, Color.WHITE)
+		t_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		t_lbl.custom_minimum_size = Vector2(180, 0)
+		info.add_child(t_lbl)
+		var d_lbl := heading(cfg["desc"], 12, ScrapUI.TEXT_MUTED)
+		d_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		d_lbl.custom_minimum_size = Vector2(180, 0)
+		info.add_child(d_lbl)
 		hbox.add_child(info)
 		var can_buy: bool = game.progress.can_buy(uid)
 		var btn_txt := "MAX" if lv >= max_lv else ("%d SCHROTT" % game.progress.cost(uid))
