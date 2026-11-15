@@ -166,7 +166,12 @@ static func show_hangar(game) -> void:
 	var chassis_row := HBoxContainer.new()
 	chassis_row.add_theme_constant_override("separation", 6)
 	box.add_child(chassis_row)
+	var visible_chassis: Array[String] = []
 	for cid: String in ChassisCatalog.CHASSIS_IDS:
+		if ChassisCatalog.has_unique_model(cid):
+			visible_chassis.append(cid)
+	var chassis_w := int((324 - 6 * maxi(0, visible_chassis.size() - 1)) / maxi(1, visible_chassis.size()))
+	for cid: String in visible_chassis:
 		var cdef: Dictionary = ChassisCatalog.get_def(cid)
 		var unlocked: bool = game.progress.is_chassis_unlocked(cid)
 		var is_sel: bool = (game.progress.selected_chassis == cid)
@@ -176,7 +181,7 @@ static func show_hangar(game) -> void:
 				game.progress.selected_chassis = cid
 				game.progress.save()
 				game.show_hangar()
-		, ScrapUI.CYAN if is_sel else (ScrapUI.ORANGE if unlocked else ScrapUI.BORDER_STEEL), Vector2(104, 38))
+		, ScrapUI.CYAN if is_sel else (ScrapUI.ORANGE if unlocked else ScrapUI.BORDER_STEEL), Vector2(chassis_w, 38))
 		cb.disabled = not unlocked
 		cb.set_meta("chassis_id", cid)
 		chassis_row.add_child(cb)

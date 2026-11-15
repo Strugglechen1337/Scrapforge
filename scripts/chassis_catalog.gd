@@ -12,6 +12,7 @@ const CHASSIS := {
 		"base_speed": 190.0,
 		"armor_bonus": 0.0,
 		"scale": Vector3(1.0, 1.0, 1.0),
+		"has_model": true,
 	},
 	"vanguard": {
 		"title": "VANGUARD MK-I",
@@ -22,6 +23,7 @@ const CHASSIS := {
 		"base_speed": 225.0,
 		"armor_bonus": 0.0,
 		"scale": Vector3(0.86, 0.92, 0.86),
+		"has_model": false,
 	},
 	"bastion_mech": {
 		"title": "BASTION MK-IV",
@@ -32,6 +34,7 @@ const CHASSIS := {
 		"base_speed": 165.0,
 		"armor_bonus": 0.12,
 		"scale": Vector3(1.18, 1.06, 1.18),
+		"has_model": false,
 	},
 }
 
@@ -58,3 +61,7 @@ static func armor_bonus(id: String) -> float:
 
 static func model_scale(id: String) -> Vector3:
 	return get_def(id)["scale"]
+
+
+static func has_unique_model(id: String) -> bool:
+	return bool(get_def(id).get("has_model", false))
