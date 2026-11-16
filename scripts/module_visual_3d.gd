@@ -265,7 +265,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 				d.position = Vector3((i * 2 - 1) * 0.7, 0.5, 0)
 				orbiters.append(d)
 		"thruster":
-			add_model("thruster", 0.95 + level * 0.05)
+			add_sketchfab("thruster", 0.95 + level * 0.05)
 			if level >= 3:
 				add_model("thruster_fin", 0.95 + level * 0.03, Vector3.ZERO, Vector3.ZERO, "fins")
 			for side in [-1, 1]:

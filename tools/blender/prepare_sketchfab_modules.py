@@ -28,6 +28,11 @@ CONFIGS = {
         "rot_deg": (0.0, 0.0, 0.0),
         "include_meshes": ["Camera2_Unreal_Camera2_0", "Camera2_Unreal_Glass_0"],
     },
+    "thruster": {
+        "target_size": 0.44,
+        "max_tris": 12000,
+        "rot_deg": (0.0, 90.0, 0.0),
+    },
 }
 
 
