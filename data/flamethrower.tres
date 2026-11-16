@@ -7,7 +7,7 @@
 script = ExtResource("1")
 id = "flamethrower"
 title = "Flammenwerfer"
-description = "Schaden ?ber Zeit im Flammenkegel."
+description = "Schaden über Zeit im Flammenkegel."
 socket = "left_arm"
 visual_script = ExtResource("2")
 values = Array[float]([8, 12, 16, 20, 24])

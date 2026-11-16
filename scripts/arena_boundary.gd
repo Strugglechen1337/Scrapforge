@@ -41,7 +41,7 @@ static func _add(buckets: Dictionary, mod_name: String, pos: Vector3, yaw: float
 	buckets[mod_name].append(Transform3D(Basis.from_euler(Vector3(0.0, yaw, 0.0)), pos))
 
 
-static func build(parent: Node3D, half_x := 36.0, half_z := 24.0) -> Node3D:
+static func build(parent: Node3D, half_x := 36.0, half_z := 24.0, arena_id := "foundry") -> Node3D:
 	var root := Node3D.new()
 	root.name = "ArenaBoundary"
 	parent.add_child(root)
@@ -49,46 +49,68 @@ static func build(parent: Node3D, half_x := 36.0, half_z := 24.0) -> Node3D:
 	var bx := half_x + 0.6
 	var bz := half_z + 0.6
 
-	# North wall (z = -bz, facing +Z): alternating 3m wall panels and 6m bay doors with piers.
-	var x := -half_x
-	var idx := 0
-	while x < half_x - 0.1:
-		_add(buckets, "wall_pier", Vector3(x, 0.0, -bz), 0.0)
-		if idx % 3 == 1 and x + 6.0 <= half_x + 0.1:
-			_add(buckets, "wall_bay", Vector3(x + 3.0, 0.0, -bz), 0.0)
-			x += 6.0
-		else:
-			_add(buckets, "wall_panel", Vector3(x + 1.5, 0.0, -bz), 0.0)
-			x += 3.0
-		idx += 1
-	_add(buckets, "wall_pier", Vector3(half_x, 0.0, -bz), 0.0)
-	var npx := -half_x + 1.8
-	while npx < half_x - 1.5:
-		_add(buckets, "wall_pipe", Vector3(npx, 2.75, -bz + 0.18), PI * 0.5)
-		npx += 3.55
+	if arena_id == "rainyard":
+		# Open freight yard: chainlink fences and concrete road barriers on all sides.
+		var fx := -half_x
+		while fx < half_x - 0.1:
+			_add(buckets, "fence_post", Vector3(fx, 0.0, -bz), 0.0)
+			_add(buckets, "fence_panel", Vector3(fx + 1.0, 0.0, -bz), 0.0)
+			fx += 2.0
+		_add(buckets, "fence_post", Vector3(half_x, 0.0, -bz), 0.0)
+		for bx_bar in range(-30, 31, 10):
+			_add(buckets, "concrete_barrier", Vector3(float(bx_bar), 0.0, -bz + 0.6), 0.0)
+		for side: float in [-1.0, 1.0]:
+			var wx := side * bx
+			var yaw := -PI * 0.5 if side > 0.0 else PI * 0.5
+			var fz := -half_z
+			while fz < half_z - 0.1:
+				_add(buckets, "fence_post", Vector3(wx, 0.0, fz), yaw)
+				_add(buckets, "fence_panel", Vector3(wx, 0.0, fz + 1.0), yaw)
+				fz += 2.0
+			_add(buckets, "fence_post", Vector3(wx, 0.0, half_z), yaw)
+			for bz_bar in [-18.0, -6.0, 6.0, 16.0]:
+				_add(buckets, "concrete_barrier", Vector3(wx - side * 0.5, 0.0, bz_bar), yaw)
+	else:
+		# North wall (z = -bz, facing +Z): alternating 3m wall panels and 6m bay doors with piers.
+		var x := -half_x
+		var idx := 0
+		while x < half_x - 0.1:
+			_add(buckets, "wall_pier", Vector3(x, 0.0, -bz), 0.0)
+			if idx % 3 == 1 and x + 6.0 <= half_x + 0.1:
+				_add(buckets, "wall_bay", Vector3(x + 3.0, 0.0, -bz), 0.0)
+				x += 6.0
+			else:
+				_add(buckets, "wall_panel", Vector3(x + 1.5, 0.0, -bz), 0.0)
+				x += 3.0
+			idx += 1
+		_add(buckets, "wall_pier", Vector3(half_x, 0.0, -bz), 0.0)
+		var npx := -half_x + 1.8
+		while npx < half_x - 1.5:
+			_add(buckets, "wall_pipe", Vector3(npx, 2.75, -bz + 0.18), PI * 0.5)
+			npx += 3.55
 
-	# West (x = -bx) and East (x = +bx) walls: solid industrial wall on north/mid,
-	# transitioning to low chainlink fence + concrete barriers toward the south camera side.
-	for side: float in [-1.0, 1.0]:
-		var wx := side * bx
-		var yaw := -PI * 0.5 if side > 0.0 else PI * 0.5
-		var z := -half_z
-		while z < 9.0 - 0.1:
+		# West (x = -bx) and East (x = +bx) walls: solid industrial wall on north/mid,
+		# transitioning to low chainlink fence + concrete barriers toward the south camera side.
+		for side: float in [-1.0, 1.0]:
+			var wx := side * bx
+			var yaw := -PI * 0.5 if side > 0.0 else PI * 0.5
+			var z := -half_z
+			while z < 9.0 - 0.1:
+				_add(buckets, "wall_pier", Vector3(wx, 0.0, z), yaw)
+				_add(buckets, "wall_panel", Vector3(wx, 0.0, z + 1.5), yaw)
+				z += 3.0
 			_add(buckets, "wall_pier", Vector3(wx, 0.0, z), yaw)
-			_add(buckets, "wall_panel", Vector3(wx, 0.0, z + 1.5), yaw)
-			z += 3.0
-		_add(buckets, "wall_pier", Vector3(wx, 0.0, z), yaw)
-		while z < half_z - 0.1:
-			_add(buckets, "fence_post", Vector3(wx, 0.0, z), yaw)
-			_add(buckets, "fence_panel", Vector3(wx, 0.0, z + 1.0), yaw)
-			z += 2.0
-		_add(buckets, "fence_post", Vector3(wx, 0.0, half_z), yaw)
-		for bz_bar in [-18.0, -6.0, 6.0, 16.0]:
-			_add(buckets, "concrete_barrier", Vector3(wx - side * 0.5, 0.0, bz_bar), yaw)
-		var wpz := -half_z + 1.8
-		while wpz < 8.0:
-			_add(buckets, "wall_pipe", Vector3(wx - side * 0.18, 2.75, wpz), 0.0)
-			wpz += 3.55
+			while z < half_z - 0.1:
+				_add(buckets, "fence_post", Vector3(wx, 0.0, z), yaw)
+				_add(buckets, "fence_panel", Vector3(wx, 0.0, z + 1.0), yaw)
+				z += 2.0
+			_add(buckets, "fence_post", Vector3(wx, 0.0, half_z), yaw)
+			for bz_bar in [-18.0, -6.0, 6.0, 16.0]:
+				_add(buckets, "concrete_barrier", Vector3(wx - side * 0.5, 0.0, bz_bar), yaw)
+			var wpz := -half_z + 1.8
+			while wpz < 8.0:
+				_add(buckets, "wall_pipe", Vector3(wx - side * 0.18, 2.75, wpz), 0.0)
+				wpz += 3.55
 
 	# South boundary (z = +bz, toward camera): low chainlink fence + concrete barriers.
 	var sx := -half_x

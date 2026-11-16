@@ -9,7 +9,7 @@ func _initialize() -> void:
 	assert(env.sky != null and env.reflected_light_source == Environment.REFLECTION_SOURCE_SKY)
 	assert(env.glow_hdr_threshold > 1.0)
 	assert(env.ambient_light_source == Environment.AMBIENT_SOURCE_SKY)
-	assert(is_equal_approx(env.ambient_light_energy, 1.1) and is_equal_approx(env.tonemap_exposure, 0.95))
+	assert(is_equal_approx(env.ambient_light_energy, 1.45) and is_equal_approx(env.tonemap_exposure, 1.18))
 	assert(env.ssao_enabled and env.ssil_enabled and env.volumetric_fog_enabled)
 	assert(sun.directional_shadow_mode == DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS)
 	ScrapEnvironment3D.apply_quality(env, sun, "mittel")

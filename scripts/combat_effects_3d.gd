@@ -136,13 +136,15 @@ func _ready() -> void:
 		label.font_size = 38 if OS.has_feature("mobile") else 72
 		if not OS.has_feature("mobile"):
 			label.pixel_size = 0.0095
-			label.outline_modulate = Color(0.05, 0.03, 0.02, 1.0)
+			label.shaded = false
+			label.render_priority = 20
+			label.outline_modulate = Color(0.04, 0.02, 0.01, 1.0)
 		label.outline_size = 7 if OS.has_feature("mobile") else 18
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		label.no_depth_test = true
 		label.visible = false
 		add_child(label)
-		label_pool.append({"node": label, "active": false, "total": 0.75, "value": 0})
+		label_pool.append({"node": label, "active": false, "total": 0.75, "value": 0, "strong": false})
 	call_deferred("prewarm")
 
 # PC-only pools; existing explosion lights share the same eight slots.
@@ -889,8 +891,8 @@ func burst(p: Vector2, kind: String) -> void:
 		piece.velocity = Vector3(randf_range(-2.4, 2.4), randf_range(1.2, 3.2), randf_range(-2.4, 2.4))
 	effects.append(slot)
 
-const NORMAL_COLOR := Color("ff7a1a")
-const STRONG_COLOR := Color("fff2a0")
+const NORMAL_COLOR := Color(1.15, 0.56, 0.14, 1.0)
+const STRONG_COLOR := Color(1.38, 1.24, 0.42, 1.0)
 
 # PC: bigger outlined numbers, orange normal / white-yellow strong (rocket, plasma).
 # Hits on the same spot within a short time are merged into one label.
@@ -916,8 +918,9 @@ func damage(p: Vector2, value: int, strong := false) -> void:
 			slot.life = LABEL_TIME
 			slot.node.text = str(slot.value)
 			slot.node.position.y = pos.y
-			if strong:
-				slot.node.modulate = Color(STRONG_COLOR.r, STRONG_COLOR.g, STRONG_COLOR.b, 1.0)
+			if strong or slot.get("strong", false):
+				slot.strong = true
+				slot.node.modulate = STRONG_COLOR
 				slot.node.scale = Vector3.ONE * 1.3
 			return
 	for slot in label_pool:
@@ -927,6 +930,7 @@ func damage(p: Vector2, value: int, strong := false) -> void:
 			slot.total = LABEL_TIME
 			slot.life = LABEL_TIME
 			slot.value = value
+			slot.strong = strong
 			slot.node.text = str(value)
 			slot.node.modulate = STRONG_COLOR if strong else NORMAL_COLOR
 			slot.node.scale = Vector3.ONE * (1.3 if strong else 1.0)
@@ -943,7 +947,9 @@ func _process(delta: float) -> void:
 		e.life -= delta
 		if e.get("label", false):
 			e.node.position.y += delta * (1.15 if OS.has_feature("mobile") else 1.5)
-			e.node.modulate.a = clampf(e.life / e.total, 0.0, 1.0)
+			var alpha := clampf((e.life / e.total) * 4.0, 0.0, 1.0)
+			e.node.modulate.a = alpha
+			e.node.outline_modulate.a = alpha
 		else:
 			if e.orb.visible:
 				var ratio := clampf(e.life / 0.55, 0.0, 1.0)

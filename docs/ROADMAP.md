@@ -56,12 +56,16 @@ Diese beiden Punkte gehen in keiner Phase verloren:
 | 1 | Licht und Rendering | fertig |
 | 2 | Arena und Boden | fertig |
 | 3 | Effekte und Trefferfeedback | fertig |
-| 4 | Module und Säge: Primitive ersetzen | offen |
-| 5 | Gegner und Boss vereinheitlichen | offen |
-| 6 | Skins als Lack | offen |
-| 7 | Audio | offen |
-| 8 | Code-Aufräumen (`main.gd`) | offen |
-| 9 | Inhalt und Tiefe | offen |
+| 4 | Module und Säge: Primitive ersetzen | umgesetzt, Abnahme offen |
+| 5 | Gegner und Boss vereinheitlichen | fertig |
+| 6 | Skins als Lack | fertig |
+| 7 | Audio | umgesetzt, Abnahme offen |
+| 8 | Code-Aufräumen (`main.gd`) | fertig |
+| 9a | Evolutionen, Elitegegner und Kisten | fertig |
+| 9b | Dauerhafter Fortschritt (Hangar-Upgrades) | fertig |
+| 9c | Chassis & Startwaffen | umgesetzt, Abnahme offen |
+| 9d | Arenen & Gegnertypen | fertig |
+| 9e | Bosse & Freischalt-Ziele | fertig |
 
 ---
 
@@ -291,3 +295,51 @@ Abnahmekriterien gemacht.
 - Keine reinen Grind-Ziele bei den Freischaltungen.
 - Evolutionseffekte bleiben lesbar (Art Direction, Regel 1) und
   verdecken weder Spieler noch Gegner.
+
+### Unterphasen und Abnahmekriterien
+
+#### Phase 9a – Evolutionen, Elitegegner und Kisten
+1. Jede Basiswaffe (`minigun`, `laser`, `rocket`, `flamethrower`, `plasma`,
+   `turret`, `drone`, `saw`) erhält eine Evolution aus Waffe auf Stufe 5 +
+   passendem Zusatzmodul + Kiste.
+2. Jede Waffenstufe und jede Evolution ändert spürbar Verhalten, Fläche oder
+   Muster (nicht nur kleine Zahlenwerte).
+3. Elitegegner spawnen zeit-/wellenabhängig, sind an Silhouette und
+   violett/roter Emission (`#c65cff` / `#ff2a2a`) sofort erkennbar und lassen
+   beim Tod eine 3D-Kiste fallen.
+4. Einsammeln einer Kiste löst eine verfügbare Evolution aus (mit eigener
+   Evolutions-Anzeige in Violett) oder gewährt sonst Schrott/Heilung/Upgrade.
+5. **Abnahme:** Tests für alle Evolutionsrezepte, Elite-Spawns und Kisten-Logik
+   grün; Autoplay-FPS-Report >= 60 FPS (1 % Low); Screenshots von Elitegegner,
+   Kiste und Evolutionseffekt.
+
+#### Phase 9b – Dauerhafter Fortschritt (Hangar-Upgrades)
+1. Schrott aus abgeschlossenen oder verlorenen Runs wird persistent
+   gespeichert (`user://progress.cfg`).
+2. Im Hangar können dauerhafte Werte (z. B. Hülle, Schaden, Tempo,
+   Schrott-Bonus, Magnet) mit Schrott gekauft und zurückgesetzt werden.
+3. Ein Run bleibt auch ohne Hangar-Käufe vollständig schaffbar.
+4. **Abnahme:** Tests für Persistenz, Kauf/Reset und Werte-Modifikatoren grün;
+   Hangar-Screenshot mit Upgrade-UI.
+
+#### Phase 9c – Chassis & Startwaffen
+1. Mindestens zwei zusätzliche spielbare Chassis neben dem Colossus, jeweils
+   mit eigenen Basiswerten, eigener Startwaffe und 3D-Modell (keine Primitive).
+2. Chassis-Auswahl im Hangar mit 3D-Vorschau und gespeicherter Auswahl.
+3. **Abnahme:** Tests für Chassis-Definitionen und Start-Loadout grün;
+   Hangar- und Ingame-Screenshots aller Chassis.
+
+#### Phase 9d – Arenen & Gegnertypen
+1. Mindestens eine zusätzliche Arena (z. B. Außengelände bei Nacht/Regen) mit
+   eigenem Lichtaufbau, Bodenmaterial und eigenen Gegnertypen.
+2. Arena-Auswahl vor dem Run-Start.
+3. **Abnahme:** Tests für Arena-Konfiguration und neue Gegnertypen grün;
+   Screenshots der neuen Arena im Spiel.
+
+#### Phase 9e – Bosse & Freischalt-Ziele
+1. Weitere Bosse, darunter mindestens ein Boss mit klarer Bedingung (z. B.
+   bestimmte Evolution oder Arena).
+2. Freischalt-Ziele ohne reinen Grind für Chassis, Arenen, Waffen und Skins
+   inkl. Übersichts-UI.
+3. **Abnahme:** Tests für Freischalt-Ziele und Boss-Bedingungen grün;
+   Screenshots von Freischalt-Übersicht und neuem Boss.

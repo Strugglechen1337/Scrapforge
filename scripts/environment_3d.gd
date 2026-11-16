@@ -26,12 +26,12 @@ static func build(parent: Node3D, mobile: bool, quality: String) -> Dictionary:
 		sky.sky_material = panorama
 		env.sky = sky
 		env.background_mode = Environment.BG_SKY
-		env.background_energy_multiplier = 0.08
+		env.background_energy_multiplier = 0.14
 		env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-		env.ambient_light_energy = 1.1
+		env.ambient_light_energy = 1.45
 		env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 		env.tonemap_mode = Environment.TONE_MAPPER_ACES
-		env.tonemap_exposure = 0.95
+		env.tonemap_exposure = 1.18
 		env.adjustment_enabled = true
 		env.adjustment_contrast = 1.05
 		env.adjustment_saturation = 0.8
@@ -47,13 +47,13 @@ static func build(parent: Node3D, mobile: bool, quality: String) -> Dictionary:
 		env.volumetric_fog_albedo = Color("746c62")
 		sun.rotation_degrees = Vector3(-55, -35, 0)
 		sun.light_color = Color("dce1e8")
-		sun.light_energy = 1.5
+		sun.light_energy = 1.9
 		sun.shadow_enabled = true
 		sun.directional_shadow_max_distance = 45.0
 		var rim := DirectionalLight3D.new()
-		rim.rotation_degrees = Vector3(-25, 135, 0)
-		rim.light_color = Color("d6b89a")
-		rim.light_energy = 0.23
+		rim.rotation_degrees = Vector3(-20, 145, 0)
+		rim.light_color = Color("ffd8ae")
+		rim.light_energy = 2.2
 		parent.add_child(rim)
 		# Half-resolution screen-space effects and a smaller fog grid retain the
 		# high profile while reducing GPU work in dense swarms.

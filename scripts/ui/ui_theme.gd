@@ -109,6 +109,8 @@ static func style_button(b: Button, accent: Color = ORANGE, min_size := Vector2(
 static func socket_label(id: String, socket: String) -> String:
 	if id == "swarm":
 		return "★ ENTWICKLUNG · SCHULTER-SCHWARM"
+	if UpgradeState.EVOLUTIONS.has(id):
+		return "★ ENTWICKLUNG ★"
 	match socket:
 		"right_arm", "left_arm":
 			return "WAFFENARM"
@@ -128,10 +130,10 @@ static func socket_label(id: String, socket: String) -> String:
 			return "SYSTEMMODUL"
 
 static func module_accent(id: String) -> Color:
+	if UpgradeState.EVOLUTIONS.has(id) or id == "laser":
+		return Color("c65cff")
 	match id:
-		"laser":
-			return Color("c65cff")
-		"plasma", "shield", "thruster", "radar", "drone", "magnet", "cooldown", "swarm":
+		"plasma", "shield", "thruster", "radar", "drone", "magnet", "cooldown":
 			return CYAN
 		_:
 			return ORANGE
@@ -242,7 +244,10 @@ class ModuleIcon extends Control:
 			draw_rect(bg_rect, Color(0.03, 0.05, 0.08, 0.85), true)
 			draw_rect(bg_rect, Color(accent.r, accent.g, accent.b, 0.45), false, 1.5)
 			draw_circle(c, 30.0, Color(accent.r, accent.g, accent.b, 0.12))
-		match module_id:
+		var draw_id := module_id
+		if UpgradeState.EVOLUTIONS.has(module_id) and module_id != "swarm":
+			draw_id = UpgradeState.EVOLUTIONS[module_id]["weapon"]
+		match draw_id:
 			"minigun":
 				draw_rect(Rect2(c + Vector2(-34, -14) * s, Vector2(28, 28) * s), steel, true)
 				draw_rect(Rect2(c + Vector2(-30, -10) * s, Vector2(20, 8) * s), ORANGE, true)

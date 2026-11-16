@@ -10,5 +10,5 @@ id = "saw"
 title = "Sägeblatt"
 description = "Umkreisende Klingen."
 visual_script = ExtResource("2")
-socket = "right_arm"
+socket = "core"
 values = Array[float]([8, 12, 16, 21, 27])

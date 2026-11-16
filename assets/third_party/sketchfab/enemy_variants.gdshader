@@ -1,6 +1,7 @@
 shader_type spatial;
 render_mode cull_disabled, specular_schlick_ggx;
 uniform sampler2D albedo_texture : source_color, filter_linear_mipmap;
+uniform sampler2D normal_texture : hint_normal, filter_linear_mipmap;
 uniform bool hover = false;
 varying vec4 instance_tint;
 void vertex() {
@@ -19,10 +20,15 @@ void vertex() {
 }
 void fragment() {
     vec3 tex = texture(albedo_texture, UV).rgb;
+    float lum = dot(tex, vec3(0.2126, 0.7152, 0.0722));
     float red = step(0.12, tex.r) * step(tex.g * 1.5, tex.r) * step(tex.b * 1.4, tex.r);
-    tex = mix(tex, vec3(dot(tex, vec3(0.2126, 0.7152, 0.0722))) * vec3(0.65, 0.72, 0.80), red);
+    vec3 gunmetal = vec3(lum) * vec3(0.42, 0.46, 0.52);
+    tex = mix(gunmetal, vec3(0.18, 0.21, 0.25), 0.35);
     ALBEDO = mix(tex, vec3(1.0), instance_tint.r);
-    EMISSION = vec3(0.0);
-    METALLIC = 0.35;
-    ROUGHNESS = 0.46;
+    float charge = instance_tint.g;
+    EMISSION = hover ? mix(vec3(0.0), vec3(1.0, 0.12, 0.08) * (1.2 + charge * 2.5), max(red * 0.6, charge * 0.85)) : vec3(0.0);
+    NORMAL_MAP = texture(normal_texture, UV * 2.0).xyz;
+    NORMAL_MAP_DEPTH = 0.45;
+    METALLIC = 0.52;
+    ROUGHNESS = 0.48;
 }

@@ -7,7 +7,7 @@
 script = ExtResource("1")
 id = "sensor"
 title = "Sensor"
-description = "Erh?ht Ziel- und Sammelreichweite."
+description = "Erhöht Ziel- und Sammelreichweite."
 socket = "head"
 visual_script = ExtResource("2")
 values = Array[float]([20, 40, 60, 80, 100])

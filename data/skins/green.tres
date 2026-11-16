@@ -4,7 +4,9 @@
 
 [resource]
 script = ExtResource("1")
-title = "Gr?n"
+title = "Grün"
 armor_color = Color(0.44313725490196076, 0.5098039215686274, 0.3607843137254902, 1)
 accent_color = Color(0.27450980392156865, 0.3411764705882353, 0.23137254901960785, 1)
 camouflage = true
+pattern = "camo"
+unit_number = "03"
