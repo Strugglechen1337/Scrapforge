@@ -26,6 +26,8 @@ var model_base_y := 0.956
 var last_position := Vector3.ZERO
 var motion := 0.0
 var recoil := 0.0
+var body_recoil := 0.0
+var body_recoil_vel := 0.0
 var previous_fire_clock := 0.0
 var last_step_half := -1
 
@@ -302,6 +304,26 @@ func follow_bone(part: Node3D, marker: Marker3D, weapon: bool) -> void:
 	var rest_basis: Basis = marker.get_meta("rest_basis")
 	var delta_basis := local_transform.basis.orthonormalized() * rest_basis.inverse()
 	part.transform = Transform3D((delta_basis * Basis(Vector3.UP, PI if weapon else 0.0)).scaled(Vector3.ONE * (0.8 if weapon else 1.0)), local_transform.origin)
+
+func trigger_weapon_fire(weapon_id: String, strength := 1.0) -> void:
+	var alias := {
+		"vulcan": "minigun",
+		"prism_laser": "laser",
+		"inferno": "flamethrower",
+		"singularity": "plasma",
+		"bastion": "turret",
+		"hive_drone": "drone",
+		"shredder": "saw",
+	}
+	var base_id: String = alias.get(weapon_id, weapon_id)
+	for part in parts.get_children():
+		var mid: String = str(part.get_meta("module_id"))
+		var m_base: String = alias.get(mid, mid)
+		if (mid == weapon_id or m_base == base_id) and part.has_method("trigger_fire"):
+			part.trigger_fire(strength)
+	if base_id in ["rocket", "turret", "plasma", "laser", "minigun"]:
+		var body_impulse := 0.55 if base_id in ["rocket", "turret"] else (0.35 if base_id in ["plasma", "laser"] else 0.16)
+		body_recoil = clampf(body_recoil + body_impulse * strength, 0.0, 1.0)
 
 func _process(delta: float) -> void:
 	clock += delta

@@ -20,6 +20,8 @@ static func update_player_fire(game, delta: float) -> void:
 		var rocket_interval := 2 if rocket_lv >= 3 else 3
 		var rocket_shot: bool = rocket_lv > 0 and game.shot_index % rocket_interval == 0
 		game.play_sfx(&"rocket" if rocket_shot else &"minigun", game.player)
+		if is_instance_valid(game.world_3d) and is_instance_valid(game.world_3d.robot):
+			game.world_3d.robot.trigger_weapon_fire("rocket" if rocket_shot else "minigun", 1.15 if rocket_shot else 0.75)
 		var dmg_mult: float = game.progress.damage_multiplier()
 		if is_vulcan:
 			for angle in [-0.10, 0.0, 0.10]:

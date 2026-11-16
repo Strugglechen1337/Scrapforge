@@ -118,6 +118,8 @@ static func update_enemies(game, delta: float) -> void:
 			var blade: Vector2 = game.player + Vector2.from_angle(game.elapsed * saw_speed + TAU * i / saw_count) * saw_radius
 			if enemy.pos.distance_to(blade) < saw_hit_r:
 				enemy.hp -= delta * saw_dps
+				if is_instance_valid(game.world_3d) and is_instance_valid(game.world_3d.robot):
+					game.world_3d.robot.trigger_weapon_fire("shredder" if is_shredder else "saw", 1.0)
 				if enemy.flash <= 0.0:
 					enemy.flash = 0.14
 					game.world_3d.effects_3d.hit(enemy.pos, (enemy.pos - blade).normalized())

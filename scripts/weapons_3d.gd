@@ -104,6 +104,9 @@ func update(game: Node, delta: float) -> void:
 		var damage: float = game.definitions[active_id].values[level - 1] * game.progress.damage_multiplier()
 		if not OS.has_feature("mobile"):
 			game.world_3d.effects_3d.muzzle(game.player + direction * 60, direction, id)
+		if is_instance_valid(game.world_3d) and is_instance_valid(game.world_3d.robot):
+			var fire_str := 1.25 if id == "turret" else (1.05 if id == "laser" else (0.85 if id == "flamethrower" else 1.0))
+			game.world_3d.robot.trigger_weapon_fire(active_id, fire_str)
 		if id == "laser":
 			AudioManager.play(&"laser", game.player)
 			var beam_range: float = 900.0 if is_evo else (650.0 + (level - 1) * 35.0)

@@ -15,6 +15,16 @@ var time := 0.0
 var mat_map: Dictionary = {}
 var blade_radius := SAW_RADIUS
 var blade_orbit_speed := SAW_ORBIT_SPEED
+var module_id := ""
+var primary_part: Node3D
+var barrel_parts: Array[Node3D] = []
+var exhaust_nodes: Array[Node3D] = []
+var fire_recoil := 0.0
+var spin_rate := 0.0
+var glow_level := 0.0
+var move_intensity := 0.0
+var saw_active_t := 0.0
+var glow_mat_ref: StandardMaterial3D
 
 func _ensure_pbr_textures() -> void:
 	if plates_normal == null:
@@ -113,8 +123,17 @@ func exhaust(pos: Vector3, is_cyan: bool) -> void:
 	flame.lifetime = 0.35
 	flame.position = pos
 	add_child(flame)
+	exhaust_nodes.append(flame)
 
 func build(id: String, level: int, metal: Material, dark: Material, glow: Material, accent: Material = null) -> void:
+	module_id = id
+	animated.clear()
+	blades.clear()
+	orbiters.clear()
+	barrel_parts.clear()
+	exhaust_nodes.clear()
+	primary_part = null
+	glow_mat_ref = glow as StandardMaterial3D
 	if accent == null:
 		accent = metal
 	var cyan := StandardMaterial3D.new()
@@ -156,28 +175,29 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 		mat_map["mat_glow"] = evo_glow
 	match id:
 		"laser":
-			add_sketchfab("laser", 1.0)
+			primary_part = add_sketchfab("laser", 1.0)
 			add_model("mount_bracket", 0.85, Vector3(0, 0, 0.08))
 			for i in range(maxi(0, level - 1)):
 				add_model("laser_coil", 0.85, Vector3(0, 0.02, -0.05 - i * 0.12), Vector3.ZERO, "coil_" + str(i))
 		"minigun":
-			add_sketchfab("minigun", 1.05)
+			primary_part = add_sketchfab("minigun", 1.05)
+			barrel_parts.append(primary_part)
 			add_model("mount_bracket", 0.85, Vector3(0, 0, 0.08))
 			if level >= 2:
 				add_model("armor_plate", 0.7, Vector3(0, 0.16, -0.04), Vector3(90, 0, 0), "shield_top")
 			if level >= 3:
 				add_model("gun_drum", 0.95, Vector3.ZERO, Vector3.ZERO, "drum_1")
 			if level >= 4:
-				add_sketchfab("minigun", 0.65, Vector3(0.16, -0.18, 0))
+				barrel_parts.append(add_sketchfab("minigun", 0.65, Vector3(0.16, -0.18, 0)))
 			if level >= 5:
 				add_model("gun_drum", 0.95, Vector3(0.32, -0.18, 0), Vector3(0, 180, 0), "drum_2")
 		"rocket":
-			add_sketchfab("rocket", 0.90 + 0.08 * (level - 1))
+			primary_part = add_sketchfab("rocket", 0.90 + 0.08 * (level - 1))
 		"swarm":
-			add_sketchfab("rocket", 0.8)
+			primary_part = add_sketchfab("rocket", 0.8)
 			add_model("swarm_pod", 0.65, Vector3(0, 0.02, -0.14), Vector3.ZERO, "pod")
 		"flamethrower":
-			add_sketchfab("flamethrower", 1.0)
+			primary_part = add_sketchfab("flamethrower", 1.0)
 			add_model("mount_bracket", 0.85, Vector3(0, 0, 0.08))
 			add_model("flamethrower_tank", 0.95, Vector3(-0.19, -0.02, 0.02), Vector3.ZERO, "tank_1")
 			if level >= 2:
@@ -191,12 +211,12 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 				aux.name = "flamer_aux"
 			exhaust(Vector3(0, 0, -0.82), false)
 		"plasma":
-			add_model("plasma", 1.0)
+			primary_part = add_model("plasma", 1.0)
 			add_model("mount_bracket", 0.85, Vector3(0, 0, 0.08))
 			for i in range(maxi(0, level - 1)):
 				add_model("plasma_coil", 0.95, Vector3(0, 0, -0.22 - i * 0.14), Vector3.ZERO, "coil_" + str(i))
 		"turret":
-			add_sketchfab("turret", 0.85 + 0.04 * (level - 1))
+			primary_part = add_sketchfab("turret", 0.85 + 0.04 * (level - 1))
 			if level >= 2:
 				add_model("gun_drum", 0.75, Vector3(0, 0.06, 0.05), Vector3.ZERO, "feed")
 			if level >= 3:
@@ -281,10 +301,53 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 				var pylon := add_model("shield_pylon", 0.9, Vector3(cos(a) * 0.36, sin(a) * 0.36, -0.30), Vector3(0, 0, rad_to_deg(a) - 90), "pylon_" + str(i))
 				pylon.name = "pylon_" + str(i)
 
+func trigger_fire(strength := 1.0) -> void:
+	fire_recoil = maxf(fire_recoil, strength)
+	spin_rate = minf(1.0, spin_rate + 0.55 * strength)
+	glow_level = maxf(glow_level, strength)
+	if module_id in ["saw", "shredder"]:
+		saw_active_t = 0.45
+
 func _process(delta: float) -> void:
 	time += delta
+	fire_recoil = move_toward(fire_recoil, 0.0, delta * 5.2)
+	spin_rate = move_toward(spin_rate, 0.0, delta * 1.8)
+	glow_level = move_toward(glow_level, 0.0, delta * 2.8)
+	saw_active_t = maxf(0.0, saw_active_t - delta)
 	for n in animated:
-		n.rotate_y(delta * 3.2)
+		var mult := 2.6 if (module_id in ["saw", "shredder"] and saw_active_t > 0.0) else 1.0
+		n.rotate_y(delta * 4.5 * mult)
+	for bp in barrel_parts:
+		if is_instance_valid(bp):
+			bp.rotate_z(delta * (2.0 + spin_rate * 22.0))
+	if is_instance_valid(primary_part):
+		match module_id:
+			"minigun", "vulcan":
+				primary_part.position.z = fire_recoil * 0.06
+			"rocket", "swarm":
+				primary_part.position.z = fire_recoil * 0.11
+				primary_part.rotation.x = fire_recoil * 0.18
+			"turret", "bastion":
+				primary_part.position.z = fire_recoil * 0.16
+				primary_part.rotation.x = fire_recoil * 0.12
+			"flamethrower", "inferno":
+				primary_part.position.x = sin(time * 48.0) * fire_recoil * 0.018
+				primary_part.position.z = fire_recoil * 0.04
+			"laser", "prism_laser":
+				primary_part.position.z = fire_recoil * 0.09
+				var pulse := 1.0 + glow_level * 0.06
+				primary_part.scale = Vector3.ONE * pulse
+			"plasma", "singularity":
+				primary_part.position.z = fire_recoil * 0.10
+	for ex in exhaust_nodes:
+		if is_instance_valid(ex):
+			if module_id in ["flamethrower", "inferno"]:
+				var s := 0.45 + fire_recoil * 0.95 + sin(time * 36.0) * 0.08 * fire_recoil
+				ex.scale = Vector3(1.0, 1.0, maxf(0.2, s))
+				ex.visible = fire_recoil > 0.05
+			elif module_id == "thruster":
+				var s_t := 0.45 + move_intensity * 0.85 + sin(time * 24.0) * 0.06 * move_intensity
+				ex.scale = Vector3(1.0, maxf(0.3, s_t), 1.0)
 	for i in range(blades.size()):
 		var angle := time * blade_orbit_speed + TAU * i / blades.size()
 		blades[i].position = Vector3(cos(angle) * blade_radius, SAW_HEIGHT, sin(angle) * blade_radius)
