@@ -19,6 +19,10 @@ var clock := 0.0
 var visor: MeshInstance3D
 var model: Node3D
 var chassis: Dictionary = {}
+var chassis_skeleton: Skeleton3D
+var chassis_bones: Dictionary = {}
+var chassis_bone_rest: Dictionary = {}
+var model_base_y := 0.956
 var last_position := Vector3.ZERO
 var motion := 0.0
 var recoil := 0.0
@@ -43,26 +47,6 @@ func _ready() -> void:
 	visor_glow.emission_enabled = true
 	visor_glow.emission = Color("31eaff")
 	visor_glow.emission_energy_multiplier = 2.5
-	model = (load("res://assets/third_party/sketchfab/colossus/colossus-parts.glb") as PackedScene).instantiate() as Node3D
-	model.position.y = 0.956
-	add_child(model)
-	for part_name in ["torso", "head", "shoulder_l", "shoulder_r", "upper_arm_l", "upper_arm_r", "forearm_l", "forearm_r", "thigh_l", "thigh_r", "shin_l", "shin_r"]:
-		var node := model.find_child(part_name, true, false) as MeshInstance3D
-		chassis[part_name] = node
-	var original := (chassis["torso"] as MeshInstance3D).get_active_material(0) as StandardMaterial3D
-	body_material = ShaderMaterial.new()
-	body_material.shader = load("res://scripts/colossus_paint.gdshader")
-	body_material.set_shader_parameter("base_texture", original.albedo_texture)
-	body_material.set_shader_parameter("normal_texture", original.normal_texture)
-	body_material.set_shader_parameter("paint_mask", load("res://assets/models/colossus_paint_mask.png"))
-	for part_name in chassis:
-		var node: MeshInstance3D = chassis[part_name]
-		node.material_override = body_material
-		node.set_instance_shader_parameter("orange_panel", 1.0 if part_name in ["shoulder_l", "shoulder_r", "thigh_l", "thigh_r"] else 0.0)
-		node.set_instance_shader_parameter("chest_panel", 1.0 if part_name == "torso" else 0.0)
-		if part_name != "torso": node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# The AnimationPlayer provides a pause control for the existing hangar and
-	# showcase; the actual rigid-part motion is generated below.
 	animation = AnimationPlayer.new()
 	var library := AnimationLibrary.new()
 	var walk := Animation.new()
@@ -72,26 +56,100 @@ func _ready() -> void:
 	animation.add_animation_library("", library)
 	add_child(animation)
 	animation.play("Walk")
-	for entry in [
-		["left_arm", "forearm_l", Vector3(-0.12, -0.12, 0.08)],
-		["right_arm", "forearm_r", Vector3(0.18, 0.02, 0.08)],
-		["left_shoulder", "shoulder_l", Vector3(-0.10, 0.13, 0.0)],
-		["right_shoulder", "shoulder_r", Vector3(0.10, 0.13, 0.0)],
-		["head", "head", Vector3(0, 0.12, 0.25)],
-		["back", "torso", Vector3(0, 0.20, -0.34)],
-		["legs", "torso", Vector3(0, -0.20, 0)],
-		["core", "torso", Vector3(0, 0.10, 0.22)]]:
-		sockets[entry[0]] = make_marker(chassis[entry[1]], entry[0], entry[2])
 	parts = Node3D.new()
 	add_child(parts)
+	_build_chassis("colossus")
+	set_skin(load("res://data/skins/standard.tres"))
+	set_robot_layer(self)
+
+func _build_chassis(id: String) -> void:
+	if is_instance_valid(visor):
+		visor.get_parent().remove_child(visor)
+		visor.queue_free()
+		visor = null
+	if is_instance_valid(model):
+		remove_child(model)
+		model.queue_free()
+	chassis.clear()
+	sockets.clear()
+	chassis_skeleton = null
+	chassis_bones.clear()
+	chassis_bone_rest.clear()
+	if id == "vanguard":
+		model_base_y = 0.0
+		model = (load("res://assets/third_party/sketchfab/vanguard/vanguard.glb") as PackedScene).instantiate() as Node3D
+		add_child(model)
+		var skels := model.find_children("*", "Skeleton3D", true, false)
+		if not skels.is_empty():
+			chassis_skeleton = skels[0] as Skeleton3D
+			var socket_map := [
+				["left_arm", "arm_pivot_left_09", Vector3.ZERO],
+				["right_arm", "arm_pivot_right_05", Vector3.ZERO],
+				["left_shoulder", "shoulder_left_07", Vector3(0.18, 0.14, 0.0)],
+				["right_shoulder", "shoulder_right_03", Vector3(-0.18, 0.14, 0.0)],
+				["head", "neck_01", Vector3(0.0, 0.18, 0.22)],
+				["back", "hull_00", Vector3(0.0, 0.22, -0.45)],
+				["legs", "hip_011", Vector3(0.0, -0.22, 0.0)],
+				["core", "core_02", Vector3(0.0, 0.05, 0.15)],
+			]
+			for entry in socket_map:
+				var ba := BoneAttachment3D.new()
+				ba.bone_name = entry[1]
+				chassis_skeleton.add_child(ba)
+				sockets[entry[0]] = make_marker(ba, entry[0], entry[2])
+			var bone_map := {
+				"thigh_l": "thigh_left_023",
+				"thigh_r": "thigh_right_012",
+				"shin_l": "leg_left_025",
+				"shin_r": "leg_right_014",
+				"arm_l": "arm_swing_left_08",
+				"arm_r": "arm_swing_right_04",
+				"torso": "hull_00",
+			}
+			for key in bone_map:
+				var idx := chassis_skeleton.find_bone(bone_map[key])
+				if idx >= 0:
+					chassis_bones[key] = idx
+					chassis_bone_rest[key] = chassis_skeleton.get_bone_pose_rotation(idx)
+	else:
+		model_base_y = 0.956
+		model = (load("res://assets/third_party/sketchfab/colossus/colossus-parts.glb") as PackedScene).instantiate() as Node3D
+		model.position.y = model_base_y
+		add_child(model)
+		for part_name in ["torso", "head", "shoulder_l", "shoulder_r", "upper_arm_l", "upper_arm_r", "forearm_l", "forearm_r", "thigh_l", "thigh_r", "shin_l", "shin_r"]:
+			var node := model.find_child(part_name, true, false) as MeshInstance3D
+			chassis[part_name] = node
+		var original := (chassis["torso"] as MeshInstance3D).get_active_material(0) as StandardMaterial3D
+		body_material = ShaderMaterial.new()
+		body_material.shader = load("res://scripts/colossus_paint.gdshader")
+		body_material.set_shader_parameter("base_texture", original.albedo_texture)
+		body_material.set_shader_parameter("normal_texture", original.normal_texture)
+		body_material.set_shader_parameter("paint_mask", load("res://assets/models/colossus_paint_mask.png"))
+		for part_name in chassis:
+			var node: MeshInstance3D = chassis[part_name]
+			node.material_override = body_material
+			node.set_instance_shader_parameter("orange_panel", 1.0 if part_name in ["shoulder_l", "shoulder_r", "thigh_l", "thigh_r"] else 0.0)
+			node.set_instance_shader_parameter("chest_panel", 1.0 if part_name == "torso" else 0.0)
+			if part_name != "torso": node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		for entry in [
+			["left_arm", "forearm_l", Vector3(-0.12, -0.12, 0.08)],
+			["right_arm", "forearm_r", Vector3(0.18, 0.02, 0.08)],
+			["left_shoulder", "shoulder_l", Vector3(-0.10, 0.13, 0.0)],
+			["right_shoulder", "shoulder_r", Vector3(0.10, 0.13, 0.0)],
+			["head", "head", Vector3(0, 0.12, 0.25)],
+			["back", "torso", Vector3(0, 0.20, -0.34)],
+			["legs", "torso", Vector3(0, -0.20, 0)],
+			["core", "torso", Vector3(0, 0.10, 0.22)]]:
+			sockets[entry[0]] = make_marker(chassis[entry[1]], entry[0], entry[2])
 	visor = MeshInstance3D.new()
 	var visor_mesh := BoxMesh.new()
 	visor_mesh.size = Vector3(0.24, 0.055, 0.035)
 	visor.mesh = visor_mesh
 	visor.material_override = visor_glow
 	sockets["head"].add_child(visor)
-	set_skin(load("res://data/skins/standard.tres"))
-	set_robot_layer(self)
+	set_robot_layer(model)
+	if skin:
+		set_skin(skin)
 
 func make_marker(parent: Node3D, marker_name: String, offset: Vector3) -> Marker3D:
 	var marker := Marker3D.new()
@@ -153,6 +211,8 @@ func set_chassis(id: String) -> void:
 		return
 	chassis_id = id
 	scale = ChassisCatalog.model_scale(id)
+	_build_chassis(id)
+	signature = ""
 	refresh()
 
 
@@ -246,13 +306,25 @@ func _process(delta: float) -> void:
 					last_step_half = step_half
 					var am := get_node_or_null("/root/AudioManager")
 					if am: am.play(&"mech_step", game.player)
-		(chassis["thigh_l"] as Node3D).rotation.x = stride * 0.32
-		(chassis["thigh_r"] as Node3D).rotation.x = -stride * 0.32
-		(chassis["shin_l"] as Node3D).rotation.x = maxf(0.0, -stride) * 0.25
-		(chassis["shin_r"] as Node3D).rotation.x = maxf(0.0, stride) * 0.25
-		(chassis["upper_arm_l"] as Node3D).rotation.x = -stride * 0.12 - recoil * 0.13
-		(chassis["upper_arm_r"] as Node3D).rotation.x = stride * 0.12 - recoil * 0.13
-		(chassis["torso"] as Node3D).rotation.z = sin(clock * 3.5) * motion * 0.025
-		model.position.y = 0.956 + absf(sin(clock * 7.0)) * motion * 0.025 + sin(clock * 1.8) * 0.006
+		if chassis_skeleton and not chassis_bones.is_empty():
+			var pose := func(key: String, rot: Vector3) -> void:
+				if chassis_bones.has(key):
+					chassis_skeleton.set_bone_pose_rotation(chassis_bones[key], chassis_bone_rest[key] * Quaternion.from_euler(rot))
+			pose.call("thigh_l", Vector3(stride * 0.34, 0, 0))
+			pose.call("thigh_r", Vector3(-stride * 0.34, 0, 0))
+			pose.call("shin_l", Vector3(maxf(0.0, -stride) * 0.28, 0, 0))
+			pose.call("shin_r", Vector3(maxf(0.0, stride) * 0.28, 0, 0))
+			pose.call("arm_l", Vector3(-stride * 0.14 - recoil * 0.12, 0, 0))
+			pose.call("arm_r", Vector3(stride * 0.14 - recoil * 0.12, 0, 0))
+			pose.call("torso", Vector3(0, 0, sin(clock * 3.5) * motion * 0.025))
+		elif not chassis.is_empty():
+			(chassis["thigh_l"] as Node3D).rotation.x = stride * 0.32
+			(chassis["thigh_r"] as Node3D).rotation.x = -stride * 0.32
+			(chassis["shin_l"] as Node3D).rotation.x = maxf(0.0, -stride) * 0.25
+			(chassis["shin_r"] as Node3D).rotation.x = maxf(0.0, stride) * 0.25
+			(chassis["upper_arm_l"] as Node3D).rotation.x = -stride * 0.12 - recoil * 0.13
+			(chassis["upper_arm_r"] as Node3D).rotation.x = stride * 0.12 - recoil * 0.13
+			(chassis["torso"] as Node3D).rotation.z = sin(clock * 3.5) * motion * 0.025
+		model.position.y = model_base_y + absf(sin(clock * 7.0)) * motion * 0.025 + sin(clock * 1.8) * 0.006
 	refresh()
 	update_parts()

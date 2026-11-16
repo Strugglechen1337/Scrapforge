@@ -67,7 +67,7 @@ func run_tests() -> void:
 	# Hidden chassis/arena saved in config must fall back to visible default
 	var fb_path := "user://test_progress_fallback.cfg"
 	var fb := ProgressState.new()
-	fb.selected_chassis = "vanguard"
+	fb.selected_chassis = "bastion_mech"
 	fb.selected_arena = "rainyard"
 	fb.save(fb_path)
 	var fb_loaded := ProgressState.new()
