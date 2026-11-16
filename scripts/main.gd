@@ -133,6 +133,10 @@ func _ready() -> void:
 			if quality in ["hoch", "mittel", "niedrig"]:
 				graphics_quality = quality
 				ScrapEnvironment3D.apply_quality(world_3d.lighting.environment, world_3d.lighting.sun, quality)
+		if arg.begins_with("--arena="):
+			var arena_arg := arg.trim_prefix("--arena=")
+			if arena_arg in ArenaCatalog.ARENA_IDS:
+				progress.selected_arena = arena_arg
 		if arg.begins_with("--shot-dir="):
 			shot_dir = arg.trim_prefix("--shot-dir=")
 		elif arg.begins_with("--shot-suffix="):

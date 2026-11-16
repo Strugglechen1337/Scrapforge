@@ -1,18 +1,20 @@
 # Scrapforge v0.2
 
-Ein modularer Roguelike-Survivor: Der Mech bewegt sich durch eine Arena, feuert automatisch und sammelt Schrott für Aufstiege. Wähle Bauteile und entwickle Raketenwerfer und Radar zum Schwarm-Werfer. Nach fünf Minuten erscheint der Boss; sein Abschuss oder zehn Minuten Überleben bedeuten den Sieg.
+Ein modularer Roguelike-Survivor: Der Mech bewegt sich durch eine Arena, feuert automatisch und sammelt Schrott für Aufstiege und Beutekisten. Wähle Waffen- und Support-Module, schalte **Waffen-Evolutionen** (wie Schwarm-Werfer, Vulcan, Prisma-Laser, Inferno, Singularität, Bastion-Schild oder Drohnen-Schwarm) frei und stelle dich Elitegegnern sowie dem Boss nach fünf Minuten Einsatzzeit.
 
-Im Hangar stehen fünf Skins zur Auswahl. Das Ergebnis zeigt Statistiken und den fertigen Mech; ein Screenshot lässt sich im Godot-Benutzerordner speichern. Im Einstellungsmenü werden Lautstärke für Master, Musik und Effekte, Bildschirmwackeln und Vollbild gespeichert. Musik und Soundeffekte können getrennt geregelt werden.
+Im Hangar stehen fünf Lackierungen, **dauerhafte Hangar-Upgrades** (Hüllen-Panzerung, Waffen-Kalibrierung, Servomotoren, Schrott-Recycler, Magnetfeld-Kern), Ziele & Freischaltungen sowie die **zweite Arena (Verladehof)** mit Nachtregen und dem Belagerungs-Koloss zur Auswahl. Das Ergebnis zeigt Statistiken und den fertigen Mech; ein Screenshot lässt sich im Godot-Benutzerordner speichern. Im Einstellungsmenü werden Grafikqualität, Lautstärke für Master, Musik und Effekte, Bildschirmwackeln und Vollbild gespeichert.
 
-Die Arena zeigt den Colossus Walker 2 mit modularen Sketchfab-Waffen, neue Spinnengegner und einen Spinnenboss. Die Blender-Aufbereitung ist unter [tools/blender/](tools/blender/README.md) beschrieben. Angaben zu den verwendeten Modellen und ihrer CC-BY-4.0-Lizenz stehen in [CREDITS.md](CREDITS.md).
+Die Arena zeigt den Colossus Walker 2 mit modularen Waffen, Spinnengegnern, Sturm-Drohnen und Bossen. Die Blender-Aufbereitung ist unter [tools/blender/](tools/blender/README.md) beschrieben. Angaben zu verwendeten Fremdassets und ihren Lizenzen stehen in [CREDITS.md](CREDITS.md).
 
 ## Screenshots
 
-| Schwarm | Boss: Spinnen-Mech |
+| Schwarm (Schrott-Halle) | Boss: Spinnen-Mech |
 |---|---|
 | ![Der Mech im Spinnenschwarm](docs/screenshots/schwarm.jpg) | ![Kampf gegen den Spinnen-Mech](docs/screenshots/boss.jpg) |
-| **Skins im Hangar** | **Einsatzbericht** |
-| ![Die fünf Mech-Skins](docs/screenshots/skins.jpg) | ![Ergebnis mit Endkonfiguration des Roboters](docs/screenshots/ergebnis.jpg) |
+| **Hangar & Dauerhafte Upgrades** | **Einsatzbericht** |
+| ![Hangar mit Lackierungen und Upgrades](docs/screenshots/hangar.jpg) | ![Ergebnis mit Endkonfiguration des Roboters](docs/screenshots/ergebnis.jpg) |
+| **Verladehof (Zweite Arena)** | |
+| ![Verladehof mit Regen und neuen Gegnern](docs/screenshots/verladehof.jpg) | |
 
 ## Steuerung
 
