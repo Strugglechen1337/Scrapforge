@@ -44,6 +44,11 @@ CONFIGS = {
         "max_tris": 12000,
         "rot_deg": (0.0, 0.0, 0.0),
     },
+    "flamethrower": {
+        "target_size": 0.85,
+        "max_tris": 12000,
+        "rot_deg": (0.0, 0.0, 90.0),
+    },
 }
 
 

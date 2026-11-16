@@ -11,7 +11,6 @@ Diese Liste erfasst alle aktuell skriptgenerierten 3D-Modelle (`assets/models/mo
 | `cooldown.glb` | Kühler-Basismodul | `back` | ca. 0,45 × 0,50 × 0,30 m |
 | `cooldown_tank.glb` | Kühltank-Paar (Kühler St. 2+) | `back` | ca. 0,22 × 0,42 × 0,22 m |
 | `drone_dock.glb` | Drohnen-Schwarm-Dock (`hive_drone` Evolution) | `back` / `left_shoulder` | ca. 0,55 × 0,45 × 0,45 m |
-| `flamethrower.glb` | Flammenwerfer & Inferno-Hauptrohr | `left_arm` / `right_arm` | ca. 0,35 × 0,35 × 0,85 m |
 | `flamethrower_tank.glb` | Treibstofftank (Flammenwerfer St. 1+) | `left_arm` / `right_arm` | ca. 0,18 × 0,32 × 0,18 m |
 | `gun_drum.glb` | Munitionstrommel (Minigun/Vulcan/Schulterturm) | `right_arm` / `left_shoulder` | ca. 0,28 × 0,28 × 0,32 m |
 | `laser_coil.glb` | Fokussierspule (Laser/Prisma-Laser/Flammenwerfer) | `left_arm` / `right_arm` | ca. 0,26 × 0,26 × 0,30 m |

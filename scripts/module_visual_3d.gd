@@ -177,7 +177,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 			add_sketchfab("rocket", 0.8)
 			add_model("swarm_pod", 0.65, Vector3(0, 0.02, -0.14), Vector3.ZERO, "pod")
 		"flamethrower":
-			add_model("flamethrower", 1.0)
+			add_sketchfab("flamethrower", 1.0)
 			add_model("mount_bracket", 0.85, Vector3(0, 0, 0.08))
 			add_model("flamethrower_tank", 0.95, Vector3(-0.19, -0.02, 0.02), Vector3.ZERO, "tank_1")
 			if level >= 2:
@@ -187,7 +187,8 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 			if level >= 4:
 				add_model("armor_plate", 0.75, Vector3(0, 0.16, -0.02), Vector3(90, 0, 0), "heat_shield")
 			if level >= 5:
-				add_model("flamethrower", 0.72, Vector3(0.14, -0.14, -0.05), Vector3.ZERO, "flamer_aux")
+				var aux := add_sketchfab("flamethrower", 0.72, Vector3(0.14, -0.14, -0.05))
+				aux.name = "flamer_aux"
 			exhaust(Vector3(0, 0, -0.82), false)
 		"plasma":
 			add_model("plasma", 1.0)
