@@ -169,9 +169,9 @@ func load_from(path: String = PROGRESS_PATH) -> void:
 		return
 	scrap = maxi(0, int(cfg.get_value("progress", "scrap", 0)))
 	var loaded_chassis := str(cfg.get_value("progress", "chassis", "colossus"))
-	selected_chassis = loaded_chassis if loaded_chassis in ChassisCatalog.CHASSIS_IDS else "colossus"
+	selected_chassis = loaded_chassis if (loaded_chassis in ChassisCatalog.CHASSIS_IDS and ChassisCatalog.has_unique_model(loaded_chassis)) else "colossus"
 	var loaded_arena := str(cfg.get_value("progress", "arena", "foundry"))
-	selected_arena = loaded_arena if loaded_arena in ArenaCatalog.ARENA_IDS else "foundry"
+	selected_arena = loaded_arena if (loaded_arena in ArenaCatalog.ARENA_IDS and ArenaCatalog.has_unique_scene(loaded_arena)) else "foundry"
 	var loaded_unlocks = cfg.get_value("progress", "unlocked", [])
 	unlocked_goals.clear()
 	if loaded_unlocks is Array:

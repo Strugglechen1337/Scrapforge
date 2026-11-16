@@ -64,5 +64,17 @@ func run_tests() -> void:
 	else:
 		DirAccess.remove_absolute(orig_path)
 
+	# Hidden chassis/arena saved in config must fall back to visible default
+	var fb_path := "user://test_progress_fallback.cfg"
+	var fb := ProgressState.new()
+	fb.selected_chassis = "vanguard"
+	fb.selected_arena = "rainyard"
+	fb.save(fb_path)
+	var fb_loaded := ProgressState.new()
+	fb_loaded.load_from(fb_path)
+	assert(fb_loaded.selected_chassis == "colossus")
+	assert(fb_loaded.selected_arena == "rainyard")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(fb_path))
+
 	print("Fortschritts- und Hangar-Upgrade-Tests bestanden")
 	quit()
