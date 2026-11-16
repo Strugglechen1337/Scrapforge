@@ -196,7 +196,6 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 				add_model("plasma_coil", 0.95, Vector3(0, 0, -0.22 - i * 0.14), Vector3.ZERO, "coil_" + str(i))
 		"turret":
 			add_sketchfab("turret", 0.85 + 0.04 * (level - 1))
-			add_model("turret_pod", 0.95 + 0.06 * (level - 1), Vector3(0, -0.02, 0.0), Vector3.ZERO, "pod")
 			if level >= 2:
 				add_model("gun_drum", 0.75, Vector3(0, 0.06, 0.05), Vector3.ZERO, "feed")
 			if level >= 3:

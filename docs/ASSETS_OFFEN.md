@@ -26,7 +26,6 @@ Diese Liste erfasst alle aktuell skriptgenerierten 3D-Modelle (`assets/models/mo
 | `shield_pylon.glb` | Schild-Pylonring (`shield` pro Stufe) | `back` | ca. 0,14 × 0,14 × 0,22 m |
 | `swarm_pod.glb` | Schwarm-Werfer Evolution (`swarm`) | `right_shoulder` | ca. 0,72 × 0,52 × 0,68 m |
 | `thruster_fin.glb` | Schubdüsen-Stabilisatorfinnen (St. 3+) | `back` / `legs` | ca. 0,52 × 0,32 × 0,24 m |
-| `turret_pod.glb` | Schultergeschütz-Pod (`turret`) | `left_shoulder` | ca. 0,46 × 0,38 × 0,58 m |
 
 ## 2. Gegner-Anbauten (`assets/models/enemies/`)
 

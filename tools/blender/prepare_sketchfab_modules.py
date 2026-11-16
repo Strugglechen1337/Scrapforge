@@ -39,6 +39,11 @@ CONFIGS = {
         "rot_deg": (0.0, 0.0, 0.0),
         "trim_z_frac": 0.28,
     },
+    "turret": {
+        "target_size": 0.58,
+        "max_tris": 12000,
+        "rot_deg": (0.0, 0.0, 0.0),
+    },
 }
 
 
