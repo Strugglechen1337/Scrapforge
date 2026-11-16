@@ -269,20 +269,10 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 			for side in [-1, 1]:
 				exhaust(Vector3(side * 0.29, -0.35, 0.03), true)
 		"saw", "shredder":
-			var blade_count := 6 if id == "shredder" else level
-			blade_radius = SAW_RADIUS * (1.38 if id == "shredder" else 1.0)
-			blade_orbit_speed = SAW_ORBIT_SPEED * (1.44 if id == "shredder" else 1.0)
-			for i in range(blade_count):
-				var pivot := Node3D.new()
-				var angle := TAU * i / blade_count
-				pivot.position = Vector3(cos(angle) * blade_radius, SAW_HEIGHT, sin(angle) * blade_radius)
-				add_child(pivot)
-				var blade := add_sketchfab("saw", 1.35 if id == "shredder" else 1.15)
-				blade.name = "asset_saw" if i == 0 else "saw_" + str(i)
-				blade.rotation_degrees = Vector3(10, 0, 0)
-				blade.reparent(pivot)
-				blade.position = Vector3.ZERO
-				blades.append(pivot)
+			add_model("mount_bracket", 0.85, Vector3(0, 0, 0.08))
+			var blade := add_sketchfab("saw", 1.15 if id == "shredder" else 0.95, Vector3(0, 0, -0.32))
+			blade.name = "asset_saw"
+			animated.append(blade)
 		"shield":
 			add_sketchfab("shield", 0.42 + 0.025 * level, Vector3(0, 0, 0.1))
 			add_model("shield_emitter", 1.05, Vector3(0, 0, -0.32), Vector3.ZERO, "emitter")

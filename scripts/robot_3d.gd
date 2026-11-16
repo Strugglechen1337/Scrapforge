@@ -285,12 +285,13 @@ func refresh() -> void:
 
 func update_parts() -> void:
 	for part in parts.get_children():
-		if part.get_meta("module_id") in ["saw", "shredder"]:
-			part.transform = Transform3D.IDENTITY
-			continue
-		var socket: Marker3D = sockets[part.get_meta("socket")]
+		var mod_id: String = part.get_meta("module_id")
+		var sock_name: String = "left_arm" if mod_id in ["saw", "shredder"] else str(part.get_meta("socket"))
+		var socket: Marker3D = sockets[sock_name]
 		follow_bone(part, socket, true)
-		if part.get_meta("module_id") in ["minigun", "laser", "rocket", "turret", "swarm", "vulcan", "prism_laser", "inferno", "singularity", "bastion", "hive_drone"]:
+		if mod_id in ["saw", "shredder"]:
+			part.position += part.basis.orthonormalized() * Vector3(-0.18, -0.08, 0.02)
+		if mod_id in ["minigun", "laser", "rocket", "turret", "swarm", "vulcan", "prism_laser", "inferno", "singularity", "bastion", "hive_drone"]:
 			part.scale *= 1.4 * (1.0 + 0.075 * (int(part.get_meta("level")) - 1))
 		if part.get_meta("socket") in ["left_shoulder", "right_shoulder"]:
 			var side := 1.0 if part.get_meta("socket") == "left_shoulder" else -1.0
