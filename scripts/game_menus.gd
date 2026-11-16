@@ -257,15 +257,14 @@ static func show_hangar(game) -> void:
 	# Right panel: permanent Hangar upgrades
 	var upg_frame := PanelContainer.new()
 	var upg_style := ScrapUI.make_chamfer_style(Color(0.045, 0.068, 0.105, 0.90), ScrapUI.ORANGE, 2, 12, 6)
-	upg_style.content_margin_left = 18
-	upg_style.content_margin_right = 18
-	upg_style.content_margin_top = 18
-	upg_style.content_margin_bottom = 18
+	upg_style.content_margin_left = 14
+	upg_style.content_margin_right = 14
+	upg_style.content_margin_top = 16
+	upg_style.content_margin_bottom = 16
 	upg_frame.add_theme_stylebox_override("panel", upg_style)
-	upg_frame.position = Vector2(884, 36)
-	upg_frame.custom_minimum_size = Vector2(376, 700)
+	upg_frame.custom_minimum_size = Vector2(360, 700)
+	upg_frame.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	game.panel.add_child(upg_frame)
-	ScrapUI.anchor_horizontal(upg_frame, 1.0)
 
 	var ubox := VBoxContainer.new()
 	ubox.add_theme_constant_override("separation", 7)
@@ -296,11 +295,11 @@ static func show_hangar(game) -> void:
 		info.add_theme_constant_override("separation", 2)
 		var t_lbl := heading("%s  (S%d/%d)" % [cfg["title"], lv, max_lv], 13, Color.WHITE)
 		t_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		t_lbl.custom_minimum_size = Vector2(168, 0)
+		t_lbl.custom_minimum_size = Vector2(152, 0)
 		info.add_child(t_lbl)
 		var d_lbl := heading(cfg["desc"], 11, ScrapUI.TEXT_MUTED)
 		d_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		d_lbl.custom_minimum_size = Vector2(168, 0)
+		d_lbl.custom_minimum_size = Vector2(152, 0)
 		info.add_child(d_lbl)
 		hbox.add_child(info)
 		var can_buy: bool = game.progress.can_buy(uid)
@@ -310,7 +309,7 @@ static func show_hangar(game) -> void:
 				game.progress.save()
 				game.play_sfx(&"upgrade")
 				game.show_hangar()
-		, ScrapUI.CYAN if can_buy else ScrapUI.BORDER_STEEL, Vector2(118, 38))
+		, ScrapUI.CYAN if can_buy else ScrapUI.BORDER_STEEL, Vector2(104, 38))
 		buy_btn.disabled = not can_buy
 		buy_btn.set_meta("progress_buy_id", uid)
 		hbox.add_child(buy_btn)
@@ -330,6 +329,9 @@ static func show_hangar(game) -> void:
 	reset_btn.set_meta("progress_reset", true)
 	ubox.add_child(reset_btn)
 	focus_controls.append(reset_btn)
+
+	upg_frame.position = Vector2(ScrapUI.DESIGN_SIZE.x - 20.0 - upg_frame.get_combined_minimum_size().x, 36.0)
+	ScrapUI.anchor_horizontal(upg_frame, 1.0)
 
 	wire_vertical_focus(focus_controls)
 

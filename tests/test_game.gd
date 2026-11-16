@@ -6,6 +6,7 @@ func _initialize() -> void:
 func run_tests() -> void:
 	var game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
+	game.progress = ProgressState.new()
 	game.graphics_quality = "mittel"
 	game.save_settings("user://test_graphics_settings.cfg")
 	game.graphics_quality = "hoch"

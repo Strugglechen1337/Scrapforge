@@ -104,7 +104,8 @@ func _ready() -> void:
 	for skin_id in SKIN_IDS:
 		skins[skin_id] = load("res://data/skins/" + skin_id + ".tres")
 	load_settings()
-	progress.load_from()
+	if DisplayServer.get_name() != "headless":
+		progress.load_from()
 	if fullscreen_enabled:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	if "--showcase" in OS.get_cmdline_user_args():
