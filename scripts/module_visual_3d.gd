@@ -279,7 +279,9 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 				var angle := TAU * i / blade_count
 				pivot.position = Vector3(cos(angle) * blade_radius, SAW_HEIGHT, sin(angle) * blade_radius)
 				add_child(pivot)
-				var blade := add_model("saw", 1.35 if id == "shredder" else 1.15, Vector3.ZERO, Vector3(10, 0, 0), "asset_saw" if i == 0 else "saw_" + str(i))
+				var blade := add_sketchfab("saw", 1.35 if id == "shredder" else 1.15)
+				blade.name = "asset_saw" if i == 0 else "saw_" + str(i)
+				blade.rotation_degrees = Vector3(10, 0, 0)
 				blade.reparent(pivot)
 				blade.position = Vector3.ZERO
 				blades.append(pivot)
