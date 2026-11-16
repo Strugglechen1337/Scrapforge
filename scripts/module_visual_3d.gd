@@ -255,7 +255,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 			if level >= 4:
 				add_model("cooldown_tank", 0.95, Vector3(0.25, 0.0, 0.0), Vector3.ZERO, "ctank_r")
 		"radar":
-			var dish := add_model("radar", 0.95 + level * 0.05)
+			var dish := add_sketchfab("radar", 0.95 + level * 0.05)
 			animated.append(dish)
 			if level >= 3:
 				var arr := add_model("radar_array", 1.0, Vector3.ZERO, Vector3.ZERO, "array")

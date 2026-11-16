@@ -17,6 +17,11 @@ CONFIGS = {
         "max_tris": 14000,
         "rot_deg": (90.0, 0.0, 0.0),
     },
+    "radar": {
+        "target_size": 0.44,
+        "max_tris": 14000,
+        "rot_deg": (0.0, 0.0, 0.0),
+    },
 }
 
 

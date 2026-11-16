@@ -20,7 +20,6 @@ Diese Liste erfasst alle aktuell skriptgenerierten 3D-Modelle (`assets/models/mo
 | `mount_bracket.glb` | Waffen-Montagehalterung (Laser, Minigun, Flamer, Plasma) | `left_arm` / `right_arm` | ca. 0,30 × 0,28 × 0,24 m |
 | `plasma.glb` | Plasmawerfer / Singularität-Basis | `left_arm` / `right_arm` | ca. 0,36 × 0,34 × 0,78 m |
 | `plasma_coil.glb` | Plasma-Ringkühler (Plasma St. 2+) | `left_arm` / `right_arm` | ca. 0,24 × 0,24 × 0,22 m |
-| `radar.glb` | Radar-Schüssel (Support-Modul) | `head` / `back` | ca. 0,44 × 0,44 × 0,36 m |
 | `radar_array.glb` | Radar-Antennenarray (Radar St. 2+, Sensor St. 3+) | `head` / `back` | ca. 0,32 × 0,22 × 0,28 m |
 | `rocket_pod_2.glb` | Raketenwerfer-Pod 2-fach (St. 1–2) | `right_shoulder` | ca. 0,52 × 0,38 × 0,58 m |
 | `rocket_pod_4.glb` | Raketenwerfer-Pod 4-fach (St. 3–4) | `right_shoulder` | ca. 0,60 × 0,44 × 0,62 m |
