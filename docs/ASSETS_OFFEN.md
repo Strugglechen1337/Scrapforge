@@ -21,9 +21,6 @@ Diese Liste erfasst alle aktuell skriptgenerierten 3D-Modelle (`assets/models/mo
 | `plasma.glb` | Plasmawerfer / Singularität-Basis | `left_arm` / `right_arm` | ca. 0,36 × 0,34 × 0,78 m |
 | `plasma_coil.glb` | Plasma-Ringkühler (Plasma St. 2+) | `left_arm` / `right_arm` | ca. 0,24 × 0,24 × 0,22 m |
 | `radar_array.glb` | Radar-Antennenarray (Radar St. 2+, Sensor St. 3+) | `head` / `back` | ca. 0,32 × 0,22 × 0,28 m |
-| `rocket_pod_2.glb` | Raketenwerfer-Pod 2-fach (St. 1–2) | `right_shoulder` | ca. 0,52 × 0,38 × 0,58 m |
-| `rocket_pod_4.glb` | Raketenwerfer-Pod 4-fach (St. 3–4) | `right_shoulder` | ca. 0,60 × 0,44 × 0,62 m |
-| `rocket_pod_6.glb` | Raketenwerfer-Pod 6-fach (St. 5+) | `right_shoulder` | ca. 0,68 × 0,50 × 0,66 m |
 | `sensor_pod.glb` | Seitenoptik-Pod (Sensor St. 2+) | `head` | ca. 0,16 × 0,16 × 0,22 m |
 | `shield_emitter.glb` | Schildgenerator-Emitter (`shield` & `bastion`) | `back` | ca. 0,48 × 0,48 × 0,28 m |
 | `shield_pylon.glb` | Schild-Pylonring (`shield` pro Stufe) | `back` | ca. 0,14 × 0,14 × 0,22 m |

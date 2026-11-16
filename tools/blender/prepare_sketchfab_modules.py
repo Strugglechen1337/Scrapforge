@@ -33,6 +33,12 @@ CONFIGS = {
         "max_tris": 12000,
         "rot_deg": (0.0, 90.0, 0.0),
     },
+    "rocket": {
+        "target_size": 0.70,
+        "max_tris": 12000,
+        "rot_deg": (0.0, 0.0, 0.0),
+        "trim_z_frac": 0.28,
+    },
 }
 
 

@@ -172,9 +172,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 			if level >= 5:
 				add_model("gun_drum", 0.95, Vector3(0.32, -0.18, 0), Vector3(0, 180, 0), "drum_2")
 		"rocket":
-			add_sketchfab("rocket", 0.8)
-			var pod_id := "rocket_pod_2" if level <= 2 else ("rocket_pod_4" if level <= 4 else "rocket_pod_6")
-			add_model(pod_id, 0.62, Vector3(0, 0.02, -0.14), Vector3.ZERO, "pod")
+			add_sketchfab("rocket", 0.90 + 0.08 * (level - 1))
 		"swarm":
 			add_sketchfab("rocket", 0.8)
 			add_model("swarm_pod", 0.65, Vector3(0, 0.02, -0.14), Vector3.ZERO, "pod")
