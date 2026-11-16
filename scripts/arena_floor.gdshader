@@ -24,11 +24,11 @@ void fragment() {
     vec3 metal = texture(metal_color, uv).rgb * brightness * variation;
     vec3 concrete = texture(concrete_color, uv * 2.2 + vec2(0.13, 0.27)).rgb;
     vec3 hall_albedo = max(metal * mix(0.96, 1.04, detail.g) + concrete * 0.001, vec3(0.020));
-    vec3 yard_albedo = max(concrete * vec3(0.165, 0.165, 0.170) * mix(0.84, 1.12, detail.g), vec3(0.028));
+    vec3 yard_albedo = max(concrete * vec3(0.058, 0.060, 0.066) * mix(0.84, 1.12, detail.g), vec3(0.014));
     ALBEDO = mix(hall_albedo, yard_albedo, yard_blend);
     float rough = texture(metal_rough, uv).r;
     float hall_rough = clamp(rough + (detail.g - 0.5) * 0.08, 0.55, 0.95);
-    float yard_rough = clamp(0.30 + detail.g * 0.34, 0.26, 0.68);
+    float yard_rough = clamp(0.24 + detail.g * 0.30, 0.18, 0.56);
     METALLIC = mix(0.4, 0.08, yard_blend);
     ROUGHNESS = mix(hall_rough, yard_rough, yard_blend);
     NORMAL_MAP = texture(metal_normal, uv).rgb;

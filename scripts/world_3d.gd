@@ -590,19 +590,24 @@ func apply_arena(arena_id: String) -> void:
 		if not OS.has_feature("mobile") and env.sky:
 			if is_yard:
 				var outdoor_sky := ProceduralSkyMaterial.new()
-				outdoor_sky.sky_top_color = Color("10151d")
-				outdoor_sky.sky_horizon_color = Color("262e38")
-				outdoor_sky.ground_bottom_color = Color("0d1015")
-				outdoor_sky.ground_horizon_color = Color("1b2129")
+				outdoor_sky.sky_top_color = Color("06080d")
+				outdoor_sky.sky_horizon_color = Color("131922")
+				outdoor_sky.ground_bottom_color = Color("05070a")
+				outdoor_sky.ground_horizon_color = Color("0e131a")
+				outdoor_sky.sun_angle_max = 0.0
 				env.sky.sky_material = outdoor_sky
-				env.background_energy_multiplier = 0.65
+				env.background_energy_multiplier = 0.24
+				env.ambient_light_energy = 0.92
 			else:
 				var panorama := PanoramaSkyMaterial.new()
 				panorama.panorama = load("res://assets/third_party/polyhaven/industrial_pipe_and_valve_01/industrial_pipe_and_valve_01_2k.hdr")
 				env.sky.sky_material = panorama
 				env.background_energy_multiplier = 0.14
+				env.ambient_light_energy = 1.45
 	if lighting.has("sun") and is_instance_valid(lighting["sun"]):
 		lighting["sun"].light_color = cfg["sun_color"]
+		if not OS.has_feature("mobile"):
+			lighting["sun"].light_energy = 1.15 if is_yard else 1.9
 	var floor_root := get_node_or_null("ArenaFloor")
 	if floor_root:
 		var floor_mesh := floor_root.get_node_or_null("Floor") as MeshInstance3D
