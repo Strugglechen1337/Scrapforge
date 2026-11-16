@@ -22,6 +22,12 @@ CONFIGS = {
         "max_tris": 14000,
         "rot_deg": (0.0, 0.0, 0.0),
     },
+    "sensor": {
+        "target_size": 0.36,
+        "max_tris": 14000,
+        "rot_deg": (0.0, 0.0, 0.0),
+        "include_meshes": ["Camera2_Unreal_Camera2_0", "Camera2_Unreal_Glass_0"],
+    },
 }
 
 

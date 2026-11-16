@@ -208,7 +208,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 			if level >= 5:
 				add_sketchfab("turret", 0.55, Vector3(0.22, 0.12, -0.02))
 		"sensor":
-			add_model("sensor", 1.0)
+			add_sketchfab("sensor", 1.0)
 			if level >= 2:
 				add_model("sensor_pod", 0.9, Vector3(-0.20, 0.14, 0.02), Vector3.ZERO, "pod_l")
 			if level >= 3:
