@@ -75,14 +75,15 @@ func _build_chassis(id: String) -> void:
 	chassis_skeleton = null
 	chassis_bones.clear()
 	chassis_bone_rest.clear()
-	if id == "vanguard":
+	if id in ["vanguard", "bastion_mech"]:
 		model_base_y = 0.0
-		model = (load("res://assets/third_party/sketchfab/vanguard/vanguard.glb") as PackedScene).instantiate() as Node3D
+		var glb_path := "res://assets/third_party/sketchfab/vanguard/vanguard.glb" if id == "vanguard" else "res://assets/third_party/sketchfab/bastion/bastion.glb"
+		model = (load(glb_path) as PackedScene).instantiate() as Node3D
 		add_child(model)
 		var skels := model.find_children("*", "Skeleton3D", true, false)
 		if not skels.is_empty():
 			chassis_skeleton = skels[0] as Skeleton3D
-			var socket_map := [
+			var socket_map: Array = [
 				["left_arm", "arm_pivot_left_09", Vector3.ZERO],
 				["right_arm", "arm_pivot_right_05", Vector3.ZERO],
 				["left_shoulder", "shoulder_left_07", Vector3(0.18, 0.14, 0.0)],
@@ -91,13 +92,22 @@ func _build_chassis(id: String) -> void:
 				["back", "hull_00", Vector3(0.0, 0.22, -0.45)],
 				["legs", "hip_011", Vector3(0.0, -0.22, 0.0)],
 				["core", "core_02", Vector3(0.0, 0.05, 0.15)],
+			] if id == "vanguard" else [
+				["left_arm", "Gun_L_04", Vector3.ZERO],
+				["right_arm", "Gun_R_07", Vector3.ZERO],
+				["left_shoulder", "Arm_L_02", Vector3(0.14, 0.18, 0.0)],
+				["right_shoulder", "Arm_R_05", Vector3(-0.14, 0.18, 0.0)],
+				["head", "Camera_08", Vector3(0.0, 0.16, 0.20)],
+				["back", "Root_01", Vector3(0.0, 0.22, -0.45)],
+				["legs", "Root_01", Vector3(0.0, -0.22, 0.0)],
+				["core", "Root_01", Vector3(0.0, 0.12, 0.22)],
 			]
 			for entry in socket_map:
 				var ba := BoneAttachment3D.new()
 				ba.bone_name = entry[1]
 				chassis_skeleton.add_child(ba)
 				sockets[entry[0]] = make_marker(ba, entry[0], entry[2])
-			var bone_map := {
+			var bone_map: Dictionary = {
 				"thigh_l": "thigh_left_023",
 				"thigh_r": "thigh_right_012",
 				"shin_l": "leg_left_025",
@@ -105,6 +115,14 @@ func _build_chassis(id: String) -> void:
 				"arm_l": "arm_swing_left_08",
 				"arm_r": "arm_swing_right_04",
 				"torso": "hull_00",
+			} if id == "vanguard" else {
+				"thigh_l": "Top_Leg_L_09",
+				"thigh_r": "Top_Leg_R_023",
+				"shin_l": "Low_Leg_L_014",
+				"shin_r": "Mid_Leg_R_00",
+				"arm_l": "Arm_L_02",
+				"arm_r": "Arm_R_05",
+				"torso": "Root_01",
 			}
 			for key in bone_map:
 				var idx := chassis_skeleton.find_bone(bone_map[key])

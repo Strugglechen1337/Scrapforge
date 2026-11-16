@@ -33,8 +33,8 @@ const CHASSIS := {
 		"base_hp": 135.0,
 		"base_speed": 165.0,
 		"armor_bonus": 0.12,
-		"scale": Vector3(1.18, 1.06, 1.18),
-		"has_model": false,
+		"scale": Vector3(1.0, 1.0, 1.0),
+		"has_model": true,
 	},
 }
 
