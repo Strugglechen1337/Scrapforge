@@ -28,6 +28,8 @@ var motion := 0.0
 var recoil := 0.0
 var body_recoil := 0.0
 var body_recoil_vel := 0.0
+var last_facing_y := 0.0
+var aim_yaw := 0.0
 var previous_fire_clock := 0.0
 var last_step_half := -1
 
@@ -337,8 +339,15 @@ func _process(delta: float) -> void:
 				recoil = 1.0
 			previous_fire_clock = game.fire_clock
 	recoil = move_toward(recoil, 0.0, delta * 6.0)
+	var yaw_delta := wrapf(rotation.y - last_facing_y, -PI, PI)
+	last_facing_y = rotation.y
+	aim_yaw = lerpf(aim_yaw, clampf(yaw_delta * 3.5, -0.26, 0.26), minf(1.0, delta * 10.0))
+	body_recoil_vel += (-body_recoil * 90.0 - body_recoil_vel * 14.0) * delta
+	body_recoil = clampf(body_recoil + body_recoil_vel * delta, -0.2, 1.0)
 	if animation.is_playing():
 		var stride := sin(clock * 7.0) * motion
+		var lean := motion * 0.05 - body_recoil * 0.09
+		var sway := sin(clock * 3.5) * motion * 0.035
 		if get_parent() is ScrapWorld3D and motion > 0.25:
 			var game = get_parent().game
 			if game and game.mode == "playing":
@@ -357,7 +366,7 @@ func _process(delta: float) -> void:
 			pose.call("shin_r", Vector3(maxf(0.0, stride) * 0.28, 0, 0))
 			pose.call("arm_l", Vector3(-stride * 0.14 - recoil * 0.12, 0, 0))
 			pose.call("arm_r", Vector3(stride * 0.14 - recoil * 0.12, 0, 0))
-			pose.call("torso", Vector3(0, 0, sin(clock * 3.5) * motion * 0.025))
+			pose.call("torso", Vector3(lean, aim_yaw, sway))
 		elif not chassis.is_empty():
 			(chassis["thigh_l"] as Node3D).rotation.x = stride * 0.32
 			(chassis["thigh_r"] as Node3D).rotation.x = -stride * 0.32
@@ -365,7 +374,12 @@ func _process(delta: float) -> void:
 			(chassis["shin_r"] as Node3D).rotation.x = maxf(0.0, stride) * 0.25
 			(chassis["upper_arm_l"] as Node3D).rotation.x = -stride * 0.12 - recoil * 0.13
 			(chassis["upper_arm_r"] as Node3D).rotation.x = stride * 0.12 - recoil * 0.13
-			(chassis["torso"] as Node3D).rotation.z = sin(clock * 3.5) * motion * 0.025
-		model.position.y = model_base_y + absf(sin(clock * 7.0)) * motion * 0.025 + sin(clock * 1.8) * 0.006
+			(chassis["torso"] as Node3D).rotation = Vector3(lean, aim_yaw, sway)
+		model.position.x = sin(clock * 3.5) * motion * 0.03
+		model.position.y = model_base_y + absf(sin(clock * 7.0)) * motion * 0.025 + sin(clock * 1.8) * 0.006 - absf(body_recoil) * 0.032
+		model.position.z = -body_recoil * 0.05
+	for part in parts.get_children():
+		if "move_intensity" in part:
+			part.move_intensity = motion
 	refresh()
 	update_parts()
