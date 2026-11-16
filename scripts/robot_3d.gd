@@ -307,6 +307,25 @@ func follow_bone(part: Node3D, marker: Marker3D, weapon: bool) -> void:
 	var delta_basis := local_transform.basis.orthonormalized() * rest_basis.inverse()
 	part.transform = Transform3D((delta_basis * Basis(Vector3.UP, PI if weapon else 0.0)).scaled(Vector3.ONE * (0.8 if weapon else 1.0)), local_transform.origin)
 
+func weapon_muzzle_world(weapon_id: String, fallback_pos: Vector2, fallback_dir: Vector2) -> Vector3:
+	var alias := {
+		"vulcan": "minigun",
+		"prism_laser": "laser",
+		"inferno": "flamethrower",
+		"singularity": "plasma",
+		"bastion": "turret",
+		"hive_drone": "drone",
+		"shredder": "saw",
+	}
+	var base_id: String = alias.get(weapon_id, weapon_id)
+	for part in parts.get_children():
+		var mid: String = str(part.get_meta("module_id"))
+		var m_base: String = alias.get(mid, mid)
+		if (mid == weapon_id or m_base == base_id) and "muzzle_marker" in part and is_instance_valid(part.muzzle_marker):
+			if part.muzzle_marker.is_inside_tree():
+				return part.muzzle_marker.global_position
+	return Vector3(fallback_pos.x / 50.0 + fallback_dir.x * 0.55, 0.85, fallback_pos.y / 50.0 + fallback_dir.y * 0.55)
+
 func trigger_weapon_fire(weapon_id: String, strength := 1.0) -> void:
 	var alias := {
 		"vulcan": "minigun",

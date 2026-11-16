@@ -338,10 +338,10 @@ func release_light(lamp: OmniLight3D) -> void:
 		lamp.visible = false
 		light_count -= 1
 
-func muzzle(p: Vector2, direction: Vector2, kind: String) -> void:
+func muzzle(p: Vector2, direction: Vector2, kind: String, world_origin := Vector3.INF) -> void:
 	if OS.has_feature("mobile"):
 		return
-	var pos := point(p, 0.8)
+	var pos := world_origin if world_origin != Vector3.INF else point(p, 0.8)
 	var shape := "star"
 	var mat := "orange"
 	var size := 1.0
@@ -539,14 +539,14 @@ func setup_beam_flame_pools() -> void:
 		ring_pool.append({"node": ring, "life": 0.0, "radius": 1.0})
 
 # Laser: continuous ribbon from muzzle to hit point / end of range.
-func beam(start: Vector2, direction: Vector2, length: float, hit: bool) -> void:
+func beam(start: Vector2, direction: Vector2, length: float, hit: bool, world_origin := Vector3.INF) -> void:
 	if OS.has_feature("mobile"):
 		return
 	for slot in beam_pool:
 		if slot.life <= 0.0:
 			slot.life = BEAM_TIME
 			slot.length = length / 50.0
-			var pos := point(start, 0.8)
+			var pos := world_origin if world_origin != Vector3.INF else point(start, 0.8)
 			for key in ["glow", "core"]:
 				slot[key].position = pos + (Vector3(0, 0.01, 0) if key == "core" else Vector3.ZERO)
 				slot[key].rotation.y = -direction.angle()
@@ -569,10 +569,10 @@ func update_beam(slot: Dictionary) -> void:
 	slot.core.scale = Vector3(slot.length, 1, 0.16 * flicker * (0.4 + 0.6 * fade))
 
 # Flame cone: one emitter set, kept alive while the weapon keeps firing.
-func flame(start: Vector2, direction: Vector2) -> void:
+func flame(start: Vector2, direction: Vector2, world_origin := Vector3.INF) -> void:
 	if OS.has_feature("mobile"):
 		return
-	flame_holder.position = point(start, 0.8)
+	flame_holder.position = world_origin if world_origin != Vector3.INF else point(start, 0.8)
 	flame_holder.rotation.y = -direction.angle()
 	flame_time = FLAME_HOLD
 	for ps in flame_systems:

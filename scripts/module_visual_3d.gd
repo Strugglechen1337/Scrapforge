@@ -17,6 +17,7 @@ var blade_radius := SAW_RADIUS
 var blade_orbit_speed := SAW_ORBIT_SPEED
 var module_id := ""
 var primary_part: Node3D
+var muzzle_marker: Marker3D
 var barrel_parts: Array[Node3D] = []
 var exhaust_nodes: Array[Node3D] = []
 var fire_recoil := 0.0
@@ -133,6 +134,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 	barrel_parts.clear()
 	exhaust_nodes.clear()
 	primary_part = null
+	muzzle_marker = null
 	glow_mat_ref = glow as StandardMaterial3D
 	if accent == null:
 		accent = metal
@@ -300,6 +302,23 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 				var a := TAU * i / maxf(level, 1)
 				var pylon := add_model("shield_pylon", 0.9, Vector3(cos(a) * 0.36, sin(a) * 0.36, -0.30), Vector3(0, 0, rad_to_deg(a) - 90), "pylon_" + str(i))
 				pylon.name = "pylon_" + str(i)
+	var muzzle_offsets := {
+		"minigun": Vector3(0.0, 0.0, -0.62),
+		"rocket": Vector3(0.0, 0.06, -0.42),
+		"swarm": Vector3(0.0, 0.06, -0.42),
+		"turret": Vector3(0.0, 0.04, -0.52),
+		"flamethrower": Vector3(0.0, 0.0, -0.78),
+		"laser": Vector3(0.0, 0.0, -0.62),
+		"plasma": Vector3(0.0, 0.0, -0.56),
+		"drone": Vector3(0.0, 0.14, -0.25),
+	}
+	var base_key: String = evo_base.get(id, id)
+	if muzzle_offsets.has(base_key):
+		muzzle_marker = Marker3D.new()
+		muzzle_marker.name = "muzzle"
+		muzzle_marker.position = muzzle_offsets[base_key]
+		var parent_node: Node3D = primary_part if is_instance_valid(primary_part) else self
+		parent_node.add_child(muzzle_marker)
 
 func trigger_fire(strength := 1.0) -> void:
 	fire_recoil = maxf(fire_recoil, strength)

@@ -23,41 +23,58 @@ static func update_player_fire(game, delta: float) -> void:
 		if is_instance_valid(game.world_3d) and is_instance_valid(game.world_3d.robot):
 			game.world_3d.robot.trigger_weapon_fire("rocket" if rocket_shot else "minigun", 1.15 if rocket_shot else 0.75)
 		var dmg_mult: float = game.progress.damage_multiplier()
+		var gun_world := Vector3(game.player.x / 50.0 + dir.x * 0.55, 0.85, game.player.y / 50.0 + dir.y * 0.55)
+		var rocket_world := gun_world
+		if is_instance_valid(game.world_3d) and is_instance_valid(game.world_3d.robot):
+			gun_world = game.world_3d.robot.weapon_muzzle_world("vulcan" if is_vulcan else "minigun", game.player, dir)
+			if rocket_shot:
+				rocket_world = game.world_3d.robot.weapon_muzzle_world("rocket", game.player, dir)
+		var gun_pos := Vector2(gun_world.x * 50.0, gun_world.z * 50.0)
+		var rocket_pos := Vector2(rocket_world.x * 50.0, rocket_world.z * 50.0)
 		if is_vulcan:
 			for angle in [-0.10, 0.0, 0.10]:
+				var use_rocket: bool = rocket_shot and angle == 0.0
 				game.bullets.append({
-					"pos": game.player,
+					"pos": rocket_pos if use_rocket else gun_pos,
+					"y": rocket_world.y if use_rocket else gun_world.y,
 					"vel": dir.rotated(angle) * 680,
 					"life": 2.0,
 					"damage": int(round(34.0 * dmg_mult)),
-					"rocket": rocket_shot and angle == 0.0,
+					"rocket": use_rocket,
 					"rocket_radius": 90.0 if rocket_lv >= 5 else 65.0,
 				})
 		elif mini_lv > 0 or rocket_lv > 0:
 			var angles: Array = [-0.08, 0.0, 0.08] if mini_lv >= 5 else ([-0.04, 0.04] if mini_lv >= 3 else [0.0])
 			var dmg: int = int(round((12 + mini_lv * 6 + rocket_lv * 5) * dmg_mult))
 			for angle in angles:
+				var use_rocket: bool = rocket_shot and angle == angles[0]
 				game.bullets.append({
-					"pos": game.player,
+					"pos": rocket_pos if use_rocket else gun_pos,
+					"y": rocket_world.y if use_rocket else gun_world.y,
 					"vel": dir.rotated(angle) * 560,
 					"life": 2.0,
 					"damage": dmg,
-					"rocket": rocket_shot and angle == angles[0],
+					"rocket": use_rocket,
 					"rocket_radius": 90.0 if rocket_lv >= 5 else (70.0 if rocket_lv >= 3 else 0.0),
 				})
 			if rocket_shot and rocket_lv >= 5:
 				for r_ang in [-0.09, 0.09]:
-					game.bullets.append({"pos": game.player, "vel": dir.rotated(r_ang) * 540, "life": 2.0, "damage": dmg, "rocket": true, "rocket_radius": 90.0})
-		game.spark(game.player + dir * 35, game.CYAN, 4)
+					game.bullets.append({"pos": rocket_pos, "y": rocket_world.y, "vel": dir.rotated(r_ang) * 540, "life": 2.0, "damage": dmg, "rocket": true, "rocket_radius": 90.0})
+		game.spark(gun_pos, game.CYAN, 4)
 		if OS.has_feature("mobile"):
-			game.world_3d.effects_3d.burst(game.player + dir * 28, "muzzle")
+			game.world_3d.effects_3d.burst(gun_pos, "muzzle")
 		else:
-			game.world_3d.effects_3d.muzzle(game.player + dir * 60, dir, "rocket" if rocket_shot else "minigun")
+			game.world_3d.effects_3d.muzzle(gun_pos, dir, "minigun", gun_world)
+			if rocket_shot:
+				game.world_3d.effects_3d.muzzle(rocket_pos, dir, "rocket", rocket_world)
 			if game.state.level("swarm"):
-				game.world_3d.effects_3d.muzzle(game.player + dir * 60, dir, "swarm")
+				var sw_world: Vector3 = game.world_3d.robot.weapon_muzzle_world("swarm", game.player, dir) if (is_instance_valid(game.world_3d) and is_instance_valid(game.world_3d.robot)) else rocket_world
+				game.world_3d.effects_3d.muzzle(Vector2(sw_world.x * 50.0, sw_world.z * 50.0), dir, "swarm", sw_world)
 		if game.state.level("swarm"):
+			var sw_w: Vector3 = game.world_3d.robot.weapon_muzzle_world("swarm", game.player, dir) if (is_instance_valid(game.world_3d) and is_instance_valid(game.world_3d.robot)) else rocket_world
+			var sw_pos := Vector2(sw_w.x * 50.0, sw_w.z * 50.0)
 			for angle in [-0.25, -0.12, 0.0, 0.12, 0.25]:
-				game.bullets.append({"pos": game.player, "vel": dir.rotated(angle) * 460, "life": 2.0, "damage": 36, "visual": "swarm"})
+				game.bullets.append({"pos": sw_pos, "y": sw_w.y, "vel": dir.rotated(angle) * 460, "life": 2.0, "damage": 36, "visual": "swarm"})
 
 
 static func update_bullets(game, delta: float) -> void:

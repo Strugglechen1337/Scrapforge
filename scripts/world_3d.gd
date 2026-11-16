@@ -726,7 +726,8 @@ func update_view() -> void:
 	var trail_used := 0
 	for i in range(mini(game.bullets.size(), projectile_nodes.size())):
 		var p: Vector2 = game.bullets[i].pos
-		projectile_nodes[i].position = Vector3(p.x / 50.0, 0.5, p.y / 50.0)
+		var py: float = float(game.bullets[i].get("y", 0.5))
+		projectile_nodes[i].position = Vector3(p.x / 50.0, py, p.y / 50.0)
 		var is_plasma: bool = game.bullets[i].get("plasma", false)
 		var is_rocket: bool = game.bullets[i].get("rocket", false) and not is_plasma
 		var is_swarm: bool = not OS.has_feature("mobile") and game.bullets[i].get("visual", "") == "swarm"
