@@ -23,7 +23,7 @@ static func update_player_fire(game, delta: float) -> void:
 		if is_instance_valid(game.world_3d) and is_instance_valid(game.world_3d.robot):
 			game.world_3d.robot.trigger_weapon_fire("rocket" if rocket_shot else "minigun", 1.15 if rocket_shot else 0.75)
 		var dmg_mult: float = game.progress.damage_multiplier()
-		var gun_world := Vector3(game.player.x / 50.0 + dir.x * 0.55, 0.85, game.player.y / 50.0 + dir.y * 0.55)
+		var gun_world := Vector3(game.player.x / 50.0 + dir.x * 0.40, 0.85, game.player.y / 50.0 + dir.y * 0.40)
 		var rocket_world := gun_world
 		if is_instance_valid(game.world_3d) and is_instance_valid(game.world_3d.robot):
 			gun_world = game.world_3d.robot.weapon_muzzle_world("vulcan" if is_vulcan else "minigun", game.player, dir)

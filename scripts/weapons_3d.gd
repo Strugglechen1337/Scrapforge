@@ -103,7 +103,7 @@ func update(game: Node, delta: float) -> void:
 			clocks[clock_key] = 0.55 if is_evo else 0.65
 		var active_id: String = evo_id if is_evo else id
 		var damage: float = game.definitions[active_id].values[level - 1] * game.progress.damage_multiplier()
-		var muzzle_world := Vector3(game.player.x / 50.0 + direction.x * 0.55, 0.85, game.player.y / 50.0 + direction.y * 0.55)
+		var muzzle_world := Vector3(game.player.x / 50.0 + direction.x * 0.40, 0.85, game.player.y / 50.0 + direction.y * 0.40)
 		if is_instance_valid(game.world_3d) and is_instance_valid(game.world_3d.robot):
 			muzzle_world = game.world_3d.robot.weapon_muzzle_world(active_id, game.player, direction)
 			var fire_str := 1.25 if id == "turret" else (1.05 if id == "laser" else (0.85 if id == "flamethrower" else 1.0))

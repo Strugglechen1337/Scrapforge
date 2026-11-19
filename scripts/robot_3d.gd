@@ -324,7 +324,7 @@ func weapon_muzzle_world(weapon_id: String, fallback_pos: Vector2, fallback_dir:
 		if (mid == weapon_id or m_base == base_id) and "muzzle_marker" in part and is_instance_valid(part.muzzle_marker):
 			if part.muzzle_marker.is_inside_tree():
 				return part.muzzle_marker.global_position
-	return Vector3(fallback_pos.x / 50.0 + fallback_dir.x * 0.55, 0.85, fallback_pos.y / 50.0 + fallback_dir.y * 0.55)
+	return Vector3(fallback_pos.x / 50.0 + fallback_dir.x * 0.40, 0.85, fallback_pos.y / 50.0 + fallback_dir.y * 0.40)
 
 func trigger_weapon_fire(weapon_id: String, strength := 1.0) -> void:
 	var alias := {
