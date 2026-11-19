@@ -303,12 +303,12 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 				var pylon := add_model("shield_pylon", 0.9, Vector3(cos(a) * 0.36, sin(a) * 0.36, -0.30), Vector3(0, 0, rad_to_deg(a) - 90), "pylon_" + str(i))
 				pylon.name = "pylon_" + str(i)
 	var muzzle_offsets := {
-		"minigun": Vector3(0.0, 0.0, -0.62),
-		"rocket": Vector3(0.0, 0.06, -0.42),
-		"swarm": Vector3(0.0, 0.06, -0.42),
-		"turret": Vector3(0.0, 0.04, -0.52),
-		"flamethrower": Vector3(0.0, 0.0, -0.78),
-		"laser": Vector3(0.0, 0.0, -0.62),
+		"minigun": Vector3(0.0, 0.0, -0.53),
+		"rocket": Vector3(0.0, 0.06, -0.32),
+		"swarm": Vector3(0.0, 0.06, -0.32),
+		"turret": Vector3(0.0, 0.04, -0.26),
+		"flamethrower": Vector3(0.0, 0.0, -0.44),
+		"laser": Vector3(0.0, 0.0, -0.51),
 		"plasma": Vector3(0.0, 0.0, -0.56),
 		"drone": Vector3(0.0, 0.14, -0.25),
 	}

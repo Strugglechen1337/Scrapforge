@@ -372,8 +372,8 @@ func muzzle(p: Vector2, direction: Vector2, kind: String, world_origin := Vector
 			radius = 3.4
 		"flamethrower":
 			shape = "cone"
-			size = 1.3
-			energy = 2.0
+			size = 0.65
+			energy = 1.6
 		"turret":
 			mat = "hot"
 			size = 0.7
