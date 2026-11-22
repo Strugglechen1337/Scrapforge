@@ -59,7 +59,12 @@ func _ready() -> void:
 			for shot_arg in OS.get_cmdline_user_args():
 				if shot_arg.begins_with("--shot-dir="): capture(shot_arg.trim_prefix("--shot-dir="))
 			return
-	check(false)
+	if DisplayServer.get_name() != "headless":
+		check(false)
+
+func _exit_tree() -> void:
+	if is_instance_valid(request):
+		request.cancel_request()
 
 func capture(path: String) -> void:
 	DirAccess.make_dir_recursive_absolute(path)

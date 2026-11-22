@@ -299,7 +299,7 @@ func _ready() -> void:
 		rquad.material = rmat
 		rain_particles.draw_pass_1 = rquad
 		add_child(rain_particles)
-	for id in ["minigun", "rocket", "armor"]:
+	for id in ["minigun", "rocket", "armor", "saw"]:
 		for n in range(3 if id != "armor" else 2):
 			menu_state.upgrade(id)
 	build_hangar_stage()
@@ -684,8 +684,8 @@ func update_view() -> void:
 			camera.position = base_pos + Vector3(1.22, 2.25, 7.8)
 			camera.look_at(base_pos + Vector3(1.22, 1.00, 0.0))
 		elif game.mode == "hangar":
-			camera.position = base_pos + Vector3(-0.08, 1.75, 7.4)
-			camera.look_at(base_pos + Vector3(-0.08, 1.02, 0.0))
+			camera.position = base_pos + Vector3(0.0, 1.75, 7.6)
+			camera.look_at(base_pos + Vector3(0.0, 1.02, 0.0))
 		else:
 			camera.position = base_pos + Vector3(-0.78, 1.55, 5.0)
 			camera.look_at(base_pos + Vector3(-0.78, 0.88, 0.0))
@@ -726,7 +726,8 @@ func update_view() -> void:
 	var trail_used := 0
 	for i in range(mini(game.bullets.size(), projectile_nodes.size())):
 		var p: Vector2 = game.bullets[i].pos
-		projectile_nodes[i].position = Vector3(p.x / 50.0, 0.5, p.y / 50.0)
+		var py: float = float(game.bullets[i].get("y", 0.5))
+		projectile_nodes[i].position = Vector3(p.x / 50.0, py, p.y / 50.0)
 		var is_plasma: bool = game.bullets[i].get("plasma", false)
 		var is_rocket: bool = game.bullets[i].get("rocket", false) and not is_plasma
 		var is_swarm: bool = not OS.has_feature("mobile") and game.bullets[i].get("visual", "") == "swarm"

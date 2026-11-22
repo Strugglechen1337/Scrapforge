@@ -182,6 +182,8 @@ static func show_hangar(game) -> void:
 				game.progress.save()
 				game.show_hangar()
 		, ScrapUI.CYAN if is_sel else (ScrapUI.ORANGE if unlocked else ScrapUI.BORDER_STEEL), Vector2(chassis_w, 38))
+		cb.add_theme_font_size_override("font_size", 11)
+		cb.clip_text = true
 		cb.disabled = not unlocked
 		cb.set_meta("chassis_id", cid)
 		chassis_row.add_child(cb)
@@ -206,6 +208,8 @@ static func show_hangar(game) -> void:
 				game.progress.save()
 				game.show_hangar()
 		, ScrapUI.CYAN if is_sel_a else (ScrapUI.ORANGE if unlocked_a else ScrapUI.BORDER_STEEL), Vector2(arena_w, 38))
+		ab.add_theme_font_size_override("font_size", 12)
+		ab.clip_text = true
 		ab.disabled = not unlocked_a
 		ab.set_meta("arena_id", aid)
 		arena_row.add_child(ab)

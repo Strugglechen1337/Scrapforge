@@ -11,10 +11,10 @@ func damage(game: Node, amount: float) -> void:
 	game.hp -= amount
 	AudioManager.play(&"player_hit", game.player)
 
-func show_beam(game: Node, direction: Vector2, length: float, color: Color, hit := false) -> void:
+func show_beam(game: Node, direction: Vector2, length: float, color: Color, hit := false, world_origin := Vector3.INF) -> void:
 	if not OS.has_feature("mobile"):
-		var start: Vector2 = game.player + direction * 60
-		game.world_3d.effects_3d.beam(start, direction, maxf(length - 60.0, 10.0), hit)
+		var start: Vector2 = (Vector2(world_origin.x * 50.0, world_origin.z * 50.0) if world_origin != Vector3.INF else game.player + direction * 60)
+		game.world_3d.effects_3d.beam(start, direction, maxf(length - 30.0, 10.0), hit, world_origin)
 		return
 	var beam := MeshInstance3D.new()
 	if OS.has_feature("mobile"): beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -34,9 +34,10 @@ func show_beam(game: Node, direction: Vector2, length: float, color: Color, hit 
 	beam.rotation = Vector3(PI / 2, -atan2(direction.y, direction.x) + PI / 2, 0)
 	game.get_tree().create_timer(0.12).timeout.connect(beam.queue_free)
 
-func show_flames(game: Node, direction: Vector2) -> void:
+func show_flames(game: Node, direction: Vector2, world_origin := Vector3.INF) -> void:
 	if not OS.has_feature("mobile"):
-		game.world_3d.effects_3d.flame(game.player + direction * 60, direction)
+		var start: Vector2 = (Vector2(world_origin.x * 50.0, world_origin.z * 50.0) if world_origin != Vector3.INF else game.player + direction * 60)
+		game.world_3d.effects_3d.flame(start, direction, world_origin)
 		return
 	var particles := CPUParticles3D.new()
 	if OS.has_feature("mobile"): particles.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -102,8 +103,14 @@ func update(game: Node, delta: float) -> void:
 			clocks[clock_key] = 0.55 if is_evo else 0.65
 		var active_id: String = evo_id if is_evo else id
 		var damage: float = game.definitions[active_id].values[level - 1] * game.progress.damage_multiplier()
+		var muzzle_world := Vector3(game.player.x / 50.0 + direction.x * 0.40, 0.85, game.player.y / 50.0 + direction.y * 0.40)
+		if is_instance_valid(game.world_3d) and is_instance_valid(game.world_3d.robot):
+			muzzle_world = game.world_3d.robot.weapon_muzzle_world(active_id, game.player, direction)
+			var fire_str := 1.25 if id == "turret" else (1.05 if id == "laser" else (0.85 if id == "flamethrower" else 1.0))
+			game.world_3d.robot.trigger_weapon_fire(active_id, fire_str)
+		var muzzle_2d := Vector2(muzzle_world.x * 50.0, muzzle_world.z * 50.0)
 		if not OS.has_feature("mobile"):
-			game.world_3d.effects_3d.muzzle(game.player + direction * 60, direction, id)
+			game.world_3d.effects_3d.muzzle(muzzle_2d, direction, id, muzzle_world)
 		if id == "laser":
 			AudioManager.play(&"laser", game.player)
 			var beam_range: float = 900.0 if is_evo else (650.0 + (level - 1) * 35.0)
@@ -114,7 +121,7 @@ func update(game: Node, delta: float) -> void:
 				if offset.dot(direction) > 0 and offset.dot(direction) < beam_range and absf(offset.cross(direction)) < beam_width:
 					reach = maxf(reach, offset.dot(direction))
 			var beam_color := Color("c65cff") if (is_evo or OS.has_feature("mobile")) else Color("ff7a1a")
-			show_beam(game, direction, reach if reach > 0.0 and not OS.has_feature("mobile") else beam_range, beam_color, reach > 0.0)
+			show_beam(game, direction, reach if reach > 0.0 and not OS.has_feature("mobile") else beam_range, beam_color, reach > 0.0, muzzle_world)
 			for enemy in game.enemies:
 				var offset: Vector2 = enemy.pos - game.player
 				if offset.dot(direction) > 0 and offset.dot(direction) < beam_range and absf(offset.cross(direction)) < beam_width:
@@ -124,7 +131,7 @@ func update(game: Node, delta: float) -> void:
 					enemy.flash = 0.15
 		elif id == "flamethrower":
 			AudioManager.flame_active()
-			show_flames(game, direction)
+			show_flames(game, direction, muzzle_world)
 			var flame_range: float = 340.0 if is_evo else (220.0 + (level - 1) * 20.0)
 			var flame_dot: float = 0.50 if is_evo else (0.86 - (level - 1) * 0.04)
 			for enemy in game.enemies:
@@ -139,7 +146,8 @@ func update(game: Node, delta: float) -> void:
 			var orbs: Array = [-0.14, 0.14] if (not is_evo and level >= 5) else [0.0]
 			for ang in orbs:
 				game.bullets.append({
-					"pos": game.player,
+					"pos": muzzle_2d,
+					"y": muzzle_world.y,
 					"vel": direction.rotated(ang) * 420,
 					"life": 2.0,
 					"damage": damage,
@@ -151,7 +159,7 @@ func update(game: Node, delta: float) -> void:
 			AudioManager.play(&"turret", game.player)
 			var spread: Array = [-0.15, -0.05, 0.05, 0.15] if is_evo else ([-0.10, 0.0, 0.10] if level >= 5 else ([-0.06, 0.06] if level >= 3 else [0.0]))
 			for ang in spread:
-				game.bullets.append({"pos": game.player, "vel": direction.rotated(ang) * 580, "life": 2.0, "damage": damage, "visual": "turret"})
+				game.bullets.append({"pos": muzzle_2d, "y": muzzle_world.y, "vel": direction.rotated(ang) * 580, "life": 2.0, "damage": damage, "visual": "turret"})
 		else:
 			AudioManager.play(&"drone", game.player)
 			var targets: Array = game.enemies.duplicate()
@@ -159,4 +167,4 @@ func update(game: Node, delta: float) -> void:
 			var max_targets := 4 if is_evo else (3 if level >= 5 else (2 if level >= 3 else 1))
 			for ti in range(mini(max_targets, targets.size())):
 				var tdir: Vector2 = (targets[ti].pos - game.player).normalized()
-				game.bullets.append({"pos": game.player, "vel": tdir * 580, "life": 2.0, "damage": damage, "visual": "drone"})
+				game.bullets.append({"pos": muzzle_2d, "y": muzzle_world.y, "vel": tdir * 580, "life": 2.0, "damage": damage, "visual": "drone"})

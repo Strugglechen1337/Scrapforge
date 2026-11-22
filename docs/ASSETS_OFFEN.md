@@ -11,7 +11,6 @@ Diese Liste erfasst alle aktuell skriptgenerierten 3D-Modelle (`assets/models/mo
 | `cooldown.glb` | Kühler-Basismodul | `back` | ca. 0,45 × 0,50 × 0,30 m |
 | `cooldown_tank.glb` | Kühltank-Paar (Kühler St. 2+) | `back` | ca. 0,22 × 0,42 × 0,22 m |
 | `drone_dock.glb` | Drohnen-Schwarm-Dock (`hive_drone` Evolution) | `back` / `left_shoulder` | ca. 0,55 × 0,45 × 0,45 m |
-| `flamethrower.glb` | Flammenwerfer & Inferno-Hauptrohr | `left_arm` / `right_arm` | ca. 0,35 × 0,35 × 0,85 m |
 | `flamethrower_tank.glb` | Treibstofftank (Flammenwerfer St. 1+) | `left_arm` / `right_arm` | ca. 0,18 × 0,32 × 0,18 m |
 | `gun_drum.glb` | Munitionstrommel (Minigun/Vulcan/Schulterturm) | `right_arm` / `left_shoulder` | ca. 0,28 × 0,28 × 0,32 m |
 | `laser_coil.glb` | Fokussierspule (Laser/Prisma-Laser/Flammenwerfer) | `left_arm` / `right_arm` | ca. 0,26 × 0,26 × 0,30 m |
@@ -20,20 +19,12 @@ Diese Liste erfasst alle aktuell skriptgenerierten 3D-Modelle (`assets/models/mo
 | `mount_bracket.glb` | Waffen-Montagehalterung (Laser, Minigun, Flamer, Plasma) | `left_arm` / `right_arm` | ca. 0,30 × 0,28 × 0,24 m |
 | `plasma.glb` | Plasmawerfer / Singularität-Basis | `left_arm` / `right_arm` | ca. 0,36 × 0,34 × 0,78 m |
 | `plasma_coil.glb` | Plasma-Ringkühler (Plasma St. 2+) | `left_arm` / `right_arm` | ca. 0,24 × 0,24 × 0,22 m |
-| `radar.glb` | Radar-Schüssel (Support-Modul) | `head` / `back` | ca. 0,44 × 0,44 × 0,36 m |
 | `radar_array.glb` | Radar-Antennenarray (Radar St. 2+, Sensor St. 3+) | `head` / `back` | ca. 0,32 × 0,22 × 0,28 m |
-| `rocket_pod_2.glb` | Raketenwerfer-Pod 2-fach (St. 1–2) | `right_shoulder` | ca. 0,52 × 0,38 × 0,58 m |
-| `rocket_pod_4.glb` | Raketenwerfer-Pod 4-fach (St. 3–4) | `right_shoulder` | ca. 0,60 × 0,44 × 0,62 m |
-| `rocket_pod_6.glb` | Raketenwerfer-Pod 6-fach (St. 5+) | `right_shoulder` | ca. 0,68 × 0,50 × 0,66 m |
-| `saw.glb` | Orbitierende Sägeblätter (`saw` & `shredder` Evolution) | Orbit um Mech (`parts`, Radius 1,18 m) | ca. 0,62 × 0,10 × 0,62 m |
-| `sensor.glb` | Ziel-Sensor Basismodul | `head` | ca. 0,36 × 0,26 × 0,30 m |
 | `sensor_pod.glb` | Seitenoptik-Pod (Sensor St. 2+) | `head` | ca. 0,16 × 0,16 × 0,22 m |
 | `shield_emitter.glb` | Schildgenerator-Emitter (`shield` & `bastion`) | `back` | ca. 0,48 × 0,48 × 0,28 m |
 | `shield_pylon.glb` | Schild-Pylonring (`shield` pro Stufe) | `back` | ca. 0,14 × 0,14 × 0,22 m |
 | `swarm_pod.glb` | Schwarm-Werfer Evolution (`swarm`) | `right_shoulder` | ca. 0,72 × 0,52 × 0,68 m |
-| `thruster.glb` | Schubdüsen-Basismodul | `back` / `legs` | ca. 0,44 × 0,42 × 0,36 m |
 | `thruster_fin.glb` | Schubdüsen-Stabilisatorfinnen (St. 3+) | `back` / `legs` | ca. 0,52 × 0,32 × 0,24 m |
-| `turret_pod.glb` | Schultergeschütz-Pod (`turret`) | `left_shoulder` | ca. 0,46 × 0,38 × 0,58 m |
 
 ## 2. Gegner-Anbauten (`assets/models/enemies/`)
 

@@ -4,6 +4,10 @@ func _initialize() -> void:
 	call_deferred("run")
 
 func run() -> void:
+	create_timer(20.0).timeout.connect(func():
+		printerr("test_weapons.gd timed out")
+		quit(1)
+	)
 	var game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
 	game.start_game()
@@ -60,8 +64,28 @@ func run() -> void:
 	game.fire_clock = 100
 	game._process(0.15)
 	assert(game.enemies[1].hp < 70 and game.enemies[0].hp == 70)
+	# Without minigun, firing produces no torso fallback flash or minigun bullet.
+	game.start_game()
+	game.state.levels.clear()
+	game.state.upgrade("armor")
+	game.enemies.append(game.make_enemy(1, Vector2(0, 140)))
+	game.fire_clock = 0.0
+	var active_before: int = game.world_3d.effects_3d.muzzle_pool.filter(func(s): return s.life > 0.0).size()
+	WeaponLogic.update_player_fire(game, 0.016)
+	assert(game.bullets.is_empty())
+	assert(game.world_3d.effects_3d.muzzle_pool.filter(func(s): return s.life > 0.0).size() == active_before)
+	game.state.upgrade("rocket")
+	game.state.upgrade("rocket")
+	game.state.upgrade("rocket")
+	game.shot_index = 1
+	game.fire_clock = 0.0
+	WeaponLogic.update_player_fire(game, 0.016)
+	assert(game.bullets.size() == 1 and game.bullets[0].get("rocket", false))
+	if not OS.has_feature("mobile"):
+		assert(game.world_3d.effects_3d.muzzle_pool.filter(func(s): return s.life > 0.0).size() == active_before + 1)
 	game.queue_free()
 	root.get_node("AudioManager").stop_all()
-	await create_timer(1.0).timeout
+	await process_frame
+	await process_frame
 	print("Waffen-Tests bestanden")
 	quit()
