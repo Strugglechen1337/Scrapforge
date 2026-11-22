@@ -306,7 +306,7 @@ func build(id: String, level: int, metal: Material, dark: Material, glow: Materi
 		"minigun": Vector3(0.0, 0.0, -0.53),
 		"rocket": Vector3(0.0, 0.06, -0.32),
 		"swarm": Vector3(0.0, 0.06, -0.32),
-		"turret": Vector3(0.0, 0.04, -0.26),
+		"turret": Vector3(0.0, 0.10, -0.26),
 		"flamethrower": Vector3(0.0, 0.0, -0.44),
 		"laser": Vector3(0.0, 0.0, -0.51),
 		"plasma": Vector3(0.0, 0.0, -0.56),
