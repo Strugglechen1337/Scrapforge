@@ -19,9 +19,12 @@ var clock := 0.0
 var visor: MeshInstance3D
 var model: Node3D
 var chassis: Dictionary = {}
+const MAX_TORSO_TWIST := deg_to_rad(100.0)
+
 var chassis_skeleton: Skeleton3D
 var chassis_bones: Dictionary = {}
 var chassis_bone_rest: Dictionary = {}
+var chassis_bone_up: Dictionary = {}
 var model_base_y := 0.956
 var last_position := Vector3.ZERO
 var motion := 0.0
@@ -79,6 +82,7 @@ func _build_chassis(id: String) -> void:
 	chassis_skeleton = null
 	chassis_bones.clear()
 	chassis_bone_rest.clear()
+	chassis_bone_up.clear()
 	if id in ["vanguard", "bastion_mech"]:
 		model_base_y = 0.0
 		var glb_path := "res://assets/third_party/sketchfab/vanguard/vanguard.glb" if id == "vanguard" else "res://assets/third_party/sketchfab/bastion/bastion.glb"
@@ -119,6 +123,7 @@ func _build_chassis(id: String) -> void:
 				"arm_l": "arm_swing_left_08",
 				"arm_r": "arm_swing_right_04",
 				"torso": "hull_00",
+				"hip": "hip_011",
 			} if id == "vanguard" else {
 				"thigh_l": "Top_Leg_L_09",
 				"thigh_r": "Top_Leg_R_023",
@@ -133,6 +138,7 @@ func _build_chassis(id: String) -> void:
 				if idx >= 0:
 					chassis_bones[key] = idx
 					chassis_bone_rest[key] = chassis_skeleton.get_bone_pose_rotation(idx)
+					chassis_bone_up[key] = (chassis_skeleton.get_bone_global_rest(idx).basis.inverse() * Vector3.UP).normalized()
 	else:
 		model_base_y = 0.956
 		model = (load("res://assets/third_party/sketchfab/colossus/colossus-parts.glb") as PackedScene).instantiate() as Node3D
@@ -358,9 +364,41 @@ func _process(delta: float) -> void:
 				recoil = 1.0
 			previous_fire_clock = game.fire_clock
 	recoil = move_toward(recoil, 0.0, delta * 6.0)
-	var yaw_delta := wrapf(rotation.y - last_facing_y, -PI, PI)
+	var desired_aim := 0.0
+	if get_parent() is ScrapWorld3D:
+		var game = get_parent().game
+		if game and game.mode == "playing":
+			var move_dir: Vector2 = game.move_dir if "move_dir" in game else Vector2.ZERO
+			var has_move := move_dir.length_squared() > 0.01
+			var has_target: bool = not game.enemies.is_empty()
+			var target_yaw := rotation.y
+			if has_target:
+				var nearest: Dictionary = game.enemies[0]
+				for enemy in game.enemies:
+					if game.player.distance_squared_to(enemy.pos) < game.player.distance_squared_to(nearest.pos):
+						nearest = enemy
+				var to_target: Vector2 = nearest.pos - game.player
+				if to_target.length_squared() > 0.0001:
+					target_yaw = atan2(to_target.x, to_target.y)
+				else:
+					has_target = false
+			var desired_body_yaw := rotation.y
+			if has_move:
+				var move_yaw := atan2(move_dir.x, move_dir.y)
+				if has_target:
+					var diff := wrapf(target_yaw - move_yaw, -PI, PI)
+					desired_body_yaw = move_yaw if absf(diff) <= MAX_TORSO_TWIST else wrapf(target_yaw - signf(diff) * MAX_TORSO_TWIST, -PI, PI)
+				else:
+					desired_body_yaw = move_yaw
+			elif has_target:
+				var diff := wrapf(target_yaw - rotation.y, -PI, PI)
+				if absf(diff) > MAX_TORSO_TWIST:
+					desired_body_yaw = wrapf(target_yaw - signf(diff) * MAX_TORSO_TWIST, -PI, PI)
+			rotation.y = lerp_angle(rotation.y, desired_body_yaw, minf(1.0, delta * 8.0))
+			if has_target:
+				desired_aim = clampf(wrapf(target_yaw - rotation.y, -PI, PI), -MAX_TORSO_TWIST, MAX_TORSO_TWIST)
 	last_facing_y = rotation.y
-	aim_yaw = lerpf(aim_yaw, clampf(yaw_delta * 3.5, -0.26, 0.26), minf(1.0, delta * 10.0))
+	aim_yaw = lerpf(aim_yaw, desired_aim, minf(1.0, delta * 10.0))
 	body_recoil_vel += (-body_recoil * 90.0 - body_recoil_vel * 14.0) * delta
 	body_recoil = clampf(body_recoil + body_recoil_vel * delta, -0.2, 1.0)
 	if animation.is_playing():
@@ -376,19 +414,24 @@ func _process(delta: float) -> void:
 					var am := get_node_or_null("/root/AudioManager")
 					if am: am.play(&"mech_step", game.player)
 		if chassis_skeleton and not chassis_bones.is_empty():
-			var pose := func(key: String, rot: Vector3) -> void:
+			var pose := func(key: String, rot: Vector3, twist := 0.0) -> void:
 				if chassis_bones.has(key):
-					chassis_skeleton.set_bone_pose_rotation(chassis_bones[key], chassis_bone_rest[key] * Quaternion.from_euler(rot))
-			pose.call("thigh_l", Vector3(stride * 0.34, 0, 0))
-			pose.call("thigh_r", Vector3(-stride * 0.34, 0, 0))
+					var q: Quaternion = chassis_bone_rest[key]
+					if not is_zero_approx(twist):
+						q = q * Quaternion(chassis_bone_up[key], twist)
+					chassis_skeleton.set_bone_pose_rotation(chassis_bones[key], q * Quaternion.from_euler(rot))
+			var leg_counter := 0.0 if chassis_bones.has("hip") else -aim_yaw
+			pose.call("hip", Vector3.ZERO, -aim_yaw)
+			pose.call("thigh_l", Vector3(stride * 0.34, 0, 0), leg_counter)
+			pose.call("thigh_r", Vector3(-stride * 0.34, 0, 0), leg_counter)
 			pose.call("shin_l", Vector3(maxf(0.0, -stride) * 0.28, 0, 0))
 			pose.call("shin_r", Vector3(maxf(0.0, stride) * 0.28, 0, 0))
 			pose.call("arm_l", Vector3(-stride * 0.14 - recoil * 0.12, 0, 0))
 			pose.call("arm_r", Vector3(stride * 0.14 - recoil * 0.12, 0, 0))
-			pose.call("torso", Vector3(lean, aim_yaw, sway))
+			pose.call("torso", Vector3(lean, 0, sway), aim_yaw)
 		elif not chassis.is_empty():
-			(chassis["thigh_l"] as Node3D).rotation.x = stride * 0.32
-			(chassis["thigh_r"] as Node3D).rotation.x = -stride * 0.32
+			(chassis["thigh_l"] as Node3D).basis = Basis(Vector3.UP, -aim_yaw) * Basis(Vector3.RIGHT, stride * 0.32)
+			(chassis["thigh_r"] as Node3D).basis = Basis(Vector3.UP, -aim_yaw) * Basis(Vector3.RIGHT, -stride * 0.32)
 			(chassis["shin_l"] as Node3D).rotation.x = maxf(0.0, -stride) * 0.25
 			(chassis["shin_r"] as Node3D).rotation.x = maxf(0.0, stride) * 0.25
 			(chassis["upper_arm_l"] as Node3D).rotation.x = -stride * 0.12 - recoil * 0.13

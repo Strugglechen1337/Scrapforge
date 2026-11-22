@@ -74,6 +74,7 @@ var shake_offset := Vector2.ZERO
 var camera_feedback := CameraFeedback.new()
 var hitstop_until_msec := 0
 var hit_flash := 0.0
+var move_dir := Vector2.ZERO
 var particles: Array[Dictionary] = []
 var damage_texts: Array[Dictionary] = []
 var shot_dir := ""
@@ -435,6 +436,7 @@ func start_game() -> void:
 	mode = "playing"
 	boss_spawned = false
 	won = false
+	move_dir = Vector2.ZERO
 	particles.clear()
 	damage_texts.clear()
 	hud_module_sig = ""
@@ -442,6 +444,9 @@ func start_game() -> void:
 	robot.visible = false
 	build_hud()
 	if is_instance_valid(world_3d):
+		if is_instance_valid(world_3d.robot):
+			world_3d.robot.rotation.y = 0.0
+			world_3d.robot.aim_yaw = 0.0
 		world_3d.update_view()
 
 
@@ -593,7 +598,8 @@ func _process(delta: float) -> void:
 		if demo_stage in [2, 4]:
 			direction = Vector2.ZERO
 	var base_spd: float = ChassisCatalog.base_speed(progress.selected_chassis)
-	player += direction.limit_length(1.0) * (base_spd + state.level("thruster") * 12.0) * progress.speed_multiplier() * delta
+	move_dir = direction.limit_length(1.0)
+	player += move_dir * (base_spd + state.level("thruster") * 12.0) * progress.speed_multiplier() * delta
 	player = player.clamp(Vector2(-1800, -1200), Vector2(1800, 1200))
 	RunSimulation.spawn_waves(self, delta)
 	AudioManager.set_listener(player)
